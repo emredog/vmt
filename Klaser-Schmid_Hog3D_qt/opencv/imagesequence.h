@@ -3,7 +3,7 @@
 
 #include <QDir>
 
-#define DEPTH 1
+#define DEPTH 0
 
 // forward decleration
 class IplImageWrapper;
@@ -33,8 +33,9 @@ public:
     //constructor
     ImageSequence(const std::string& folderPath) :
         directory(QString::fromStdString(folderPath)),
-       /* _startPts(0),*/ _currentFrameIndex(0), _currentBuffer(NULL) /*, _peekFrameIndex(0)*/
+       /* _startPts(0),*/  _currentBuffer(0) /*, _peekFrameIndex(0)*/
     {
+        _currentFrameIndex = 0;
         init();
     }
 

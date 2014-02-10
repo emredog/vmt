@@ -16,9 +16,9 @@ void ImageSequence::init()
     // prepare...
     QStringList filters;
     if (DEPTH == 1)
-        filters << ".jp2";
+        filters << "*.jp2";
     else
-        filters << ".jpg";
+        filters << "*.jpg" << "*.png";
     // ...and get all "jp2" (depth) files, ordered by name
     this->imageFiles = this->directory.entryList(filters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
 
@@ -28,7 +28,7 @@ void ImageSequence::init()
 
     // get width and height of images
     // TODO
-    if (DEBUGOUT) std::cout << "### Width: " << this->_width <<  " Height: " << this->_height << std::endl;
+//    if (DEBUGOUT) std::cout << "### Width: " << this->_width <<  " Height: " << this->_height << std::endl;
 
     // get the first frame, then we know the starting time of the first frame
     //if (DEBUGOUT) std::cout << "### startPts: " << _startPts << std::endl;
@@ -98,7 +98,7 @@ bool ImageSequence::advance(FrameIndex frameIndex)
     QString currentFile;
     if (frame < this->imageFiles.size())
     {
-        currentFile = this->imageFiles[frame];
+        currentFile = this->directory.absoluteFilePath(this->imageFiles[frame]);
         this->_currentFrameIndex = static_cast<FrameIndex>(frame);
     }
     else
@@ -125,7 +125,7 @@ bool ImageSequence::advance(FrameIndex frameIndex)
     if (DEPTH == 1)
         this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_16UC1); // 16 bit depth images (jp2)
     else
-        this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_8UC3); // 8 bit RGB images (jpg)
+        this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_8UC1); // 8 bit grayscale images (png/jpg)
 
     this->_width = this->_currentBuffer->getWidth();
     this->_height = this->_currentBuffer->getHeight();

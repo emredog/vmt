@@ -75,7 +75,8 @@ bool FastVideoGradientComputer::getFrame(long frame, IplImageWrapper img)
 		// set the frame for the video
 //		cout << "_video->setFrame(" << frame << ")" << endl;
 //		if (ok = _video->seek(static_cast<Video::FrameIndex>(frame))) {
-        if (ok = _imgSequence->seek(static_cast<ImageSequence::FrameIndex>(frame))) {
+        ok = _imgSequence->seek(static_cast<ImageSequence::FrameIndex>(frame));
+        if (ok) {
 //			cvResize(_video->getFrame(), _tmpFrame, CV_INTER_AREA);
             cvResize(_imgSequence->getFrame(), _tmpFrame, CV_INTER_AREA);
 			convert2GrayFloatImg(_tmpFrame, img);

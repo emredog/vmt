@@ -49,7 +49,7 @@ public:
 
 	operator const IplImage*() const;
 
-	operator const bool() const;
+    operator const bool() const;
 
 	operator bool();
 
