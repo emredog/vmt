@@ -18,7 +18,7 @@ void ImageSequence::init()
     if (DEPTH == 1)
         filters << "*.jp2";
     else
-        filters << "*.jpg" << "*.png";
+        filters << "*.jpg" << "*.png" << "*.tiff";
     // ...and get all "jp2" (depth) files, ordered by name
     this->imageFiles = this->directory.entryList(filters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
 
@@ -123,9 +123,16 @@ bool ImageSequence::advance(FrameIndex frameIndex)
 
     // create a new image
     if (DEPTH == 1)
+    {
         this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_16UC1); // 16 bit depth images (jp2)
+    }
     else
-        this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_8UC1); // 8 bit grayscale images (png/jpg)
+    {
+        if (CHANNELS == 1)
+            this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_8UC1); // 8 bit grayscale images (png/jpg/tiff)
+        else if (CHANNELS == 3)
+            this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_8UC3); // 8 bit RGB images (png/jpg/tiff)
+    }
 
     this->_width = this->_currentBuffer->getWidth();
     this->_height = this->_currentBuffer->getHeight();
