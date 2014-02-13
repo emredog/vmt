@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 //            cerr << "Aborting!" << endl;
 //            return EXIT_FAILURE;
 //        }
-        double frameRate = 24.0; //FIXME !!!!
+        //double frameRate = 24.0; // emredog commented
 
 
 
@@ -306,16 +306,17 @@ int main(int argc, char *argv[])
             imgSequence->probeFrame(static_cast<ImageSequence::FrameIndex>(endFrame));
             cerr << "end frame: " << endFrame << endl;
         }
-        if (vm.count("start-time")) {
-            startFrame = static_cast<std::size_t>(std::max(0.0, round(vm["start-time"].as<double>() * frameRate)));
-            cerr << "start time: " << vm["start-time"].as<double>() << " => frame " << startFrame << endl;
-        }
-        if (vm.count("end-time")) {
-//            video->probeFrame(vm["end-time"].as<double>());
-            imgSequence->probeFrame(vm["end-time"].as<double>());
-            endFrame = static_cast<std::size_t>(std::max(0.0, round(vm["end-time"].as<double>() * frameRate)));
-            cerr << "end time: " << vm["end-time"].as<double>() << " => frame " << endFrame << endl;
-        }
+        // emredog commented
+//        if (vm.count("start-time")) {
+//            startFrame = static_cast<std::size_t>(std::max(0.0, round(vm["start-time"].as<double>() * frameRate)));
+//            cerr << "start time: " << vm["start-time"].as<double>() << " => frame " << startFrame << endl;
+//        }
+//        if (vm.count("end-time")) {
+////            video->probeFrame(vm["end-time"].as<double>());
+//            imgSequence->probeFrame(vm["end-time"].as<double>());
+//            endFrame = static_cast<std::size_t>(std::max(0.0, round(vm["end-time"].as<double>() * frameRate)));
+//            cerr << "end time: " << vm["end-time"].as<double>() << " => frame " << endFrame << endl;
+//        }
         if (endFrame <= startFrame) {
             cerr << "The ending point should have a higher value than the starting point! Aborting!" << endl;
             return EXIT_FAILURE;
