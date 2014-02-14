@@ -10,13 +10,13 @@
 
 inline
 void IplImageWrapper::decrementAndFree() {
-//    if (true) {
-//        static int ii(0);
-//        std::cout << "IplImageWrapper::decrementAndFree() -- address: " << _img << " nRefs: " << (*_nRefs) << " - 1 = " << (*_nRefs - 1) << std::endl;
-//        ++ii;
-//        if (ii > 5)
-//            throw int(1);
-//    }
+    //    if (true) {
+    //        static int ii(0);
+    //        std::cout << "IplImageWrapper::decrementAndFree() -- address: " << _img << " nRefs: " << (*_nRefs) << " - 1 = " << (*_nRefs - 1) << std::endl;
+    //        ++ii;
+    //        if (ii > 5)
+    //            throw int(1);
+    //    }
     if (_nRefs)
     {
         --(*_nRefs);
@@ -24,6 +24,7 @@ void IplImageWrapper::decrementAndFree() {
         {
             if (_img)
                 //cvReleaseImage(&_img); // FIXME!!! WILL CAUSE MEMLEAK !!!
+            //cvReleaseImageHeader(&_img);
             delete _nRefs;
         }
     }
@@ -33,21 +34,22 @@ inline
 IplImageWrapper::IplImageWrapper(IplImage *newImg, bool isOwner)
     : _img(newImg), _nRefs(isOwner ? new std::size_t(1) : 0), _mask()
 {
-//    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
+    //    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
 }
 
 inline
 IplImageWrapper::IplImageWrapper(CvSize size, int depth, int channels)
     : _img(cvCreateImage(size, depth, channels)), _nRefs(new std::size_t(1)), _mask()
+//    : _img(cvCreateImageHeader(size, depth, channels)), _nRefs(new std::size_t(1)), _mask()
 {
-//    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
+    //    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
 }
 
 inline
 IplImageWrapper::IplImageWrapper(std::string fileName)
     : _img(cvLoadImage(fileName.c_str())), _nRefs(new std::size_t(1)), _mask()
 {
-//    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
+    //    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
 }
 
 //emre:
@@ -55,17 +57,19 @@ inline
 IplImageWrapper::IplImageWrapper(std::string fileName, int imgType)
     : _nRefs(new std::size_t(1)), _mask()
 {
-//    std::cout << fileName << " IS LOADED-------------------" << std::endl;
-//    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
-    cv::Mat bufferMat = cv::imread(fileName, CV_LOAD_IMAGE_UNCHANGED);
-    if(! bufferMat.data )
-        throw std::runtime_error("Could not open or find the image: ");
+    //    std::cout << fileName << " IS LOADED-------------------" << std::endl;
+    //    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
+//    cv::Mat bufferMat = cv::imread(fileName, CV_LOAD_IMAGE_UNCHANGED);
+//    if(! bufferMat.data )
+//        throw std::runtime_error("Could not open or find the image: ");
 
-    cv::Mat correctImage;
-    bufferMat.convertTo(correctImage, imgType);
-    bufferMat.release();
-    _img = new IplImage(correctImage);
-    correctImage.release();
+//    cv::Mat correctImage;
+//    bufferMat.convertTo(correctImage, imgType);
+//    bufferMat.release();
+//    _img = new IplImage(correctImage);
+//    correctImage.release();
+
+    _img = cvLoadImage(fileName.c_str());
 }
 
 inline
@@ -73,7 +77,7 @@ IplImageWrapper::IplImageWrapper(const IplImageWrapper& newImg)
     : _img(newImg._img), _nRefs(newImg._nRefs), _mask(newImg._mask)
 {
     //if (IplImageWrapperDebug)
-//    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << " + 1 = " << (*_nRefs + 1) << std::endl;
+    //    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << " + 1 = " << (*_nRefs + 1) << std::endl;
     ++(*_nRefs);
 }
 

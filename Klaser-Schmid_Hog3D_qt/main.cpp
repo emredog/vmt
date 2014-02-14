@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
         std::size_t endFrame = imgSequence->numOfFrames() - 1;
 
 
-        //emredog: I've commented this section
+        //ED: I've commented this section
 //        double frameRate = video->getFrameRate();
 //        cerr << "frame rate: " << frameRate << endl;
 //        if (0.1 > frameRate || 100.0 < frameRate) {
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 //            cerr << "Aborting!" << endl;
 //            return EXIT_FAILURE;
 //        }
-        //double frameRate = 24.0; // emredog commented
+        //double frameRate = 24.0; // ED commented
 
 
 
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
             imgSequence->probeFrame(static_cast<ImageSequence::FrameIndex>(endFrame));
             cerr << "end frame: " << endFrame << endl;
         }
-        // emredog commented
+        // ED commented
 //        if (vm.count("start-time")) {
 //            startFrame = static_cast<std::size_t>(std::max(0.0, round(vm["start-time"].as<double>() * frameRate)));
 //            cerr << "start time: " << vm["start-time"].as<double>() << " => frame " << startFrame << endl;

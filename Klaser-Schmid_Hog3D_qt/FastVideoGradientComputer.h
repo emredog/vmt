@@ -105,7 +105,7 @@ public:
 //		init();
 //	}
 
-    //emredog:
+    //ED:
     ImageSequence* getImageSequence() { return _imgSequence; }
     const ImageSequence* getImageSequence() const { return _imgSequence; }
     void setImageSequence(ImageSequence* imgSeq)

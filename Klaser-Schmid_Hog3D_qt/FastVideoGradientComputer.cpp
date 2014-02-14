@@ -42,12 +42,12 @@ void FastVideoGradientComputer::init()
 
 	// initiate convolution matrices
 	if (!_hDevMat || !_vDevMat) {
-		_hDevMat = cvCreateMat(1, 2, CV_32FC1);
-		cvmSet(_hDevMat, 0, 0, -1);
+        _hDevMat = cvCreateMat(1, 2, CV_32FC1); // (-1 1) horizontal vector //ED
+        cvmSet(_hDevMat, 0, 0, -1);
 		cvmSet(_hDevMat, 0, 1, 1);
 		_vDevMat = cvCreateMat(2, 1, CV_32FC1);
-		cvmSet(_vDevMat, 0, 0, -1);
-		cvmSet(_vDevMat, 1, 0, 1);
+        cvmSet(_vDevMat, 0, 0, -1);             // (-1)
+        cvmSet(_vDevMat, 1, 0, 1);              // ( 1) vertical vector //ED
 	}
 
 	// initiate the temp frame
