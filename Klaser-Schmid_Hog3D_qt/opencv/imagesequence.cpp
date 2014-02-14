@@ -11,6 +11,16 @@
 const bool DEBUGOUT = false;
 
 
+
+IplImageWrapper *ImageSequence::currentBuffer() const
+{
+    return _currentFrame;
+}
+
+void ImageSequence::setCurrentBuffer(IplImageWrapper *currentBuffer)
+{
+    _currentFrame = currentBuffer;
+}
 void ImageSequence::init()
 {
     // prepare...
@@ -44,8 +54,8 @@ ImageSequence::~ImageSequence()
 
 const IplImageWrapper ImageSequence::getFrame() const
 {
-    if (this->_currentBuffer)
-        return *(this->_currentBuffer);
+    if (this->_currentFrame)
+        return *(this->_currentFrame);
     else
         return IplImageWrapper();
 }
@@ -77,8 +87,8 @@ void ImageSequence::cleanup()
     // free all allocated objects
 //    if (this->_peekBuffer)
 //        delete this->_peekBuffer;
-    if (this->_currentBuffer)
-        delete this->_currentBuffer;
+    if (this->_currentFrame)
+        delete this->_currentFrame;
 
     // reset internal variables
 //    _startPts = 0;
@@ -115,27 +125,27 @@ bool ImageSequence::advance(FrameIndex frameIndex)
 
 
     // if allocated, delete it.
-    if (this->_currentBuffer)
+    if (this->_currentFrame)
     {
-        delete this->_currentBuffer;
-        this->_currentBuffer = NULL;
+        delete this->_currentFrame;
+        this->_currentFrame = NULL;
     }
 
     // create a new image
     if (DEPTH == 1)
     {
-        this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_16UC1); // 16 bit depth images (jp2)
+        this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), CV_16UC1); // 16 bit depth images (jp2)
     }
     else
     {
         if (CHANNELS == 1)
-            this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_8UC1); // 8 bit grayscale images (png/jpg/tiff)
+            this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), CV_8UC1); // 8 bit grayscale images (png/jpg/tiff)
         else if (CHANNELS == 3)
-            this->_currentBuffer = new IplImageWrapper(currentFile.toStdString(), CV_8UC3); // 8 bit RGB images (png/jpg/tiff)
+            this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), CV_8UC3); // 8 bit RGB images (png/jpg/tiff)
     }
 
-    this->_width = this->_currentBuffer->getWidth();
-    this->_height = this->_currentBuffer->getHeight();
+    this->_width = this->_currentFrame->getWidth();
+    this->_height = this->_currentFrame->getHeight();
 
     return true;
 }

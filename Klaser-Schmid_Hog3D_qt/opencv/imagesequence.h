@@ -17,7 +17,7 @@ protected:
     QDir directory;
     QStringList imageFiles;
 
-    IplImageWrapper *_currentBuffer;
+    IplImageWrapper *_currentFrame;
     //IplImageWrapper *_peekBuffer;
 
     int _width;
@@ -34,7 +34,7 @@ public:
     //constructor
     ImageSequence(const std::string& folderPath) :
         directory(QString::fromStdString(folderPath)),
-       /* _startPts(0),*/  _currentBuffer(0) /*, _peekFrameIndex(0)*/
+       /* _startPts(0),*/  _currentFrame(0) /*, _peekFrameIndex(0)*/
     {
         _currentFrameIndex = 0;
         init();
@@ -70,6 +70,8 @@ public:
     // other functionalities
     bool probeFrame(FrameIndex frame);
     //bool probeFrame(double seconds);
+    IplImageWrapper *currentBuffer() const;
+    void setCurrentBuffer(IplImageWrapper *currentBuffer);
 };
 
 #endif // IMAGESEQUENCE_H

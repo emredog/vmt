@@ -34,7 +34,7 @@ public:
 
 	IplImageWrapper(std::string fileName);
 
-    //emredog
+    //ED
     IplImageWrapper(std::string fileName, int imgType = CV_16UC1); //CV_16UC1 is for jp2 depth images of LIRIS dataset
 
 	IplImageWrapper(const IplImageWrapper& newImg);
