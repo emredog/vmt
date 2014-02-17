@@ -71,8 +71,8 @@ public:
 
 	void clearMask();
 
-    int getWidth() { return this->_img->width; }
-    int getHeight() { return this->_img->height; }
+    int getWidth() const { return _img->width; }
+    int getHeight() const { return _img->height; }
 };
 
 #include "IplImageWrapper.hpp"

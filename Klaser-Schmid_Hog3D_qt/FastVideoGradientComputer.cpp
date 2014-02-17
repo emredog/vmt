@@ -64,7 +64,20 @@ bool FastVideoGradientComputer::getFrame(long frame, IplImageWrapper img)
 	if (iBufferedFrame != _bufferedFrames.end()) {
 		// frame is buffered :), we can reuse it
 		if (img)
-			cvCopy(iBufferedFrame->second, img);
+        {
+            IplImageWrapper* temp = 0;
+            if (this->isWorkingWithDepth)
+            {
+                temp = 0;
+                //TODO: correct the depth image (bit shift)
+            }
+            else
+            {
+                temp = &img;
+            }
+
+            cvCopy(iBufferedFrame->second, temp);
+        }
 	}
 	else {
 		// frame needs to be obtained from the video .. check whether the frame should exist
@@ -78,6 +91,10 @@ bool FastVideoGradientComputer::getFrame(long frame, IplImageWrapper img)
         ok = _imgSequence->seek(static_cast<ImageSequence::FrameIndex>(frame));
         if (ok) {
 //			cvResize(_video->getFrame(), _tmpFrame, CV_INTER_AREA);
+            if (this->isWorkingWithDepth)
+            {
+                //TODO correct the depth image (bit shift)
+            }
             cvResize(_imgSequence->getFrame(), _tmpFrame, CV_INTER_AREA);
 			convert2GrayFloatImg(_tmpFrame, img);
 			_bufferedFrames[frame] = img.clone();

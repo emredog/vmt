@@ -3,8 +3,6 @@
 
 #include <QDir>
 
-#define DEPTH 0
-#define CHANNELS 1
 
 // forward decleration
 class IplImageWrapper;

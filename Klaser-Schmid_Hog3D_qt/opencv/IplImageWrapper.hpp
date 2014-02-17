@@ -23,7 +23,7 @@ void IplImageWrapper::decrementAndFree() {
         if (*_nRefs == 0)
         {
             if (_img)
-                //cvReleaseImage(&_img); // FIXME!!! WILL CAUSE MEMLEAK !!!
+                cvReleaseImage(&_img); // FIXME!!! WILL CAUSE MEMLEAK !!!
             //cvReleaseImageHeader(&_img);
             delete _nRefs;
         }

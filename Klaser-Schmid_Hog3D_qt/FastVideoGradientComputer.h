@@ -32,6 +32,7 @@ protected:
 	double _scaleFactor;
 	CvMat* _hDevMat;
 	CvMat* _vDevMat;
+    bool isWorkingWithDepth;
 
 	// little buffer to avoid jumping backwards with 
 	std::map<long, IplImageWrapper> _bufferedFrames;
@@ -51,10 +52,13 @@ public:
     FastVideoGradientComputer(ImageSequence* imgSequence, std::size_t nFramesBuffer = 100, double scaleFactor = 1)
         : _imgSequence(imgSequence), _nFramesBuffer(nFramesBuffer), ICENTER(nFramesBuffer / 2),
 		_firstFrame(0), _iFirstPos(0), _hasBeenLoaded(false), _scaleFactor(scaleFactor),
-		_hDevMat(0), _vDevMat(0)
+        _hDevMat(0), _vDevMat(0), isWorkingWithDepth(0)
 	{
 		init();
 	}
+
+    //TODO: use this
+    void setWorkingWithDepth(bool isDepth) {this->isWorkingWithDepth = isDepth;}
 	
 	virtual ~FastVideoGradientComputer();
 	

@@ -1,6 +1,8 @@
 #include <cassert>
 #include <boost/numeric/conversion/converter.hpp>
 #include <iostream>
+#include <opencv/cxcore.h>
+#include "IplImageWrapper.h"
 
 template <typename ValueType, typename RandomGenerator>
 void _addGaussianNoise(IplImageWrapper& img, double sigma, RandomGenerator& rng)
@@ -109,18 +111,18 @@ double getIntegralRegion(const IplImageWrapper& integralImg, const Box<int>& box
 	int left = std::min(box.getLeft() - 1, integralImg->width - 1);
 	int right = std::min(box.getRight() - 1, integralImg->width - 1);
 	double sumTopLeft(0), sumTopRight(0), sumBottomLeft(0), sumBottomRight(0);
-	if (top >= 0) {
-		if (left >= 0)
-			sumTopLeft = CV_IMAGE_ELEM(integralImg, double, top, left);
-		if (right >= 0)
-			sumTopRight = CV_IMAGE_ELEM(integralImg, double, top, right);
-	}
-	if (bottom >= 0) {
-		if (left >= 0)
-			sumBottomLeft = CV_IMAGE_ELEM(integralImg, double, bottom, left);
-		if (right >= 0)
-			sumBottomRight = CV_IMAGE_ELEM(integralImg, double, bottom, right);
-	}
+    if (top >= 0) {
+        if (left >= 0)
+            sumTopLeft = CV_IMAGE_ELEM(integralImg, double, top, left);
+        if (right >= 0)
+            sumTopRight = CV_IMAGE_ELEM(integralImg, double, top, right);
+    }
+    if (bottom >= 0) {
+        if (left >= 0)
+            sumBottomLeft = CV_IMAGE_ELEM(integralImg, double, bottom, left);
+        if (right >= 0)
+            sumBottomRight = CV_IMAGE_ELEM(integralImg, double, bottom, right);
+    }
 	return sumBottomRight + sumTopLeft - sumBottomLeft - sumTopRight;
 //	double sumTopLeft(0), sumTopRight(0), sumBottomLeft(0), sumBottomRight(0);
 //	if (box.getTop() >= 0) {
@@ -137,6 +139,27 @@ double getIntegralRegion(const IplImageWrapper& integralImg, const Box<int>& box
 //	}
 //	return sumBottomRight + sumTopLeft - sumBottomLeft - sumTopRight;
 }
+
+//allocates a new image and converts it to a raw depth image (most significant 11 bits etc.)
+inline IplImageWrapper* convertToRawDepthImage(const IplImageWrapper& srcWrapper)
+{
+    //create a new image
+    const IplImage* srcImg = srcWrapper.getReference();
+    IplImage* resultImg = cvCloneImage(srcImg);
+    size_t imgWidth = static_cast<size_t>(srcImg->width);
+    size_t imgHeight = static_cast<size_t>(srcImg->height);
+
+    //correct all the pixels
+    for (size_t y=0; y<imgHeight; y++)
+        for (size_t x=0; x<imgWidth; x++)
+            resultImg->imageData[y*imgWidth+x] = srcImg->imageData[y*imgWidth+x] / 32; //bitsifht by 5 to right
+
+
+    return new IplImageWrapper(resultImg);
+
+}
+
+
 
 
 
