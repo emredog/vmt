@@ -144,18 +144,23 @@ double getIntegralRegion(const IplImageWrapper& integralImg, const Box<int>& box
 inline IplImageWrapper* convertToRawDepthImage(const IplImageWrapper& srcWrapper)
 {
     //create a new image
-    const IplImage* srcImg = srcWrapper.getReference();
-    IplImage* resultImg = cvCloneImage(srcImg);
-    size_t imgWidth = static_cast<size_t>(srcImg->width);
-    size_t imgHeight = static_cast<size_t>(srcImg->height);
+//    const IplImage* srcImg = srcWrapper.getReference();
+//    IplImage* resultImg = cvCloneImage(srcImg);
+//    size_t imgWidth = static_cast<size_t>(srcImg->width);
+//    size_t imgHeight = static_cast<size_t>(srcImg->height);
 
-    //correct all the pixels
-    for (size_t y=0; y<imgHeight; y++)
-        for (size_t x=0; x<imgWidth; x++)
-            resultImg->imageData[y*imgWidth+x] = srcImg->imageData[y*imgWidth+x] / 32; //bitsifht by 5 to right
+//    //correct all the pixels
+//    for (size_t y=0; y<imgHeight; y++)
+//        for (size_t x=0; x<imgWidth; x++)
+//            resultImg->imageData[y*imgWidth+x] = srcImg->imageData[y*imgWidth+x] / 32; //bitsifht by 5 to right
 
+    cv::Mat srcMat(srcWrapper.getReference());
+    cv::Mat rsltMat = srcMat * (1.0/32.0); //divide all pixels by 32 ~= shift 5 bits to right
+    IplImage resultImg = rsltMat;
 
-    return new IplImageWrapper(resultImg);
+    IplImageWrapper* newWrapper = new IplImageWrapper(cvCloneImage(&resultImg));
+
+    return newWrapper;
 
 }
 

@@ -25,7 +25,7 @@ void ImageSequence::init()
 {
     // prepare...
     QStringList filters;
-    if (DEPTH == 1)
+    if (this->isWorkingWithDepth)
         filters << "*.jp2";
     else
         filters << "*.jpg" << "*.png" << "*.tiff";
@@ -132,17 +132,18 @@ bool ImageSequence::advance(FrameIndex frameIndex)
     }
 
     // create a new image
-    if (DEPTH == 1)
-    {
-        this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), CV_16UC1); // 16 bit depth images (jp2)
-    }
-    else
-    {
-        if (CHANNELS == 1)
-            this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), CV_8UC1); // 8 bit grayscale images (png/jpg/tiff)
-        else if (CHANNELS == 3)
-            this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), CV_8UC3); // 8 bit RGB images (png/jpg/tiff)
-    }
+    this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), false);
+//    if (this->isWorkingWithDepth)
+//    {
+//        this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), IPL_DEPTH_16U); // 16 bit depth images (jp2)
+//    }
+//    else
+//    {
+//        if (this->nbrChannels == 1)
+//            this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), CV_8UC1); // 8 bit grayscale images (png/jpg/tiff)
+//        else if (this->nbrChannels == 3)
+//            this->_currentFrame = new IplImageWrapper(currentFile.toStdString(), CV_8UC3); // 8 bit RGB images (png/jpg/tiff)
+//    }
 
     this->_width = this->_currentFrame->getWidth();
     this->_height = this->_currentFrame->getHeight();

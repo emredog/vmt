@@ -28,13 +28,18 @@ protected:
     void cleanup();
     bool advance(FrameIndex frameIndex);
 
+    bool isWorkingWithDepth; //ED
+    int nbrChannels; //ED
+
 public:
     //constructor
-    ImageSequence(const std::string& folderPath) :
+    ImageSequence(const std::string& folderPath, bool workingWithDepth, int channels) :
         directory(QString::fromStdString(folderPath)),
        /* _startPts(0),*/  _currentFrame(0) /*, _peekFrameIndex(0)*/
     {
         _currentFrameIndex = 0;
+        isWorkingWithDepth = workingWithDepth; //ED
+        nbrChannels = channels; //ED
         init();
     }
 

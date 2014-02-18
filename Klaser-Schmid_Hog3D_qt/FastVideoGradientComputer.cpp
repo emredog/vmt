@@ -52,7 +52,14 @@ void FastVideoGradientComputer::init()
 
 	// initiate the temp frame
 //	_tmpFrame = IplImageWrapper(size, IPL_DEPTH_8U, _video->getFrame()->nChannels);
-    _tmpFrame = IplImageWrapper(size, IPL_DEPTH_8U, _imgSequence->getFrame()->nChannels);
+    if (this->isWorkingWithDepth)
+    {
+        _tmpFrame = IplImageWrapper(size, IPL_DEPTH_16U, _imgSequence->getFrame()->nChannels);
+    }
+    else
+    {
+        _tmpFrame = IplImageWrapper(size, IPL_DEPTH_8U, _imgSequence->getFrame()->nChannels);
+    }
 	_imgGrayFloat = IplImageWrapper(size, IPL_DEPTH_32F, 1);
 	_imgGrayFloat2 = IplImageWrapper(size, IPL_DEPTH_32F, 1);
 }
@@ -65,18 +72,21 @@ bool FastVideoGradientComputer::getFrame(long frame, IplImageWrapper img)
 		// frame is buffered :), we can reuse it
 		if (img)
         {
-            IplImageWrapper* temp = 0;
-            if (this->isWorkingWithDepth)
+            IplImageWrapper* temp = 0; //ED
+            if (this->isWorkingWithDepth) //ED
             {
-                temp = 0;
-                //TODO: correct the depth image (bit shift)
+                //correct the depth image (bitshift operation)
+                temp = convertToRawDepthImage(img);  //ED
+//                temp = new IplImageWrapper(img.clone());
+//                cvSaveImage("test_convertedDepthImg.png", temp); //FIXME
             }
             else
             {
-                temp = &img;
+                temp = new IplImageWrapper(img.clone());
             }
 
-            cvCopy(iBufferedFrame->second, temp);
+            cvCopy(iBufferedFrame->second, *temp);
+            delete temp; //ED
         }
 	}
 	else {
@@ -91,12 +101,17 @@ bool FastVideoGradientComputer::getFrame(long frame, IplImageWrapper img)
         ok = _imgSequence->seek(static_cast<ImageSequence::FrameIndex>(frame));
         if (ok) {
 //			cvResize(_video->getFrame(), _tmpFrame, CV_INTER_AREA);
-            if (this->isWorkingWithDepth)
-            {
-                //TODO correct the depth image (bit shift)
-            }
+            IplImageWrapper off = _imgSequence->getFrame();
             cvResize(_imgSequence->getFrame(), _tmpFrame, CV_INTER_AREA);
 			convert2GrayFloatImg(_tmpFrame, img);
+            if (this->isWorkingWithDepth) //ED
+            {
+//                correct the depth image (bit shift)
+                IplImageWrapper* temp = convertToRawDepthImage(img);
+                img = temp->clone();
+//                cvSaveImage("test_convertedDepthImg.jpg", temp->getReference()); //FIXME
+                delete temp;
+            }
 			_bufferedFrames[frame] = img.clone();
 		}
 	}
@@ -145,24 +160,24 @@ void FastVideoGradientComputer::setIntegralGradientImage(std::size_t iPos, long 
 			//cvSobel(_imgGrayFloat, _imgGrayFloat2, 1, 0, 1);
 			cvFilter2D(_imgGrayFloat, _imgGrayFloat2, _hDevMat, cvPoint(0, 0));
 //			cout << "frame: " << frame << endl;
-//			cvShowImage("image", _imgGrayFloat);
-//			cvWaitKey(0);
-//			cvShowImage("image", _imgGrayFloat2);
-//			cvWaitKey(0);
+//            cvShowImage("image", _imgGrayFloat);
+//            cvWaitKey(0);
+//            cvShowImage("image", _imgGrayFloat2);
+//            cvWaitKey(0);
 			computeIntegralImage(_imgGrayFloat2, _intImgs[iPos][0]);
 			
 			// compute gradients in y direction
 			//cvSobel(_imgGrayFloat, _imgGrayFloat2, 0, 1, 1);
 			cvFilter2D(_imgGrayFloat, _imgGrayFloat2, _vDevMat, cvPoint(0, 0));
-//			cvShowImage("image", _imgGrayFloat2);
-//			cvWaitKey(0);
+//            cvShowImage("image", _imgGrayFloat2);
+//            cvWaitKey(0);
 			computeIntegralImage(_imgGrayFloat2, _intImgs[iPos][1]);
 			
 			// compute gradients in t direction (type [-1, 1])
 			getFrame(frame + 1, _imgGrayFloat2);
 			cvSub(_imgGrayFloat2, _imgGrayFloat, _imgGrayFloat);
-//			cvShowImage("image", _imgGrayFloat);
-//			cvWaitKey(0);
+//            cvShowImage("image", _imgGrayFloat);
+//            cvWaitKey(200);
 			computeIntegralImage(_imgGrayFloat, _intImgs[iPos][2]);
 			
 			// clear buffers that are too old/young

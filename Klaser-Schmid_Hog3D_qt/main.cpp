@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
             std::string filename = vm["video-file"].as<string>();
             cout << "sequence: " << filename << endl;
             //Video video(filename);
-            ImageSequence imageSeq(filename);
+            ImageSequence imageSeq(filename, DEPTH, CHANNELS); //ED
 
             // get the frame number we need to extract
 //            Video::FrameIndex iFrame = vm["dump-frame"].as<std::size_t>();
@@ -274,8 +274,8 @@ int main(int argc, char *argv[])
         // init variables
         //boost::scoped_ptr<Video> video(new Video(vm["video-file"].as<string>()));
 //        boost::scoped_ptr<FastVideoGradientComputer> gradComputer(new FastVideoGradientComputer(video.get(), bufferLength, imgScaleFactor));
-        boost::scoped_ptr<ImageSequence> imgSequence(new ImageSequence(vm["video-file"].as<string>())); //FIXME
-        boost::scoped_ptr<FastVideoGradientComputer> gradComputer(new FastVideoGradientComputer(imgSequence.get(), bufferLength, imgScaleFactor));
+        boost::scoped_ptr<ImageSequence> imgSequence(new ImageSequence(vm["video-file"].as<string>(), DEPTH, CHANNELS)); //FIXME
+        boost::scoped_ptr<FastVideoGradientComputer> gradComputer(new FastVideoGradientComputer(imgSequence.get(), DEPTH, bufferLength, imgScaleFactor));
 
         FastHog3DComputer hogComputer(gradComputer.get(), quantizationType, polarBinsXY, polarBinsT,
                 xyNCells, tNCells, nPix, normThreshold, cutZero, fullOrientation,

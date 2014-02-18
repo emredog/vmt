@@ -23,7 +23,7 @@ void IplImageWrapper::decrementAndFree() {
         if (*_nRefs == 0)
         {
             if (_img)
-                cvReleaseImage(&_img); // FIXME!!! WILL CAUSE MEMLEAK !!!
+                cvReleaseImage(&_img);
             //cvReleaseImageHeader(&_img);
             delete _nRefs;
         }
@@ -52,9 +52,9 @@ IplImageWrapper::IplImageWrapper(std::string fileName)
     //    std::cout << "IplImageWrapper::IplImageWrapper() -- address: " << _img << " nRefs: " << (*_nRefs) << std::endl;
 }
 
-//emre:
+//ED:
 inline
-IplImageWrapper::IplImageWrapper(std::string fileName, int imgType)
+IplImageWrapper::IplImageWrapper(std::string fileName, bool dummyParam)
     : _nRefs(new std::size_t(1)), _mask()
 {
     //    std::cout << fileName << " IS LOADED-------------------" << std::endl;
@@ -69,7 +69,7 @@ IplImageWrapper::IplImageWrapper(std::string fileName, int imgType)
 //    _img = new IplImage(correctImage);
 //    correctImage.release();
 
-    _img = cvLoadImage(fileName.c_str());
+    _img = cvLoadImage(fileName.c_str(), CV_LOAD_IMAGE_ANYDEPTH);
 }
 
 inline
