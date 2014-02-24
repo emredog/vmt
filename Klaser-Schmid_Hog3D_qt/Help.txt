@@ -1,0 +1,205 @@
+usage:
+    extractFeatures [options] <video-file>
+or (for testing):
+    extractFeatures --dump-frame <frame-number> <video-file>
+
+output format is:
+    <x> <y> <frame> <x-normalized> <y-norm.> <t-norm.> <xy-scale> <t-scale> <descriptor>
+
+version: 1.3.0
+
+For license information use the option '--license'.
+
+
+command line arguments:
+  --video-file arg      video file to process
+
+general options:
+  -h [ --help ]               produce help message
+  --license                   print license information
+  -v [ --verbose ]            verbose mode, the 3D boxes for which the 
+                              descriptor is computed will be printed to stderr
+  -p [ --position-file ] arg  position file for sampling features; each line 
+                              represents one feature position and consists of 5
+                              elements (they may be floating points) which are:
+                              '<x-position> <y-position> <frame-number> 
+                              <xy-scale> <t-scale>'; lines beginning with '#' 
+                              are ignored
+  -q [ --position-file2 ] arg similar to --position-file, however with a 
+                              different format; each line consists of 6 
+                              elements and describes a spatio-temporal cuboid 
+                              for which the descriptor is computed: '<x> <y> 
+                              <frame-start> <width> <height> <length>'; lines 
+                              beginning with '#' are ignored
+  -t [ --track-file ] arg     track file for sampling features; each line 
+                              represents a bounding box at a given frame; a 
+                              line consists of 5 elements (they may be floating
+                              points) which are: '<frame-number> 
+                              <top-left-x-position> <top-left-y-position> 
+                              <width> <height>'; lines beginning with '#' are 
+                              ignored; for a given position file, features with
+                              a center point that lies outside the set of given
+                              bounding boxes are ignored; for dense sampling, 
+                              the --xy-nstride and --t-nstride options will be 
+                              relative to the track (length and bounding boxes)
+  --loose-track               denotes that the track file is a collection of 
+                              bounding boxes; for dense sampling, descriptors 
+                              will be computed for each given bounding box in 
+                              the track file
+  --shot-file arg             simple file with shot boundaries (i.e., frame 
+                              number of beginning of a new shot) separate by 
+                              any whitespace character; features crossing shot 
+                              boundaries will be suppressed
+  -f [ --force ]              force computation of features, no suppression if 
+                              features do not fit completely in the full 
+                              video/buffer
+  --n-subsample arg (=1)      subsample every n-th feautre (in average)
+  --seed arg (=timestamp)     seed for subsampling (default current time)
+  --dump-frame arg            this option lets you double check whether the 
+                              video is read correctly, give it a frame number 
+                              and it will save this frame from the video as 
+                              'frame<x>.png' in the curent working directory, 
+                              then it will quit
+
+descriptor options:
+  --kth-optimized                       by default, the parameter setting 
+                                        optimized on the Hollywood2 training 
+                                        dataset (see explanations at the end) 
+                                        is employed; if this flag is set, the 
+                                        parameter settings optimized on the KTH
+                                        training dataset are being used.
+  --xy-ncells arg (=2)                  number of HOG3D cells in x and y 
+                                        direction
+  --t-ncells arg (=5)                   number of HOG3D cells in time
+  --npix arg (=4)                       number of hyper pixel support for each 
+                                        HOG3D cell, i.e., the histogram of a 
+                                        cell is computed for SxSxS subblocks
+  -n [ --norm-threshold ] arg (=0.1)    suppress features with a descriptor 
+                                        L2-norm lower than the given threshold
+  --cut-zero arg (=0.25)                descriptor vector is normalized, its 
+                                        values are limited to given value, and 
+                                        the vector is renormalized again
+  --sigma-support arg (=24)             on the original scale, sigma determines
+                                        the size of the region around a 
+                                        sampling point for which the descriptor
+                                        is computed; for a different scale, 
+                                        this size is given by: 
+                                        <characteristic-scale>*<sigma-support>;
+                                        sigma is the support in x- and 
+                                        y-direction
+  --tau-support arg (=12)               similar to 'sigma-support'; tau is the 
+                                        support in time
+  -P [ --quantization-type ] arg (=polar)
+                                        method that shall be taken for 3D 
+                                        gradient quantization: 'icosahedron' 
+                                        (20 faces=bins), 'dodecahedron' (12 
+                                        faces=bins), 'polar' (binning on polar 
+                                        coordinates, you can specify the 
+                                        binning)
+  --polar-bins-xy arg (=5)              number of bins for the XY-plane 
+                                        orientation using polar coordinate 
+                                        quantization (has either full or half 
+                                        orientation)
+  --polar-bins-t arg (=3)               number of bins for the XT-plane 
+                                        orientation using polar coordinate 
+                                        quantization (has always half 
+                                        orientation
+  -F [ --full-orientation ] arg (=0)    By default, the half orientation is 
+                                        used (thus resulting in half the number
+                                        of bins); if this flag is set, only the
+                                        full sphere is used for quantization, 
+                                        thus doubling the number of bins
+  -G [ --gauss-weight ] arg (=0)        By default, each (hyper) pixel has a 
+                                        weight = 1; this flag enables Gaussian 
+                                        weighting similar to the SIFT 
+                                        descriptor
+  -O [ --overlap-cells ] arg (=0)       Given this flag, cells in the 
+                                        descriptor will be 50% overlapping
+  -N [ --norm-global ] arg (=0)         By default, each cell in the descriptor
+                                        is normalized; given this flag, 
+                                        normalization is carried out on the 
+                                        complete descriptor
+  --l1-norm arg (=0)                    Given this flag, the each cell 
+                                        desriptor (or the full descriptor if 
+                                        given '--norm-global') will be 
+                                        normalized with L1 norm; by default 
+                                        normalization is done using L2-norm
+
+dense sampling options:
+  --xy-nstride arg          how many features are sampled in x/y direction on 
+                            the smallest scale (specify either xy-nstride or 
+                            xy-stride)
+  --xy-stride arg           specifies the stride in x/y direction (in pixel) on
+                            the smallest scale (specify either xy-nstride or 
+                            xy-stride)
+  --xy-max-stride arg       specifies the maximum stride (and indirectly its 
+                            scale) for x/y
+  --xy-max-scale arg        specifies the maximum scale for x/y
+  --xy-scale arg (=sqrt(2)) scale factor for different scales in x/y direction
+  --t-nstride arg           how many features are sampled in time on the 
+                            smallest scale (specify either t-nstride or 
+                            t-stride)
+  --t-stride arg            specifies the stride in t direction (in frames) on 
+                            the smalles scale (specify either t-nstride or 
+                            t-stride)
+  --t-max-stride arg        specifies the maximum stride (and indirectly its 
+                            scale) for t
+  --t-max-scale arg         specifies the maximum scale for t
+  --t-scale arg (=sqrt(2))  scale factor for different scales in time
+  --scale-overlap arg (=2)  controls overlap of adjacent features, scales size 
+                            of 3D box; for a factor of 1, features will be 
+                            adjacent, any factor greater than 1 will cause 
+                            overlapping features; a factor of 2 will double the
+                            size of the box (along each dimension) and thus 
+                            will result in an overlap of 50%
+
+video options:
+  -S [ --start-frame ] arg          if given, feature extraction starts at 
+                                    given frame
+  -E [ --end-frame ] arg            if given, feature extraction ends at given 
+                                    frame (including this frame)
+  -s [ --start-time ] arg           if given, feature extraction starts at the 
+                                    first frame at or after the given time (in 
+                                    seconds)
+  -e [ --end-time ] arg             if given, feature extraction ends at the 
+                                    last frame before or at the given time (in 
+                                    seconds)
+  -b [ --buffer-length ] arg (=100) length of the internal video buffer .. 
+                                    controls the memory usage as well as the 
+                                    maximal scale in time for features
+  --simg arg (=1)                   scale the input video by this given factor
+
+descriptor parameters:
+  By default, descriptor parameters are employed that have been learned on the
+  training set of the Hollywood2 actions database. The setting is as follows:
+    xy-ncells=2
+    t-ncells=5
+    npix=4
+    sigma-support=24
+    tau-support=12
+    quantization-type=polar
+    polar-bins-xy=5
+    polar-bins-t=3
+    half-orientation
+    normalization of cell histograms independently with L2 norm
+
+  Optionally, a parameter setting learned on the KTH training set can be 
+  chosen by setting the option '--kth-optimized'. The parameters are then:
+    xy-ncells=5
+    t-ncells=4
+    npix=4
+    sigma-support=16
+    tau-support=4
+    quantization-type=icosahedron
+    half-orientation
+    normalization of cell histograms independently with L2 norm
+
+  More information can be obtained in my PhD thesis: 
+    Alexander Klaeser, Learning Human Actions in Video, July 2010
+
+-----------------------------------------------------------------------------------
+COMMAND:
+
+./Klaser-Schmid_Hog3D_qt --video-file ~/LIRIS-data/training-validation/vid0005/ -t ~/LIRIS-data/training-validation/vid0005_3_discussion.track -P icosahedron --loose-track --xy-stride 16 --t-stride 16 --t-ncells 2 --xy-scale 1 --t-scale 1 --scale-overlap 1 --npix 2 >> vid0005_3_discussion.out
+
+
