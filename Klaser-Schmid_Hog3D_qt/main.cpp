@@ -43,7 +43,7 @@ namespace fs = boost::filesystem;
 
 const string VERSION = "1.3.0";
 
-#define DEPTH 1
+#define DEPTH 0
 #define CHANNELS 1
 
 // declerations
@@ -426,6 +426,8 @@ int main(int argc, char *argv[])
             FastHog3DComputer::VectorType vec;
             std::list<Box<double> > bboxes; // list will contain all bounding boxes of a frame
             bboxes.push_back(Box<double>(0, 0, width, height)); // without a track, the full image is the only bounding box
+
+            //ED: if tScaleFactor is set 1, this becomes an infinite loop
             for (double tScale = 1; fuzzyLowerEqual(tScale, maxTScale); tScale *= tScaleFactor) {
                 double tAdd = vm.count("loose-track") ? 1 : tStride * tScale;
                 for (double t = 0; t < length; t += tAdd) {
@@ -484,8 +486,9 @@ int main(int argc, char *argv[])
                             yEnd = iBox->getBottom();
                         }
 
-                        // spatial sampling
+                        // spatial sampling   //ED: if xyScaleFactor is set 1, this becomes an infinite loop
                         for (double xyScale = 1; fuzzyLowerEqual(xyScale, maxXyScale); xyScale *= xyScaleFactor)
+                        {
                             for (double x = xStart; x <= xEnd; x += xyStride * xyScale)
                                 for (double y = yStart; y <= yEnd; y += xyStride * xyScale) {
                                     // compute the feature position and size .. ensure that boxes are large enough
@@ -525,8 +528,13 @@ int main(int argc, char *argv[])
                                         outputVector(vec, cout);
                                     }
                                 }
+                            //ED: to break the infinite loop (in case of xyScaleFactor=1
+                            if (xyScaleFactor == 1) break;
+                        }
                     }
                 }
+                //ED: to break the infinite loop (in case of tScaleFactor=1
+                if (tScaleFactor == 1) break;
             }
         }
         else {

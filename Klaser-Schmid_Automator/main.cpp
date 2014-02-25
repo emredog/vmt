@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 
     QHash<QString, QString>::const_iterator it = videosToTrackFiles.constBegin();
     QStringList inputArgs;
-    QFileInfo* outputFileInfo;
+    QFileInfo* trackFileInfo;
     int counter = 1;
     int total = videosToTrackFiles.count();
 
@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
         //create a new process
         process = new QProcess();
         //set output file name
-        outputFileInfo = new QFileInfo(it.value());
-        process->setStandardOutputFile(targetDir.absoluteFilePath(outputFileInfo->baseName() + ".out"), QIODevice::Truncate);
+        trackFileInfo = new QFileInfo(it.value());
+        process->setStandardOutputFile(targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out"), QIODevice::Truncate);
 
         //run the program
         process->start(program, inputArgs + algoArgs);
@@ -87,13 +87,13 @@ int main(int argc, char *argv[])
             cerr << "Could not start process with following parameters:" << endl
                  << "input: " << inputArgs.join(" ").toStdString() << endl
                  << "parameters: " << algoArgs.join(" ").toStdString() << endl
-                 << "output: " << targetDir.absoluteFilePath(outputFileInfo->baseName() + ".out").toStdString() << endl;
+                 << "output: " << targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out").toStdString() << endl;
 
             continue;
         }
 
         cout << "Process " << counter << " started..." << endl;
-        cout << "\tExpected output file: " << targetDir.absoluteFilePath(outputFileInfo->baseName() + ".out").toStdString() << endl << endl;
+        cout << "\tExpected output file: " << targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out").toStdString() << endl << endl;
 
         //wait 10 minutes for it to finish
         if (!process->waitForFinished(600000)) //wait for 10 minutes
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
             cerr << "Could not complete process within 10 minutes, with following parameters:" << endl
                  << "input: " << inputArgs.join(" ").toStdString() << endl
                  << "parameters: " << algoArgs.join(" ").toStdString() << endl
-                 << "output: " << targetDir.absoluteFilePath(outputFileInfo->baseName() + ".out").toStdString() << endl;
+                 << "output: " << targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out").toStdString() << endl;
 
             continue;
         }
@@ -109,9 +109,11 @@ int main(int argc, char *argv[])
         cout << "Process " << counter << " completed. Remaining: " << total-counter << endl << endl;
         counter++;
 
+        it++;
+
         //clean-up
         delete process;
-        delete outputFileInfo;
+        delete trackFileInfo;
         inputArgs.clear();
     }
 
