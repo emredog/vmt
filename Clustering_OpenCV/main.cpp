@@ -15,15 +15,20 @@ int main(/*int argc, char *argv[]*/)
     const int randomFeatSize = 500000;
     const int nrOfUnwantedFeats = 8;
 
+    const int termCrit_Count = 10;
+    const double termCrit_Epsilon = 1.0;
+
+    int k = 4000;
+
     cv::Mat featMat(randomFeatSize, dimOfFeats-nrOfUnwantedFeats, CV_32FC1);
     cv::Mat labels;
     cv::Mat centers;
 
-    int k = 1000;
+
 
     //GENERATE RANDOM INDEXES
     cv::Mat randomIndexes(randomFeatSize, 1, CV_32SC1);
-    cv::RNG rng;
+    cv::RNG rng(static_cast<uint64>(QTime::currentTime().msec()));
     rng.fill(randomIndexes, cv::RNG::UNIFORM, 0, totNumberOfFeats);
     //for(int i=0; i<indexes.rows; i++) cout << indexes.at<int>(i, 0) << "\n";
 
@@ -36,7 +41,7 @@ int main(/*int argc, char *argv[]*/)
     qSort(sortedIndexes);
 
 
-    QFile file("/home/emredog/LIRIS-data/training-validation_features/AllFeatures.feat");
+    QFile file("/home/emredog/LIRIS-data/training-validation_features/AllFeaturesInSingleFile.features");
     if (!file.open(QIODevice::ReadOnly))
     {
         std::cerr << "CANT OPEN FILE!!!";
@@ -48,15 +53,23 @@ int main(/*int argc, char *argv[]*/)
     QStringList fields;
     int featMatRowCounter = 0;
     int errorCounter = 0;
+    int warninCounter = 0;
     int lineCounter = -1;
     int wantedLine = sortedIndexes.first();
     sortedIndexes.removeFirst();
 
     bool ok = true;
 
-    while (!in.atEnd())
+    while (!in.atEnd() && !sortedIndexes.isEmpty())
     {
         lineCounter++;
+
+        if (lineCounter > wantedLine)
+        {
+            lineCounter -= 2;
+            warninCounter++;
+            continue;
+        }
 
         //if its not the line we want, skip it
         if (lineCounter != wantedLine)
@@ -66,9 +79,6 @@ int main(/*int argc, char *argv[]*/)
         wantedLine = sortedIndexes.first();
         sortedIndexes.removeFirst(); //remove it from list
 
-        //if all indexes are finished
-        if (sortedIndexes.isEmpty())
-            break; //stop gathering features
 
         //and process the current line:
         line = in.readLine();
@@ -88,20 +98,22 @@ int main(/*int argc, char *argv[]*/)
     }
     in.reset();
 
-    cout << endl << "Encountered " << errorCounter << " errors." << endl;
+    cout << endl << "Encountered " << errorCounter << " error(s) and " << warninCounter << " warning(s)." << endl;
 
-    cout << "Starting kmeans..." << endl;
+    cout << "Starting kmeans with TermCriteria:Count: " << termCrit_Count << ", TermCriteria:Epsilon: "
+         << termCrit_Epsilon << endl;
 
     QTime timer;
     timer.start();
     double compactness = cv::kmeans(featMat, k, labels,
-                                    cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 150, 0.1),
+                                    cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT,
+                                                     termCrit_Count, termCrit_Epsilon),
                                     100, cv::KMEANS_PP_CENTERS, centers);
 
     int elapsed = timer.elapsed();
-    cout << "K-means completed in " << (double)elapsed/1000.0 << " with compactness: " << compactness << endl;
+    cout << "K-means completed in " << (double)elapsed/1000.0 << "seconds with compactness: " << compactness << endl;
 
-    QFile output("K-Means_s500K_k1000_150_01.out");
+    QFile output(QString("K-Means_s%1K_k%2_C%3_e%4.out").arg(randomFeatSize/1000).arg(k).arg(termCrit_Count).arg(termCrit_Epsilon));
     if (!output.open(QIODevice::Append))
         return -1;
 
@@ -115,6 +127,6 @@ int main(/*int argc, char *argv[]*/)
          in << endl;
     }
 
-    cout << "Wrote the file.";
+    cout << "Wrote the file." << endl;
 
 }
