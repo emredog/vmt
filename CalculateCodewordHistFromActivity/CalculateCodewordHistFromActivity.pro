@@ -16,7 +16,9 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    featureset.cpp
+    featureset.cpp \
+    calculateprocess.cpp
 
 HEADERS += \
-    featureset.h
+    featureset.h \
+    calculateprocess.h

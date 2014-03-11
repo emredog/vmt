@@ -9,11 +9,12 @@
 class FeatureSet
 {
 public:
-    FeatureSet(QString fileName, int preFeatureCount = 0);
+    FeatureSet();
+    FeatureSet(QString fileName, int featDim = 80, int preFeatureCount = 0);
 
     int getNrOfFeatures() const;
-
-    static const int featDim = 80;
+    //dimensionality of feature vector
+    int featDim;
     const QList<QList<float> >& getFeatureVectors() const;
 
 protected:

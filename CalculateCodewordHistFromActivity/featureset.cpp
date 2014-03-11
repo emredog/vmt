@@ -6,9 +6,15 @@
 #include <iostream>
 
 
-FeatureSet::FeatureSet(QString fileName, int preFeatureCount)
+FeatureSet::FeatureSet()
+{
+
+}
+
+FeatureSet::FeatureSet(QString fileName, int featDim, int preFeatureCount)
 {
     this->ignoreFirstFeatures = preFeatureCount;
+    this->featDim = featDim;
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly))
     {

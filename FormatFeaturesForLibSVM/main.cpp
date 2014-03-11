@@ -10,8 +10,8 @@ using namespace std;
 int main(/*int argc, char *argv[]*/)
 {
     //parameters
-    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BoW/with_K-Means_s500K_k4000_C100_e0.1/";
-    QString dataFileForLibSVM = "data.dat";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BoW/with_K-Means_s100K_k4000_C50_e0.5/";
+    QString dataFileForLibSVM = "train-validation_data.dat";
 
     //prepare class names
     QMap<QString, int> classNames;
@@ -39,7 +39,6 @@ int main(/*int argc, char *argv[]*/)
         cout << "ERROR opening file: " << dirBoWs.absoluteFilePath(dataFileForLibSVM).toStdString() << endl;
     QTextStream dataOut(&outputFile);
 
-    //TODO: should I only take 60% (for validation purposes) ?
     foreach(QString bowName, BoWFileNames)
     {
         QString curClassName = bowName.mid(10); //remove vidxxxx_x_ part
@@ -58,7 +57,7 @@ int main(/*int argc, char *argv[]*/)
         dataOut << classNames[curClassName] << " ";
 
         //write <index>:<value> pairs
-        int index = 0;
+        int index = 1; // from svm-scale help: minimal feature index is 0, but indices should start from 1
         while (!in.atEnd())
         {
             //write <index>:

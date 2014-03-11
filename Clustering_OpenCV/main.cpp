@@ -15,8 +15,8 @@ int main(/*int argc, char *argv[]*/)
     const int randomFeatSize = 500000;
     const int nrOfUnwantedFeats = 8;
 
-    const int termCrit_Count = 10;
-    const double termCrit_Epsilon = 1.0;
+    const int termCrit_Count = 100;
+    const double termCrit_Epsilon = 0.1;
 
     int k = 4000;
 
@@ -41,7 +41,7 @@ int main(/*int argc, char *argv[]*/)
     qSort(sortedIndexes);
 
 
-    QFile file("/home/emredog/LIRIS-data/training-validation_features/AllFeaturesInSingleFile.features");
+    QFile file("/home/emredog/LIRIS-data/training-validation_features_p20140310/AllFeaturesInSingleFile.features");
     if (!file.open(QIODevice::ReadOnly))
     {
         std::cerr << "CANT OPEN FILE!!!";

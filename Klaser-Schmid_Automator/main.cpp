@@ -15,15 +15,15 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------------------------------------------------------------
     QDir dataDir("/home/emredog/LIRIS-data/training-validation/");
-    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/");
+    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features_p20140310/");
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");
     QString program = "./Klaser-Schmid_Hog3D_qt";
 
     QStringList algoArgs;
     algoArgs << "-P" <<  "icosahedron"
              << "--loose-track"
-             << "--xy-stride" <<  "16"
-             << "--t-stride" << "16"
+             << "--xy-stride" <<  "32"
+             << "--t-stride" << "32"
              << "--t-ncells" << "2"
              << "--xy-scale" << "1"
              << "--t-scale" << "1"
@@ -80,6 +80,8 @@ int main(int argc, char *argv[])
 
         //run the program
         process->start(program, inputArgs + algoArgs);
+        cout << "All parameters:" << endl
+             << inputArgs.join(" ").toStdString() << " " << algoArgs.join(" ").toStdString() << endl << endl;
 
         //check if it started normally
         if (!process->waitForStarted(-1))
