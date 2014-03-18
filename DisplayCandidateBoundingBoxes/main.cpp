@@ -5,6 +5,12 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#define MAX_X 639
+#define MAX_Y 479
+
+#define DILATION 5
+#define DRAW_BEST 3
+
 using namespace cv;
 
 typedef QPair<Rect, float> RectWithScore;
@@ -20,7 +26,7 @@ bool operator< (const RectWithScore &cC1, const RectWithScore &cC2)
 }
 
 void paintBBoxes(Mat& img, QString bboxFilePath, int drawBest);
-
+Rect dilateRectangle(const Rect& rect, int amount);
 
 int main(int argc, char *argv[])
 {
@@ -41,7 +47,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<imgFiles.count(); i++)
     {
         img = imread(imgFolder.absoluteFilePath(imgFiles[i]).toStdString(), CV_LOAD_IMAGE_GRAYSCALE);
-        paintBBoxes(img, bboxFolder.absoluteFilePath(bboxFiles[i]), 3);
+        paintBBoxes(img, bboxFolder.absoluteFilePath(bboxFiles[i]), DRAW_BEST);
         imshow("Display Bounding Boxes", img);
         waitKey(0);
     }
@@ -82,10 +88,37 @@ void paintBBoxes(Mat& img, QString bboxFilePath, int drawBest)
     //sort list by score (ascending)
     qSort(boundingBoxes);
 
-    for (int i=boundingBoxes.count()-1; i>boundingBoxes.count()-1-drawBest; i--)
+    for (int i=boundingBoxes.count()-1; i>boundingBoxes.count()-1-drawBest && i>=0; i--)
     {
-        rectangle(img, boundingBoxes[i].first, 255);
-    }
 
+        Rect dilated = dilateRectangle(boundingBoxes[i].first, DILATION);
+        rectangle(img, dilated, 255);
+    }
+}
+
+Rect dilateRectangle(const Rect& rect, int amount)
+{
+    if (amount <= 0)
+        return rect;
+
+    Point newTopLeft, newBottomRight;
+
+    newTopLeft.x = rect.tl().x - amount;
+    if (newTopLeft.x < 0) //too much
+        newTopLeft.x = 0;
+
+    newTopLeft.y = rect.tl().y - amount;
+    if (newTopLeft.y < 0) //too much
+        newTopLeft.y = 0;
+
+    newBottomRight.x = rect.br().x + amount;
+    if (newBottomRight.x > MAX_X)
+        newBottomRight.x = MAX_X;
+
+    newBottomRight.y = rect.br().y + amount;
+    if (newBottomRight.y > MAX_X)
+        newBottomRight.y = MAX_X;
+
+    return Rect(newTopLeft, newBottomRight);
 
 }
