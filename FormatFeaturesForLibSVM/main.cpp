@@ -10,7 +10,7 @@ using namespace std;
 int main(/*int argc, char *argv[]*/)
 {
     //parameters
-    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BoW/with_K-Means_s100K_k4000_C50_e0.5/";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BoW_p20140310/with_K-Means_s500K_k4000_C100_e0.1/";
     QString dataFileForLibSVM = "train-validation_data.dat";
 
     //prepare class names

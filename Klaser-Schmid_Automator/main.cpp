@@ -15,12 +15,12 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------------------------------------------------------------
     QDir dataDir("/home/emredog/LIRIS-data/training-validation/");
-    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features_p20140310/");
+    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features_params03/");
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");
     QString program = "./Klaser-Schmid_Hog3D_qt";
 
     QStringList algoArgs;
-    algoArgs << "-P" <<  "icosahedron"
+    algoArgs << "-P" <<  "dodecahedron"
              << "--loose-track"
              << "--xy-stride" <<  "32"
              << "--t-stride" << "32"
