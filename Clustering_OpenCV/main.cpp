@@ -10,8 +10,8 @@ using namespace std;
 
 int main(/*int argc, char *argv[]*/)
 {
-    const int totNumberOfFeats = 9459442;
-    const int dimOfFeats = 88;
+    const int totNumberOfFeats = 2420822; //9459442;
+    const int dimOfFeats = 56; //88;
     const int randomFeatSize = 500000;
     const int nrOfUnwantedFeats = 8;
 
@@ -41,7 +41,7 @@ int main(/*int argc, char *argv[]*/)
     qSort(sortedIndexes);
 
 
-    QFile file("/home/emredog/LIRIS-data/training-validation_features_p20140310/AllFeaturesInSingleFile.features");
+    QFile file("/home/emredog/LIRIS-data/training-validation_features/training-validation_features_params03/AllFeaturesInSingleFile.features");
     if (!file.open(QIODevice::ReadOnly))
     {
         std::cerr << "CANT OPEN FILE!!!";
