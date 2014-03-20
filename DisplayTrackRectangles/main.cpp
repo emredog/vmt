@@ -12,8 +12,8 @@ void paintTrackFile(Mat& img, QString trackFile, int frameIndex);
 int main(int argc, char *argv[])
 {
 
-    const QDir imgFolder("/home/emredog/LIRIS-data/test/vid0006/");
-    const QString trackFile("/home/emredog/LIRIS-data/test/vid0006_b3_d10.track");
+    const QDir imgFolder("/home/emredog/LIRIS-data/test/vid0003/");
+    const QString trackFile("/home/emredog/LIRIS-data/test/vid0003_b3_d10.track");
 
 
     QCoreApplication a(argc, argv);
