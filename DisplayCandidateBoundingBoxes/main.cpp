@@ -8,8 +8,8 @@
 #define MAX_X 639
 #define MAX_Y 479
 
-#define DILATION 5
-#define DRAW_BEST 3
+#define DILATION 0
+#define DRAW_BEST 30
 
 using namespace cv;
 
@@ -32,11 +32,12 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    const QDir imgFolder("/home/emredog/LIRIS-data/test/vid0006/");
-    const QDir bboxFolder("/home/emredog/Documents/ADSC_NUS_Harl_result_code_v2/HumanDetectionResults/vid0006_result");
+    const QDir imgFolder("/home/emredog/LIRIS-data/test/vid0003/");
+    const QDir bboxFolder("/home/emredog/Documents/ADSC_NUS_Harl_result_code_v2/HumanDetectionResults/vid0003_result");
 
     QStringList filters; filters << "*.jpg";
     QStringList imgFiles = imgFolder.entryList(filters);
+    imgFiles.removeFirst();
     filters.clear();
     filters << "*.txt";
     QStringList bboxFiles = bboxFolder.entryList(filters);

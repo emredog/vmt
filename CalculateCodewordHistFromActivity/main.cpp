@@ -16,12 +16,12 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
-    const QDir activityFeaturesDir("/home/emredog/LIRIS-data/training-validation_features/training-validation_features_params03");
+    const QDir activityFeaturesDir("/home/emredog/LIRIS-data/test_features/test_features_params03");
     const QString codeBookFilePath("/home/emredog/LIRIS-data/CodeBooks/CodeBook_with_featExtractionParams_03/K-Means_s500K_k4000_C100_e0.1.out");
     const int ignoreFeatsOnActs = 8; //number of ignored features in the beginning of each line
     const int vocabularySize = 4000;
     const int featureDim = 48;
-    const int threadCount = 3;
+    const int threadCount = 2;
 
     //read Code book:
     FeatureSet codeBook(codeBookFilePath, featureDim);
@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
     }
 
 
+    cout << "Finished all.\n";
     return app.exec();
 
 
