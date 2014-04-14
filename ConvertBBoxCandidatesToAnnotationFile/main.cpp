@@ -18,8 +18,8 @@ int main(/*int argc, char *argv[]*/)
 {
     //QCoreApplication a(argc, argv);
 
-    const QDir testFolder("/home/emredog/LIRIS-data/test/");
-    const QDir bboxMainFolder("/home/emredog/Documents/ADSC_NUS_Harl_result_code_v2/HumanDetectionResults/");
+    //const QDir testFolder("/home/emredog/LIRIS-data/test/");
+    const QDir bboxMainFolder("/home/emredog/Documents/ADSC_NUS_Harl_result_code_v2/HumanDetectionResults/training-validation");
 
     QStringList filters;
 

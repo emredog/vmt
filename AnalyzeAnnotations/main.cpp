@@ -7,9 +7,8 @@
 
 using namespace std;
 
-QMap<int, QString> g_ClassNames;
-
 void printPerActivityDuration(QList<Video> videos);
+QMap<int, QString> g_ClassNames;
 
 int main(int argc, char *argv[])
 {

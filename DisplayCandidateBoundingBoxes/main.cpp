@@ -9,7 +9,8 @@
 #define MAX_Y 479
 
 #define DILATION 0
-#define DRAW_BEST 30
+#define DRAW_BEST 300   //set to a big number to display all candidates
+#define T_FACTOR 0.60   //set to 0 to display all candidates
 
 using namespace cv;
 
@@ -67,7 +68,7 @@ void paintBBoxes(Mat& img, QString bboxFilePath, int drawBest)
         return;
 
     QTextStream in(&file);
-    QList<RectWithScore> boundingBoxes;
+    QList<RectWithScore> boundingBoxes;    
 
     while (!in.atEnd())
     {
@@ -80,17 +81,21 @@ void paintBBoxes(Mat& img, QString bboxFilePath, int drawBest)
         Point pt1(values[0].toFloat()*2, values[1].toFloat()*2); //*2 because coordinates are scaled for 320x240 images
         Point pt2(values[2].toFloat()*2, values[3].toFloat()*2);
         Rect rect(pt1, pt2);
-        float score = values[4].toFloat();
+        float score = values[4].toFloat();        
         RectWithScore rctScore(rect, score);
         boundingBoxes.append(rctScore);
 
-    }
+    }    
 
     //sort list by score (ascending)
     qSort(boundingBoxes);
+    float maxScore = boundingBoxes.last().second;
+    float threshold = maxScore * T_FACTOR;
 
     for (int i=boundingBoxes.count()-1; i>boundingBoxes.count()-1-drawBest && i>=0; i--)
     {
+        if (boundingBoxes[i].second < threshold)
+            continue;
 
         Rect dilated = dilateRectangle(boundingBoxes[i].first, DILATION);
         rectangle(img, dilated, 255);

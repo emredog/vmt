@@ -13,7 +13,7 @@ public:
     int number;
     int activityClass;
 
-    QMap<int, BoundingBox> boundingBoxes;
+    QMultiMap<int, BoundingBox> boundingBoxes;
 
    // Video* parentVideo;
 

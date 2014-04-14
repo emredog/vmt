@@ -10,6 +10,9 @@ public:
     ~BoundingBox();
 
     int x, y, width, height, frameNr;
+    float score;
+
+    bool overlaps(BoundingBox &bbox);
 
     //Action* parentAction;
 };

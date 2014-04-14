@@ -10,6 +10,7 @@ class Video
 {
 public:
     Video(QString fullPath);
+    Video();
 
     QString name;
 
@@ -17,6 +18,8 @@ public:
 
     int getNumberOfActions();
     void printSummary();
+
+    void writeWithAnnotationFormat(QString fullPath);
 
 };
 

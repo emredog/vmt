@@ -7,8 +7,14 @@ using namespace std;
 
 #include <QFile>
 #include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 extern QMap<int, QString> g_ClassNames;
+
+Video::Video()
+{
+    this->name = "N/A";
+}
 
 Video::Video(QString fullPath)
 {
@@ -18,7 +24,7 @@ Video::Video(QString fullPath)
 
     QXmlStreamReader xmlReader(&annotFile);
 
-    int currentActionNumber = -1;
+    int currentActionNumber = -100;
 
     while (!xmlReader.atEnd() && !xmlReader.hasError())
     {
@@ -46,13 +52,25 @@ Video::Video(QString fullPath)
                     continue;
                 }
 
-                bool ok1, ok2;
-                action.activityClass = attributes.value("class").toString().toInt(&ok1);
-                action.number = attributes.value("nr").toString().toInt(&ok2);
-                if (!ok1 || !ok2)
+
+                QString classStr = attributes.value("class").toString(),
+                        nrStr = attributes.value("nr").toString();
+
+                if (classStr.compare("N/A") == 0 && nrStr.compare("N/A") == 0) //unknown action
                 {
-                    std::cout << "Read error on <action> 'class' or 'nr' !!!" << std::endl;
-                    break;
+                    action.activityClass = -1;
+                    action.number = -1;
+                }
+                else //action is read from proper annotation file
+                {
+                    bool ok1, ok2;
+                    action.activityClass = classStr.toInt(&ok1);
+                    action.number = nrStr.toInt(&ok2);
+                    if (!ok1 || !ok2)
+                    {
+                        std::cout << "Read error on <action> 'class' or 'nr' !!!" << std::endl;
+                        break;
+                    }
                 }
 
                 this->actions[action.number] = action;
@@ -77,10 +95,17 @@ Video::Video(QString fullPath)
                 boundingBox.width = attributes.value("width").toString().toInt();
                 boundingBox.height = attributes.value("height").toString().toInt();
                 boundingBox.frameNr = attributes.value("framenr").toString().toInt();
+
+                //we may have a score attribute:
+                QString scoreStr = attributes.value("score").toString();
+                if (!scoreStr.isEmpty())
+                {
+                    boundingBox.score = scoreStr.toFloat();
+                }
                 //from <action nr="..." class="...">
 
 
-                this->actions[currentActionNumber].boundingBoxes[boundingBox.frameNr] = boundingBox;
+                this->actions[currentActionNumber].boundingBoxes.insert(boundingBox.frameNr, boundingBox);
 
             }
         }
@@ -105,4 +130,66 @@ void Video::printSummary()
                " [Action: " << g_ClassNames[act.activityClass].toStdString() << "]" <<
                " [Duration: " << act.getDuration() << "]" << endl;
     }
+}
+
+void Video::writeWithAnnotationFormat(QString fullPath)
+{
+    QFile annotationFile(fullPath);
+    if (!annotationFile.open(QIODevice::Truncate | QIODevice::WriteOnly))
+    {
+        cout << "ERROR when opening file to write: " << fullPath.toStdString() << endl;
+    }
+
+    QXmlStreamWriter xmlWriter(&annotationFile);
+
+    xmlWriter.setAutoFormatting(true);
+    xmlWriter.writeStartDocument();
+    xmlWriter.writeStartElement("tagset");
+    xmlWriter.writeStartElement("video");
+    xmlWriter.writeStartElement("videoName");
+    xmlWriter.writeCharacters(this->name);
+    xmlWriter.writeEndElement(); //videoName
+
+    QMapIterator<int, Action> it(actions);
+    //for each action:
+    while(it.hasNext())
+    {
+        it.next();
+        Action act = it.value();
+        if (act.boundingBoxes.isEmpty())
+            continue;
+
+        xmlWriter.writeStartElement("action");
+        xmlWriter.writeAttribute("nr", QString::number(act.number));
+        xmlWriter.writeAttribute("class", QString::number(act.activityClass));
+
+        int maxKey = -1;
+        {
+            QMap<int, BoundingBox>::Iterator mit = act.boundingBoxes.end();
+            mit--;
+            maxKey = mit.key();
+        }
+
+        for (int frame=0; frame<act.boundingBoxes.keys().last(); frame++)
+        {
+            QList<BoundingBox> boxesForThisFrame = act.boundingBoxes.values(frame);
+            foreach(BoundingBox box, boxesForThisFrame)
+            {
+                xmlWriter.writeStartElement("bbox");
+                xmlWriter.writeAttribute("x", QString::number(box.x));
+                xmlWriter.writeAttribute("y", QString::number(box.y));
+                xmlWriter.writeAttribute("width", QString::number(box.width));
+                xmlWriter.writeAttribute("height", QString::number(box.height));
+                xmlWriter.writeAttribute("framenr", QString::number(frame));
+                xmlWriter.writeAttribute("score", QString::number(box.score));
+                xmlWriter.writeEndElement(); //bbox
+            }
+        }
+        xmlWriter.writeEndElement(); //action
+    }
+
+    xmlWriter.writeEndElement(); //video
+    xmlWriter.writeEndElement(); //tagset
+
+    xmlWriter.writeEndDocument();
 }
