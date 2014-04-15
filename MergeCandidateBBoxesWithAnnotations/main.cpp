@@ -77,18 +77,22 @@ int main(int argc, char *argv[])
             //get bounding boxes from annotated video
             QMultiMap<int, BoundingBox> annotatedBboxes = annotatedAction.boundingBoxes;
 
-            QList<int> frameNrs =  annotatedBboxes.keys();
+            //QList<int> frameNrs =  annotatedBboxes.keys();
+            QList<int> frameNrs =  unknownAction.boundingBoxes.keys();
 
             //for each frame
             foreach(int frameNr, frameNrs)
             {
-                BoundingBox annotatedBbox = annotatedBboxes.value(frameNr); //there should be only one in the annotatedBboxes
+                BoundingBox annotatedBbox = annotatedBboxes.value(frameNr); //there should be only one or zero in the annotatedBboxes
+                //if there's no annotated box for this frame, default constructor sets the framenr to -1
+
                 QList<BoundingBox> candidateBboxes = unknownAction.boundingBoxes.values(frameNr);
 
                 //if any of the candidate bounding box does NOT overlap with the annotated bounding box
                 foreach (BoundingBox bbox, candidateBboxes)
                 {
-                    if (!bbox.overlaps(annotatedBbox))
+                    //if there's no overlap OR no ground truth for this frame
+                    if (!bbox.overlaps(annotatedBbox) || annotatedBbox.frameNr == -1)
                     {
                         //add it to NoAction class
                         noAction.boundingBoxes.insert(frameNr, bbox);
