@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
             QMultiMap<int, BoundingBox> annotatedBboxes = annotatedAction.boundingBoxes;
 
             //QList<int> frameNrs =  annotatedBboxes.keys();
-            QList<int> frameNrs =  unknownAction.boundingBoxes.keys();
+            QList<int> frameNrs =  unknownAction.boundingBoxes.uniqueKeys();
 
             //for each frame
             foreach(int frameNr, frameNrs)
