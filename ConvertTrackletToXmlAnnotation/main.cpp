@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    QDir trackletRoot("C:\\Users\\emredog\\Documents\\ADSC_NUS_Harl_result_code_v2\\Tracklets\\test");
+    QDir trackletRoot("C:\\Users\\emredog\\Documents\\ADSC_NUS_Harl_result_code_v2\\Tracklets\\training-validation");
 
     QStringList filters;
 

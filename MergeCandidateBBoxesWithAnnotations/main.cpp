@@ -86,7 +86,8 @@ int main(int argc, char *argv[])
         for (int k=0; k<unknownActions.length(); k++)
         {
             unknownActions[k].activityClass = NO_ACTION; //set it to NO-ACTION
-            mergedVideo.actions.insert(maxKey+k, unknownActions[k]);
+            unknownActions[k].number = maxKey+k+1;
+            mergedVideo.actions.insert(maxKey+k+1, unknownActions[k]);
         }
 
         QString fullPath = targetDir.absoluteFilePath(mergedVideo.name.remove(0,3).append(".xml"));
