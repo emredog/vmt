@@ -13,11 +13,13 @@ public:
     int number;
     int activityClass;
 
-    QMultiMap<int, BoundingBox> boundingBoxes;
+    QMap<int, BoundingBox> boundingBoxes;
+
+    bool operator==(const Action& other) const;
 
    // Video* parentVideo;
 
-    int getDuration();
+    int getDuration() const;
 };
 
 #endif // ACTION_H

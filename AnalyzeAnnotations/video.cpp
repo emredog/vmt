@@ -17,10 +17,12 @@ Video::Video()
 }
 
 Video::Video(QString fullPath)
-{
+{    
     QFile annotFile(fullPath);
+    this->name = QString("d1/").append(annotFile.fileName());
+
     if (!annotFile.open(QFile::ReadOnly))
-        return;
+        return;        
 
     QXmlStreamReader xmlReader(&annotFile);
 
@@ -56,10 +58,12 @@ Video::Video(QString fullPath)
                 QString classStr = attributes.value("class").toString(),
                         nrStr = attributes.value("nr").toString();
 
-                if (classStr.compare("N/A") == 0 && nrStr.compare("N/A") == 0) //unknown action
+                if (classStr.compare("N/A") == 0) //unknown action
                 {
                     action.activityClass = -1;
-                    action.number = -1;
+                    bool ok;
+                    int nr = nrStr.toInt(&ok);
+                    action.number = ok? nr : -1;
                 }
                 else //action is read from proper annotation file
                 {
@@ -163,14 +167,14 @@ void Video::writeWithAnnotationFormat(QString fullPath)
         xmlWriter.writeAttribute("nr", QString::number(act.number));
         xmlWriter.writeAttribute("class", QString::number(act.activityClass));
 
-        int maxKey = -1;
-        {
-            QMap<int, BoundingBox>::Iterator mit = act.boundingBoxes.end();
-            mit--;
-            maxKey = mit.key();
-        }
+//        int maxKey = -1;
+//        {
+//            QMap<int, BoundingBox>::Iterator mit = act.boundingBoxes.end();
+//            mit--;
+//            maxKey = mit.key();
+//        }
 
-        for (int frame=0; frame<act.boundingBoxes.keys().last(); frame++)
+        for (int frame=act.boundingBoxes.keys().first(); frame<act.boundingBoxes.keys().last(); frame++)
         {
             QList<BoundingBox> boxesForThisFrame = act.boundingBoxes.values(frame);
             foreach(BoundingBox box, boxesForThisFrame)
@@ -181,7 +185,7 @@ void Video::writeWithAnnotationFormat(QString fullPath)
                 xmlWriter.writeAttribute("width", QString::number(box.width));
                 xmlWriter.writeAttribute("height", QString::number(box.height));
                 xmlWriter.writeAttribute("framenr", QString::number(frame));
-                xmlWriter.writeAttribute("score", QString::number(box.score));
+//                xmlWriter.writeAttribute("score", QString::number(box.score));
                 xmlWriter.writeEndElement(); //bbox
             }
         }
