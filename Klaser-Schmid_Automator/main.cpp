@@ -16,12 +16,12 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     QDir dataDir("/home/emredog/LIRIS-data/training-validation/");
     QDir trackFileDir("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION/");
-    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/training-validation_withNoAction_features_params01");
+    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/training-validation_withNoAction_features_params03");
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");
     QString program = "./Klaser-Schmid_Hog3D_qt";
 
     QStringList algoArgs;
-    algoArgs << "-P" <<  "icosahedron"
+    algoArgs << "-P" <<  "dodecahedron"
              << "--loose-track"
              << "--xy-stride" <<  "16"
              << "--t-stride" << "16"

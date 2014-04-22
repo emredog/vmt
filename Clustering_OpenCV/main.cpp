@@ -10,15 +10,16 @@ using namespace std;
 
 int main(/*int argc, char *argv[]*/)
 {
-    const int totNumberOfFeats = 2420822; //9459442;
-    const int dimOfFeats = 56; //88;
-    const int randomFeatSize = 500000;
+    const int totNumberOfFeats = 14043723; // <--Icosa with noaction //Dodeca w/o noaction:2420822; //Icosa w/o noaction 9459442;
+    const int dimOfFeats = 56; // Icosa:88    //Dodeca: 56;
+    const int randomFeatSize = 500000; //100000
+    const int k = 4000;
     const int nrOfUnwantedFeats = 8;
 
     const int termCrit_Count = 100;
     const double termCrit_Epsilon = 0.1;
 
-    int k = 4000;
+
 
     cv::Mat featMat(randomFeatSize, dimOfFeats-nrOfUnwantedFeats, CV_32FC1);
     cv::Mat labels;
@@ -40,8 +41,13 @@ int main(/*int argc, char *argv[]*/)
 
     qSort(sortedIndexes);
 
+    // to get a big fat file to contain all features:
+    // $ cd /path/to/files
+    // $ files=*
+    // $ cat $files > bigfile
 
-    QFile file("/home/emredog/LIRIS-data/training-validation_features/training-validation_features_params03/AllFeaturesInSingleFile.features");
+
+    QFile file("/home/emredog/LIRIS-data/training-validation_features/training-validation_withNoAction_features_params03/AllFeaturesInSingleFile.features");
     if (!file.open(QIODevice::ReadOnly))
     {
         std::cerr << "CANT OPEN FILE!!!";

@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define TRAINING 0
+#define TRAINING 1
 
 void formatTrainingData(QString pathToBows, QString outFile);
 void formatTestData(QString pathToBoWs, QString outFile);
@@ -17,10 +17,10 @@ int main(/*int argc, char *argv[]*/)
 
 
     //parameters
-//    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BagOfWords/training-validation_BoW_params03/with_K-Means_s500K_k4000_C100_e0.1";
-//    QString dataFileForLibSVM = "training-validation_data.dat";
-    QString pathToBoWs = "/home/emredog/LIRIS-data/test_BagOfWords/test_BoWs_params03/with_K-Means_s500K_k4000_C100_e0.1";
-    QString dataFileForLibSVM = "test_data.dat";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BagOfWords/training-validation_BoW-withNoAction_params01/with_K-Means_s100K_k4000_C50_e0.1";
+    QString dataFileForLibSVM = "training-validation_data.dat";
+//    QString pathToBoWs = "/home/emredog/LIRIS-data/test_BagOfWords/test_BoWs_params03/with_K-Means_s500K_k4000_C100_e0.1";
+//    QString dataFileForLibSVM = "test_data.dat";
 
     if (TRAINING)
         formatTrainingData(pathToBoWs, dataFileForLibSVM);
@@ -92,16 +92,17 @@ void formatTrainingData(QString pathToBoWs, QString outFile)
 {
     //prepare class names
     QMap<QString, int> classNames;
-    classNames["discussion"] = 0;
-    classNames["give"] = 1;
-    classNames["box-desk"] = 2;
-    classNames["enter-leave"] = 3;
-    classNames["try-to-enter"] = 4;
-    classNames["unlock-enter"] = 5;
-    classNames["baggage"] = 6;
-    classNames["handshaking"] = 7;
-    classNames["typing"] = 8;
-    classNames["telephone"] = 9;
+    classNames["no-action"] = 0;
+    classNames["discussion"] = 1;
+    classNames["give"] = 2;
+    classNames["box-desk"] = 3;
+    classNames["enter-leave"] = 4;
+    classNames["try-to-enter"] = 5;
+    classNames["unlock-enter"] = 6;
+    classNames["baggage"] = 7;
+    classNames["handshaking"] = 8;
+    classNames["typing"] = 9;
+    classNames["telephone"] = 10;
 
     //get BoW files
     QDir dirBoWs(pathToBoWs);
@@ -118,7 +119,14 @@ void formatTrainingData(QString pathToBoWs, QString outFile)
 
     foreach(QString bowName, BoWFileNames)
     {
-        QString curClassName = bowName.mid(10); //remove vidxxxx_x_ part
+        QString curClassName;
+        {
+            QStringList parts = bowName.split("_");
+            curClassName = parts[2];
+        }
+
+
+
         curClassName.truncate(curClassName.indexOf('.')); //removes after the first point
 
         //read data from bow file
@@ -131,7 +139,15 @@ void formatTrainingData(QString pathToBoWs, QString outFile)
         QTextStream in(&bowFile);
 
         //write <label>
-        dataOut << classNames[curClassName] << " ";
+        int classIndex = classNames.value(curClassName, -1);
+
+        if (classIndex < 0)
+        {
+            cout << "ERROR reading class name for: " << dirBoWs.absoluteFilePath(bowName).toStdString() << endl;
+            continue;
+        }
+
+        dataOut << classIndex << " ";
 
         //write <index>:<value> pairs
         int index = 1; // from svm-scale help: minimal feature index is 0, but indices should start from 1
