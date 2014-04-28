@@ -16,11 +16,11 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
-    const QDir activityFeaturesDir("/home/emredog/LIRIS-data/training-validation_features/training-validation_withNoAction_features_params01");
-    const QString codeBookFilePath("/home/emredog/LIRIS-data/CodeBooks/CodeBook_with_featExtraction-withNOACTION-Params_01/K-Means_s500K_k4000_C100_e0.1.out");
+    const QDir activityFeaturesDir("/home/emredog/LIRIS-data/training-validation_features/training-validation_withNoAction_features_params03");
+    const QString codeBookFilePath("/home/emredog/LIRIS-data/CodeBooks/CodeBook_with_featExtraction-withNOACTION-Params_03/K-Means_s500K_k4000_C100_e0.1.out");
     const int ignoreFeatsOnActs = 8; //number of ignored features in the beginning of each line
     const int vocabularySize = 4000;
-    const int featureDim = 80;
+    const int featureDim = 48;
     const int threadCount = 4;
 
     //read Code book:

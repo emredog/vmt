@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    QDir trackletRoot("C:\\Users\\emredog\\Documents\\ADSC_NUS_Harl_result_code_v2\\Tracklets\\training-validation");
+    QDir trackletRoot("/home/emredog/Documents/ADSC_NUS_Harl_result_code_v2/Tracklets/test_20140424");
 
     QStringList filters;
 
@@ -101,14 +101,14 @@ int main(int argc, char *argv[])
         foreach(QString trackletFile, trackletFiles)
         {
             Tracklet newTracklet(trackletDir.absoluteFilePath(trackletFile));
-            if (!trackletFile.startsWith("stand") ||  //if it doesnt start with "stand"
-                    (trackletFile.startsWith("stand") &&  !tracklets.contains(newTracklet))) //or it does start with "stand" BUT list doesnt contain any similar tracklet
-            {
+//            if (!trackletFile.startsWith("stand") ||  //if it doesnt start with "stand"
+//                    (trackletFile.startsWith("stand") &&  !tracklets.contains(newTracklet))) //or it does start with "stand" BUT list doesnt contain any similar tracklet
+//            {
                 tracklets.append(newTracklet);
 
                 xmlWriter.writeStartElement("action");
                 xmlWriter.writeAttribute("nr", QString::number(trackletFiles.indexOf(trackletFile)+1));
-                xmlWriter.writeAttribute("class", "N/A");
+                xmlWriter.writeAttribute("class", "1");
 
                 QList<int> frames = newTracklet.bboxes.keys();
                 foreach (int fr, frames)
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 
 
                 xmlWriter.writeEndElement(); //action
-            }
+//            }
 
         }
 

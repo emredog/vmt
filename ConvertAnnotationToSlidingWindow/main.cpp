@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     g_ClassNames[9] = "typing";
     g_ClassNames[10] = "telephone";
 
-    QDir annotationRoot("/home/emredog/LIRIS-data/test_tracklets");
+    QDir annotationRoot("/home/emredog/LIRIS-data/test_tracklets_20140424");
     QStringList filters;
     filters << "*.xml";
 

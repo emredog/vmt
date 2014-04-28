@@ -3,28 +3,34 @@
 #include <QDir>
 #include <QHash>
 #include <iostream>
+#include <unistd.h>
+#include "klaserschmidthread.h"
+
 //#include <stdio.h>
 
 using std::cout;
 using std::cerr;
 using std::endl;
 
+
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
     //-----------------------------------------------------------------------------------------------------------------
-    QDir dataDir("/home/emredog/LIRIS-data/training-validation/");
-    QDir trackFileDir("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION/");
-    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/training-validation_withNoAction_features_params03");
-    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");
-    QString program = "./Klaser-Schmid_Hog3D_qt";
+    QDir dataDir("/home/emredog/LIRIS-data/test/");
+    QDir trackFileDir("/home/emredog/LIRIS-data/test_tracklets_20140424/");
+    QDir targetDir("/home/emredog/LIRIS-data/test_features/test_withSlidingWindows_params02");
+    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");    
+
+    const int threadCount = 2;
 
     QStringList algoArgs;
-    algoArgs << "-P" <<  "dodecahedron"
+    algoArgs << "-P" <<  "icosahedron"  //"dodecahedron"
              << "--loose-track"
-             << "--xy-stride" <<  "16"
-             << "--t-stride" << "16"
+             << "--xy-stride" <<  "32"
+             << "--t-stride" << "32"
              << "--xy-ncells" << "2"
              << "--t-ncells" << "2"
              << "--xy-scale" << "1"
@@ -60,76 +66,33 @@ int main(int argc, char *argv[])
 
     cout << endl << "Matching completed." << endl;
 
-    QHash<QString, QString>::const_iterator it = videosToTrackFiles.constBegin();
-    QStringList inputArgs;
-    QFileInfo* trackFileInfo;
-    int counter = 1;
-    int total = videosToTrackFiles.count();
 
-    QProcess* process;
+    QHash<QString, QString>::const_iterator it = videosToTrackFiles.constBegin();
+
+
+    QList<VideoTrackPair> pairs;
 
     while (it != videosToTrackFiles.constEnd())
     {
-        //set input arguments with video name and track file name
-        inputArgs << "--video-file" << dataDir.absoluteFilePath(it.key())
-                 << "-t" << trackFileDir.absoluteFilePath(it.value());
-
-        //create a new process
-        process = new QProcess();
-        //set output file name
-        trackFileInfo = new QFileInfo(it.value());
-        process->setStandardOutputFile(targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out"), QIODevice::Truncate);
-
-        //run the program
-        process->start(program, inputArgs + algoArgs);
-        cout << "All parameters:" << endl
-             << inputArgs.join(" ").toStdString() << " " << algoArgs.join(" ").toStdString() << endl << endl;
-
-        //check if it started normally
-        if (!process->waitForStarted(-1))
-        {
-            cerr << "Could not start process with following parameters:" << endl
-                 << "input: " << inputArgs.join(" ").toStdString() << endl
-                 << "parameters: " << algoArgs.join(" ").toStdString() << endl
-                 << "output: " << targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out").toStdString() << endl;
-
-            continue;
-        }
-
-        cout << "Process " << counter << " started..." << endl;
-        cout << "\tExpected output file: " << targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out").toStdString() << endl << endl;
-
-        //wait 10 minutes for it to finish
-        if (!process->waitForFinished(600000)) //wait for 10 minutes
-        {
-            cerr << "Could not complete process within 10 minutes, with following parameters:" << endl
-                 << "input: " << inputArgs.join(" ").toStdString() << endl
-                 << "parameters: " << algoArgs.join(" ").toStdString() << endl
-                 << "output: " << targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out").toStdString() << endl;
-
-            continue;
-        }
-
-        cout << "Process " << counter << " completed. Remaining: " << total-counter << endl << endl;
-        counter++;
-
-        it++;
-
-        //clean-up
-        delete process;
-        delete trackFileInfo;
-        inputArgs.clear();
+        VideoTrackPair pair;
+        pair.first = it.key();
+        pair.second = it.value();
+        pairs.append(pair);
+        ++it;
     }
 
+    int length = pairs.length()/threadCount;
 
+    for (int i=0; i<threadCount; i++)
+    {
+        int startPos = i * length;
 
+        if (i == threadCount - 1) //if it's the last thread
+            length = -1; //just take all of the remaining files
 
-    //TODO: set arguments
-
-
-    //TODO: manage process starts / ends etc.
-    //QProcess *myProcess = new QProcess();
-    //myProcess->start(program, arguments);
+        KlaserSchmidThread* proc = new KlaserSchmidThread(pairs.mid(startPos, length), algoArgs, dataDir, trackFileDir, targetDir);
+        proc->start();
+    }
 
     return a.exec();
 }
