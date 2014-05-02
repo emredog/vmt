@@ -1,6 +1,10 @@
 #include "action.h"
 #include "boundingbox.h"
 
+#include <QStringList>
+#include <QTextStream>
+#include <QFile>
+
 Action::Action()
 {
     this->activityClass = -1;
@@ -40,4 +44,40 @@ bool Action::operator==(const Action& other) const
     }
 
     return false;
+}
+
+bool Action::fillBoxesFromTrackFile(QString pathToTrack)
+{
+    QFile trackFile(pathToTrack);
+    if (!trackFile.open(QFile::ReadOnly))
+        return false;
+
+    QTextStream txtStream(&trackFile);
+
+    float temp;
+
+    while(!txtStream.atEnd())
+    {
+        QString line = txtStream.readLine();
+
+        QStringList elts = line.split(" ");
+        BoundingBox bbox;
+
+        temp = elts[1].toFloat();
+        bbox.x = static_cast<int>(temp);
+        temp = elts[2].toFloat();
+        bbox.y = static_cast<int>(temp);
+        temp = elts[3].toFloat();
+        bbox.width = static_cast<int>(temp);
+        temp = elts[4].toFloat();
+        bbox.height = static_cast<int>(temp);
+        temp = elts[0].toFloat();
+        bbox.frameNr = static_cast<int>(temp);
+
+        this->boundingBoxes.insert(bbox.frameNr, bbox);
+    }
+
+    return true;
+
+
 }

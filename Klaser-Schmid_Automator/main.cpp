@@ -21,16 +21,16 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     QDir dataDir("/home/emredog/LIRIS-data/test/");
     QDir trackFileDir("/home/emredog/LIRIS-data/test_tracklets_20140424/");
-    QDir targetDir("/home/emredog/LIRIS-data/test_features/test_withSlidingWindows_params02");
+    QDir targetDir("/home/emredog/LIRIS-data/test_features/test_withSlidingWindows_params03");
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");    
 
     const int threadCount = 2;
 
     QStringList algoArgs;
-    algoArgs << "-P" <<  "icosahedron"  //"dodecahedron"
+    algoArgs << "-P" <<  "dodecahedron"  //"icosahedron"
              << "--loose-track"
-             << "--xy-stride" <<  "32"
-             << "--t-stride" << "32"
+             << "--xy-stride" <<  "16"
+             << "--t-stride" << "16"
              << "--xy-ncells" << "2"
              << "--t-ncells" << "2"
              << "--xy-scale" << "1"

@@ -15,6 +15,7 @@ CalculateProcess::CalculateProcess(QStringList activityFiles, QDir activityFeatu
     this->featDim = featDim;
     this->ignoreFeatsOnActs = ignoreFeatsOnActs;
     this->codeBook = codebook;
+    this->targetDir = QDir(".");
 }
 
 CalculateProcess::~CalculateProcess()
@@ -38,6 +39,7 @@ void CalculateProcess::run()
         writeBoWtoFile(codeWords, actFile.append(".BoW"));
         std::cout << "Processed: " << counter << std::endl;
     }
+    std::cout << "\n\nFinished for this thread.\n";
 }
 
 float CalculateProcess::calculateSquaredEuclidDistance(const QList<float> &featVect1, const QList<float> &featVect2)
@@ -103,5 +105,10 @@ void CalculateProcess::writeBoWtoFile(QVector<int> &codeWords, QString fileName)
 
     QTextStream out(&file);
     for (int i=0; i<codeWords.size(); i++) out << codeWords[i] << "\n";
+}
 
+void CalculateProcess::setTargetDir(QString pathToFolder)
+{
+    if (!this->targetDir.setCurrent(pathToFolder))
+        this->targetDir.setCurrent(".");
 }

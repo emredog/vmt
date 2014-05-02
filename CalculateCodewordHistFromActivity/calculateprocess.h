@@ -15,6 +15,8 @@ public:
                               int featDim = 88, int ignoreFeatsOnActs = 8, QObject *parent = 0);
     ~CalculateProcess();
 
+    void setTargetDir(QString pathToFolder);
+
 signals:
 
 public slots:
@@ -33,6 +35,7 @@ protected:
     int featDim;
     int ignoreFeatsOnActs;
     int vocabularySize;
+    QDir targetDir;
 };
 
 #endif // CALCULATEPROCESS_H

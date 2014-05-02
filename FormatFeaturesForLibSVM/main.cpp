@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define TRAINING 1
+#define TRAINING 0
 
 void formatTrainingData(QString pathToBows, QString outFile);
 void formatTestData(QString pathToBoWs, QString outFile);
@@ -17,10 +17,10 @@ int main(/*int argc, char *argv[]*/)
 
 
     //parameters
-    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BagOfWords/training-validation_BoW-withNoAction_params01/with_K-Means_s100K_k4000_C50_e0.1";
-    QString dataFileForLibSVM = "training-validation_data.dat";
-//    QString pathToBoWs = "/home/emredog/LIRIS-data/test_BagOfWords/test_BoWs_params03/with_K-Means_s500K_k4000_C100_e0.1";
-//    QString dataFileForLibSVM = "test_data.dat";
+//    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BagOfWords/training-validation_BoW-withNoAction_params03/with_K-Means_s500K_k4000_C100_e0.1/";
+//    QString dataFileForLibSVM = "training-validation_data.dat";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/test_BagOfWords/test_BoWs-withNoAction_params03/with_K-Means_s500K_k4000_C100_e0.1";
+    QString dataFileForLibSVM = "test_data.dat";
 
     if (TRAINING)
         formatTrainingData(pathToBoWs, dataFileForLibSVM);

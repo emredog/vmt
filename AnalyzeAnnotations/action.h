@@ -17,6 +17,8 @@ public:
 
     bool operator==(const Action& other) const;
 
+    bool fillBoxesFromTrackFile(QString pathToTrack);
+
    // Video* parentVideo;
 
     int getDuration() const;

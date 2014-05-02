@@ -16,12 +16,14 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
-    const QDir activityFeaturesDir("/home/emredog/LIRIS-data/training-validation_features/training-validation_withNoAction_features_params03");
+    const QDir activityFeaturesDir("/home/emredog/LIRIS-data/test_features/test_withSlidingWindows_params03");
     const QString codeBookFilePath("/home/emredog/LIRIS-data/CodeBooks/CodeBook_with_featExtraction-withNOACTION-Params_03/K-Means_s500K_k4000_C100_e0.1.out");
+    const QString targetDir("/home/emredog/LIRIS-data/test_BagOfWords/test_BoWs-withNoAction_params03/with_K-Means_s500K_k4000_C100_e0.1/");
+
     const int ignoreFeatsOnActs = 8; //number of ignored features in the beginning of each line
     const int vocabularySize = 4000;
-    const int featureDim = 48;
-    const int threadCount = 4;
+    const int featureDim = 48;// <--- dodecahedron //80 <--- icosahedron
+    const int threadCount = 3;
 
     //read Code book:
     FeatureSet codeBook(codeBookFilePath, featureDim);
@@ -45,11 +47,10 @@ int main(int argc, char *argv[])
 
         CalculateProcess* proc = new CalculateProcess(activityFiles.mid(startPos, length), activityFeaturesDir, codeBook, vocabularySize, featureDim, ignoreFeatsOnActs);
         processes.append(proc);
+        proc->setTargetDir(targetDir);
         proc->start();
     }
 
-
-    cout << "Finished all.\n";
     return app.exec();
 
 
