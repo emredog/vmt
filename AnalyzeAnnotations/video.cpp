@@ -151,7 +151,10 @@ void Video::writeWithAnnotationFormat(QString fullPath)
     xmlWriter.writeStartElement("tagset");
     xmlWriter.writeStartElement("video");
     xmlWriter.writeStartElement("videoName");
-    xmlWriter.writeCharacters(this->name);
+    QString vidName = this->name;
+    if (!vidName.startsWith("d1/"))
+        vidName = QString("d1/%1").arg(vidName);
+    xmlWriter.writeCharacters(vidName);
     xmlWriter.writeEndElement(); //videoName
 
     QMapIterator<int, Action> it(actions);

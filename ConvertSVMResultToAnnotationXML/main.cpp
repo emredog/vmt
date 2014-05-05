@@ -2,6 +2,7 @@
 #include <QDir>
 #include <iostream>
 #include <QTextStream>
+#include <QtDebug>
 #include "../AnalyzeAnnotations/video.h"
 
 
@@ -17,13 +18,19 @@ Video mergeSuccessiveActions(Video vid);
 QMap<int, QString> g_ClassNames;
 
 int main(int argc, char *argv[])
-{   
+{
 
     QCoreApplication a(argc, argv);
 
     QDir trackDir("/home/emredog/LIRIS-data/test_tracklets_20140424");
-    QDir targetDir("/home/emredog/LIRIS-data/SVM/result06-CSVC-Lin-Annotations");
-    QString resultFile = "/home/emredog/LIRIS-data/SVM/result06-CSVC-Lin";
+    QString resultFile = "/home/emredog/LIRIS-data/SVM/result10-nuSVC-RBF";
+    QDir targetDir(QString("%1-Annotations").arg(resultFile));
+    if (!targetDir.exists())
+        targetDir.mkdir(targetDir.absolutePath());
+    QDir noactionDir(QString("%1/NoAction").arg(targetDir.absolutePath()));
+    if (!noactionDir.exists())
+        noactionDir.mkdir(noactionDir.absolutePath());
+
 
 
     QList<int> classIndices = resultFileToClassList(resultFile);
@@ -91,7 +98,7 @@ int main(int argc, char *argv[])
                 //check for successive actions
                 Video mergedNoActionVid = mergeSuccessiveActions(noActionVideo);
                 //write video to annotation
-                mergedNoActionVid.writeWithAnnotationFormat(targetDir.absoluteFilePath(QString("%1_NoAction.xml").arg(mergedNoActionVid.name)));
+                mergedNoActionVid.writeWithAnnotationFormat(noactionDir.absoluteFilePath(QString("%1_NoAction.xml").arg(mergedNoActionVid.name)));
 
             }
 
@@ -99,30 +106,37 @@ int main(int argc, char *argv[])
             lastNoActionIndex = 1;
             currentVideo.actions.clear();
             currentVideo.name = vidName;
-        }
-        else //it's still the same video
-        {
-            lastActionIndex++;
-            lastNoActionIndex++;
+            noActionVideo.actions.clear();
+            noActionVideo.name = vidName;
+
         }
 
         if (actionFromTrack.activityClass == 0) //no action class
+        {
+            actionFromTrack.number = lastNoActionIndex;
             noActionVideo.actions.insert(lastNoActionIndex, actionFromTrack);
+            lastNoActionIndex++;
+        }
         else
+        {
+            actionFromTrack.number = lastActionIndex;
             currentVideo.actions.insert(lastActionIndex, actionFromTrack);
+            lastActionIndex++;
+        }
 
         cout << ".";
     }
 
-
-    return a.exec();
+    cout << "Completed." << endl;
+    //return a.exec();
 }
 
 
-//tODO: fix this function
-
 Video mergeSuccessiveActions(Video vid)
 {
+    if (vid.actions.keys().length() == 1) //just one action, no need to check
+        return vid;
+
     Video mergedVideo;
     mergedVideo.name = vid.name;
 
@@ -131,44 +145,56 @@ Video mergeSuccessiveActions(Video vid)
 
     QList<int> keys = vid.actions.keys();
 
-    for(int i=keys.first(); i<=keys.last(); i++)
+    foreach(int keyCurrent, keys)
     {
-        //TODO: comparing should be agains all other actions
-        // keys are ordered but there're gaps (2,3,5,6,9,...)
-        Action currentAct = vid.actions[i];
-        Action nextAct = vid.actions[i+1];
 
-        //if same activity
-        if (currentAct.activityClass == nextAct.activityClass)
+        QList<int> restOfKeys = keys;
+        restOfKeys.removeAll(keyCurrent);
+
+        foreach(int keyOther, restOfKeys)
         {
-            int lastFrame = currentAct.boundingBoxes.end().key();
-            int firstFrame = nextAct.boundingBoxes.begin().key();
+            // keys are ordered but there're gaps (2,3,5,6,9,...)
+            Action currentAct = vid.actions[keyCurrent];
+            Action nextAct = vid.actions[keyOther];
 
-            //if successive
-            if (lastFrame + 1 == firstFrame)
+            //if same activity
+            if (currentAct.activityClass == nextAct.activityClass)
             {
-                Action mergedAct;
-                mergedAct.activityClass = currentAct.activityClass;
-                mergedAct.number = lastActionIndex;
-                mergedAct.boundingBoxes = currentAct.boundingBoxes; //take all from current action
+                QMap<int, BoundingBox>::iterator lastIt = currentAct.boundingBoxes.end();
+                lastIt--;
+                int lastFrame = lastIt.key();
+                int firstFrame = nextAct.boundingBoxes.begin().key();
+               // qDebug() << "Checking frames: " << lastFrame << " vs. " << firstFrame << "\n";
 
-                QMapIterator<int, BoundingBox> itNext(nextAct.boundingBoxes); //take one by one from next action
-                while (itNext.hasNext())
+                //if successive
+                if (qAbs(lastFrame-firstFrame) < 1)
                 {
-                    itNext.next();
-                    mergedAct.boundingBoxes.insert(itNext.key(), itNext.value());
-                }
+                    //qDebug() << "\tFound one to merge!" << endl;
+                    Action mergedAct;
+                    mergedAct.activityClass = currentAct.activityClass;
+                    mergedAct.number = lastActionIndex;
+                    mergedAct.boundingBoxes = currentAct.boundingBoxes; //take all from current action
 
-                mergedVideo.actions.insert(lastActionIndex, mergedAct);
+                    QMapIterator<int, BoundingBox> itNext(nextAct.boundingBoxes); //take one by one from next action
+                    while (itNext.hasNext())
+                    {
+                        itNext.next();
+                        mergedAct.boundingBoxes.insert(itNext.key(), itNext.value());
+                    }
+
+                    mergedVideo.actions.insert(lastActionIndex, mergedAct);
+                    lastActionIndex++;
+                }
+            }
+            else //no successive activities
+            {
+                currentAct.number = lastActionIndex;
+                mergedVideo.actions.insert(lastActionIndex, currentAct);
+                lastActionIndex++;
             }
         }
-        else //no successive activities
-        {
-            currentAct.number = lastActionIndex;
-            mergedVideo.actions.insert(lastActionIndex, currentAct);
-        }
 
-        lastActionIndex++;
+
     }
 
     return mergedVideo;
