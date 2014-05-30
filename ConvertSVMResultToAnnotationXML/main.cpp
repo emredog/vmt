@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     QDir trackDir("/home/emredog/LIRIS-data/test_tracklets_20140424");
-    QString resultFile = "/home/emredog/LIRIS-data/SVM/result10-nuSVC-RBF";
+    QString resultFile = "/home/emredog/LIRIS-data/SVM-20140526/results/result15-nuSVC-RBF";
     QDir targetDir(QString("%1-Annotations").arg(resultFile));
     if (!targetDir.exists())
         targetDir.mkdir(targetDir.absolutePath());
@@ -91,6 +91,10 @@ int main(int argc, char *argv[])
                 Video mergedCurrentVid = mergeSuccessiveActions(currentVideo);
                 //write video to annotation
                 mergedCurrentVid.writeWithAnnotationFormat(targetDir.absoluteFilePath(QString("%1.xml").arg(mergedCurrentVid.name)));
+            }
+            else
+            {
+                currentVideo.writeWithAnnotationFormat(targetDir.absoluteFilePath(QString("%1.xml").arg(currentVideo.name)));
             }
 
             if (!noActionVideo.actions.keys().isEmpty())

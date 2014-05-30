@@ -46,7 +46,7 @@ void KlaserSchmidThread::run()
              << inputArgs.join(" ").toStdString() << " " << algoArgs.join(" ").toStdString() << endl << endl;
 
         //check if it started normally
-        if (!process->waitForStarted(-1))
+        if (!process->waitForStarted(3000))
         {
             cerr << "Could not start process with following parameters:" << endl
                  << "input: " << inputArgs.join(" ").toStdString() << endl
