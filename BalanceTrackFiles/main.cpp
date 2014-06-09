@@ -9,6 +9,7 @@ using namespace std;
 
 #define TARGET_COUNT 100
 
+
 QMap<int, QString> g_ClassNames;
 QMultiMap<int, QString> actionToTrack; //<actionNr, trackFileName>
 
@@ -28,7 +29,7 @@ int main()
 
     int counters[] = {0,0,0,0,0,0,0,0,0,0,0};
 
-    QDir trackFolder("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/balanced");
+    QDir trackFolder("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/balanced_2");
 
     QStringList filters;
     filters << "*.track";
@@ -54,14 +55,17 @@ int main()
     QList<int> keys = actionToTrack.uniqueKeys();
     foreach (int actionNr, keys)
     {
-        if (counters[actionNr] < TARGET_COUNT) //track count is less than the target count
+        if ((counters[actionNr] < TARGET_COUNT && actionNr != 4) || //FIXME: special treatment for ENTER/LEAVE action
+                (actionNr == 4 && counters[4] < TARGET_COUNT/2)
+                ) //track count is less than the target count
             continue; //dont balance for this action type
 
         QStringList tracksForThisAction = actionToTrack.values(actionNr);
         tracksForThisAction.sort();
 
         int index = 0;
-        while (tracksForThisAction.length() > TARGET_COUNT)
+        int aimedCount = actionNr == 4 ? TARGET_COUNT/2 : TARGET_COUNT; //FIXME: special treatment for ENTER/LEAVE action
+        while (tracksForThisAction.length() > aimedCount)
         {
             cout << "+";
             QString videoActionPrefix = tracksForThisAction[index];

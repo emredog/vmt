@@ -11,10 +11,10 @@ using namespace std;
 int main(/*int argc, char *argv[]*/)
 {
     QString prefix = "featSet09";
-    QFile file("/home/emredog/LIRIS-data/training-validation_features/3rdRun_wNoAction_SlidingWindows_features_params03/AllFeaturesInSingleFile.features");
+    QFile file("/home/emredog/LIRIS-data/training-validation_features/3rdRun_wNoAction_SlidingWindows_features_params01_non-biased/AllFeaturesInSingleFile.features");
 
-    const int totNumberOfFeats = 7458292; // // <--Icosa with noaction&slidingwindows
-    const int dimOfFeats = 56; // Icosa:88    //Dodeca: 56;
+    const int totNumberOfFeats = 7253191; //
+    const int dimOfFeats = 88; // Icosa:88    //Dodeca: 56;
     const int randomFeatSize = 500000; //100000 500000
     const int k = 4000;
     const int nrOfUnwantedFeats = 8;
@@ -27,6 +27,10 @@ int main(/*int argc, char *argv[]*/)
     cv::Mat featMat(randomFeatSize, dimOfFeats-nrOfUnwantedFeats, CV_32FC1);
     cv::Mat labels;
     cv::Mat centers;
+
+
+
+
 
 
 
@@ -110,7 +114,10 @@ int main(/*int argc, char *argv[]*/)
     cout << endl << "Encountered " << errorCounter << " error(s) and " << warninCounter << " warning(s)." << endl;
 
     cout << "Starting kmeans with TermCriteria:Count: " << termCrit_Count << ", TermCriteria:Epsilon: "
-         << termCrit_Epsilon << endl;
+         << termCrit_Epsilon << endl;        
+
+
+
 
     QTime timer;
     timer.start();

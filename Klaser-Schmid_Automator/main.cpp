@@ -20,14 +20,14 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------------------------------------------------------------
     QDir dataDir("/home/emredog/LIRIS-data/training-validation/");
-    QDir trackFileDir("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/balanced");
-    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/3rdRun_wNoAction_SlidingWindows_features_params03");
+    QDir trackFileDir("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/balanced_2");
+    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/3rdRun_wNoAction_SlidingWindows_features_params01_non-biased");
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");    
 
     const int threadCount = 4;
 
     QStringList algoArgs;
-    algoArgs << "-P" << "dodecahedron" //"dodecahedron" icosahedron
+    algoArgs << "-P" << "icosahedron" //"dodecahedron" icosahedron
              << "--loose-track"
              << "--xy-stride" <<  "16"  //"16" "32"
              << "--t-stride" << "16"    //"16" "32"

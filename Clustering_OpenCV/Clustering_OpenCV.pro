@@ -18,5 +18,4 @@ TEMPLATE = app
 SOURCES += main.cpp
 
 LIBS += -lopencv_core \
--lopencv_ml \
-
+-lopencv_ml
