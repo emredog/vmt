@@ -12,7 +12,7 @@ else:
 
 telnet_workers = []
 ssh_workers = []
-nr_local_worker = 1
+nr_local_worker = 4
 
 class GridOption:
 	def __init__(self, dataset_pathname, options):
