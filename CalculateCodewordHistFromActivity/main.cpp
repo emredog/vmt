@@ -16,14 +16,15 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
+    const QString codebookStr = "K-Means_s500K_k4000_C100_e0.1";
     const QDir activityFeaturesDir("/home/emredog/LIRIS-data/test_features/test_withSlidingWindows_params03");
-    const QString codeBookFilePath("/home/emredog/LIRIS-data/CodeBooks/CodeBook_with_featExtraction-withNOACTION-Params_03/K-Means_s500K_k4000_C100_e0.1.out");
-    const QString targetDir("/home/emredog/LIRIS-data/test_BagOfWords/test_BoWs-withNoAction_params03/with_K-Means_s500K_k4000_C100_e0.1/");
+    const QString codeBookFilePath = QString("/home/emredog/LIRIS-data/CodeBooks/CodeBook_3rdRUN_wNOACTION-SLIDINGWINDOWS_03/%1.out").arg(codebookStr);
+    const QString targetDir = QString("/home/emredog/LIRIS-data/test_BagOfWords/3rdRun_params03/with_%1/").arg(codebookStr);
 
     const int ignoreFeatsOnActs = 8; //number of ignored features in the beginning of each line
     const int vocabularySize = 4000;
-    const int featureDim = 48;// <--- dodecahedron //80 <--- icosahedron
-    const int threadCount = 3;
+    const int featureDim = 48;// 48<--- dodecahedron //80 <--- icosahedron
+    const int threadCount = 4;
 
     //read Code book:
     FeatureSet codeBook(codeBookFilePath, featureDim);

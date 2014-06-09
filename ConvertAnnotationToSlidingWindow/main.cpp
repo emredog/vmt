@@ -8,6 +8,7 @@
 
 #define OVERLAP 0.5
 #define FIXED_DURATION 40
+#define BALANCE_DATA 0
 
 using namespace std;
 
@@ -29,7 +30,9 @@ int main(int argc, char *argv[])
     g_ClassNames[9] = "typing";
     g_ClassNames[10] = "telephone";
 
-    QDir annotationRoot("/home/emredog/LIRIS-data/test_tracklets_20140424");
+    int counters[] = {0,0,0,0,0,0,0,0,0,0,0};
+
+    QDir annotationRoot("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS");
     QStringList filters;
     filters << "*.xml";
 
@@ -64,12 +67,21 @@ int main(int argc, char *argv[])
                 if (endSW > bboxes.keys().last()) //if remaining frames are less than duration
                     endSW = bboxes.keys().last();  //set the end as the last frame
 
+                counters[action.activityClass]++;
 
-                QFile trackfile(annotationRoot.absoluteFilePath(QString("%1_%2_(%3-%4).track")
+
+                QString balancedFolder = "";
+                if (BALANCE_DATA)
+                    balancedFolder = "balanced/";
+
+
+                QFile trackfile(annotationRoot.absoluteFilePath(QString("%5%1_%2_%6_(%3-%4).track")
                                                                 .arg(name)
                                                                 .arg(QString::number(action.number))
                                                                 .arg(beginSW)
-                                                                .arg(endSW)));
+                                                                .arg(endSW)
+                                                                .arg(balancedFolder)
+                                                                .arg(g_ClassNames[action.activityClass])));
 
                 if (!trackfile.open(QFile::WriteOnly))
                 {
@@ -105,5 +117,9 @@ int main(int argc, char *argv[])
             }
         }
     }
+
+    cout << endl << endl << "Results:" << endl;
+    for (int i=0; i<11; i++)
+        cout << g_ClassNames[i].toStdString() << ": " << counters[i] << endl;
 
 }

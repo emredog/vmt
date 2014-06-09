@@ -19,18 +19,18 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     //-----------------------------------------------------------------------------------------------------------------
-    QDir dataDir("/home/emredog/LIRIS-data/test/");
-    QDir trackFileDir("/home/emredog/LIRIS-data/test_tracklets_20140424/");
-    QDir targetDir("/home/emredog/LIRIS-data/test_features/test_withSlidingWindows_params03");
+    QDir dataDir("/home/emredog/LIRIS-data/training-validation/");
+    QDir trackFileDir("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/balanced_2");
+    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/3rdRun_wNoAction_SlidingWindows_features_params01_non-biased");
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");    
 
-    const int threadCount = 2;
+    const int threadCount = 4;
 
     QStringList algoArgs;
-    algoArgs << "-P" <<  "dodecahedron"  //"icosahedron"
+    algoArgs << "-P" << "icosahedron" //"dodecahedron" icosahedron
              << "--loose-track"
-             << "--xy-stride" <<  "16"
-             << "--t-stride" << "16"
+             << "--xy-stride" <<  "16"  //"16" "32"
+             << "--t-stride" << "16"    //"16" "32"
              << "--xy-ncells" << "2"
              << "--t-ncells" << "2"
              << "--xy-scale" << "1"

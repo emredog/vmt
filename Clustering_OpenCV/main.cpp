@@ -10,13 +10,16 @@ using namespace std;
 
 int main(/*int argc, char *argv[]*/)
 {
-    const int totNumberOfFeats = 14043723; // <--Icosa with noaction //Dodeca w/o noaction:2420822; //Icosa w/o noaction 9459442;
-    const int dimOfFeats = 56; // Icosa:88    //Dodeca: 56;
-    const int randomFeatSize = 500000; //100000
+    QString prefix = "featSet09";
+    QFile file("/home/emredog/LIRIS-data/training-validation_features/3rdRun_wNoAction_SlidingWindows_features_params01_non-biased/AllFeaturesInSingleFile.features");
+
+    const int totNumberOfFeats = 7253191; //
+    const int dimOfFeats = 88; // Icosa:88    //Dodeca: 56;
+    const int randomFeatSize = 500000; //100000 500000
     const int k = 4000;
     const int nrOfUnwantedFeats = 8;
 
-    const int termCrit_Count = 100;
+    const int termCrit_Count = 100; //100 //50;
     const double termCrit_Epsilon = 0.1;
 
 
@@ -24,6 +27,10 @@ int main(/*int argc, char *argv[]*/)
     cv::Mat featMat(randomFeatSize, dimOfFeats-nrOfUnwantedFeats, CV_32FC1);
     cv::Mat labels;
     cv::Mat centers;
+
+
+
+
 
 
 
@@ -47,7 +54,7 @@ int main(/*int argc, char *argv[]*/)
     // $ cat $files > bigfile
 
 
-    QFile file("/home/emredog/LIRIS-data/training-validation_features/training-validation_withNoAction_features_params03/AllFeaturesInSingleFile.features");
+
     if (!file.open(QIODevice::ReadOnly))
     {
         std::cerr << "CANT OPEN FILE!!!";
@@ -107,7 +114,10 @@ int main(/*int argc, char *argv[]*/)
     cout << endl << "Encountered " << errorCounter << " error(s) and " << warninCounter << " warning(s)." << endl;
 
     cout << "Starting kmeans with TermCriteria:Count: " << termCrit_Count << ", TermCriteria:Epsilon: "
-         << termCrit_Epsilon << endl;
+         << termCrit_Epsilon << endl;        
+
+
+
 
     QTime timer;
     timer.start();
@@ -119,7 +129,8 @@ int main(/*int argc, char *argv[]*/)
     int elapsed = timer.elapsed();
     cout << "K-means completed in " << (double)elapsed/1000.0 << "seconds with compactness: " << compactness << endl;
 
-    QFile output(QString("K-Means_s%1K_k%2_C%3_e%4.out").arg(randomFeatSize/1000).arg(k).arg(termCrit_Count).arg(termCrit_Epsilon));
+    QFile output(QString("%5_K-Means_s%1K_k%2_C%3_e%4.out")
+                 .arg(randomFeatSize/1000).arg(k).arg(termCrit_Count).arg(termCrit_Epsilon).arg(prefix));
     if (!output.open(QIODevice::Append))
         return -1;
 

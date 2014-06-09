@@ -1,14 +1,14 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2014-02-27T14:58:41
+# Project created by QtCreator 2014-05-27T16:35:11
 #
 #-------------------------------------------------
 
-QT       += core
+QT       += core xml
 
 QT       -= gui
 
-TARGET = Clustering_OpenCV
+TARGET = MergeSVMResults
 CONFIG   += console
 CONFIG   -= app_bundle
 
@@ -16,6 +16,3 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp
-
-LIBS += -lopencv_core \
--lopencv_ml
