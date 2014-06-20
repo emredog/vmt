@@ -124,10 +124,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
         counter++;
     }
 
-    //FIXME: modify ConstructVMT to accept QList
-    QVector<cv::SparseMat> tempVec = volumeObjectDifferences.toVector();
-
-    cv::SparseMat vmt = this->ConstructVMT(tempVec.toStdVector());
+    cv::SparseMat vmt = this->ConstructVMT(volumeObjectDifferences);
 
     cv::SparseMat normalized = this->SpatiallyNormalizeVMT(vmt);    
     cv::SparseMat trimmed = this->TrimVmt(normalized);
@@ -514,15 +511,16 @@ int VmtFunctions::MagnitudeOfMotion(const cv::SparseMat& sparseMat)
     return (int)sparseMat.nzcount();
 }
 
-double VmtFunctions::AttenuationConstantForAnAction(const vector<cv::SparseMat>& volumeObjects)
+double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjects)
 {
     double attConst = 0.0;
     int sumOfMagnitutedOfMotion = 0;
     int curMagnituteOfMotion = 0;
 
-    for(vector<cv::SparseMat>::const_iterator it=volumeObjects.begin(); it != volumeObjects.end(); ++it)
+    for(int i=0; i<volumeObjects.length(); i++)
     {
-        curMagnituteOfMotion = MagnitudeOfMotion((*it));
+        cv::SparseMat it = volumeObjects.at(i);
+        curMagnituteOfMotion = MagnitudeOfMotion((it));
         sumOfMagnitutedOfMotion += curMagnituteOfMotion;
     }
     attConst = (double)(I_MAX - 1) / (double)sumOfMagnitutedOfMotion;
@@ -530,9 +528,9 @@ double VmtFunctions::AttenuationConstantForAnAction(const vector<cv::SparseMat>&
     return attConst;
 }
 
-cv::SparseMat VmtFunctions::ConstructVMT(const vector<cv::SparseMat>& volumeObjectDifferences)
+cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjectDifferences)
 {
-    vector<cv::SparseMat> vmtList;
+    QList<cv::SparseMat> vmtList;
     cv::SparseMat curVolObj;
     cv::SparseMat prevVolObj        ;
     //Formulation:
@@ -544,13 +542,14 @@ cv::SparseMat VmtFunctions::ConstructVMT(const vector<cv::SparseMat>& volumeObje
     int curMagnituteOfMotion = 0;
 
     //repeat for all volume differences:
-    for(vector<cv::SparseMat>::const_iterator deltaIt=volumeObjectDifferences.begin(); deltaIt != volumeObjectDifferences.end(); ++deltaIt)
+    for(int i=0; i<volumeObjectDifferences.length(); i++)
     {
-        curVolObj = cv::SparseMat(this->dims, deltaIt->size(), deltaIt->type()); //create a sparse matrix
-        curMagnituteOfMotion = MagnitudeOfMotion(*deltaIt); //calculate magnitute of motion of current volume difference
+        cv::SparseMat deltaIt = volumeObjectDifferences.at(i);
+        curVolObj = cv::SparseMat(this->dims, deltaIt.size(), deltaIt.type()); //create a sparse matrix
+        curMagnituteOfMotion = MagnitudeOfMotion(deltaIt); //calculate magnitute of motion of current volume difference
 
         //for all delta, except the first one:
-        if (deltaIt != volumeObjectDifferences.begin())
+        if (i > 0)
         {
             //take the previous VMT
             prevVolObj = vmtList.back();
@@ -560,7 +559,7 @@ cv::SparseMat VmtFunctions::ConstructVMT(const vector<cv::SparseMat>& volumeObje
             {
                 const cv::SparseMat::Node* n = pit.node();
 
-                if (deltaIt->value<uchar>(n->idx) <= 0) //if difference is zero at that point
+                if (deltaIt.value<uchar>(n->idx) <= 0) //if difference is zero at that point
                 {
                     //and if value is bigger than [attenuation constant times magnitute of motion]
                     uchar newValue = pit.value<uchar>() - (uchar)(constant);
@@ -573,71 +572,73 @@ cv::SparseMat VmtFunctions::ConstructVMT(const vector<cv::SparseMat>& volumeObje
         }
 
         //for all, set points of current VMT to I_MAX where difference is non-zero:
-        for(cv::SparseMatConstIterator dit = deltaIt->begin(); dit != deltaIt->end(); ++dit)
+        for(cv::SparseMatConstIterator dit = deltaIt.begin(); dit != deltaIt.end(); ++dit)
         {
             const cv::SparseMat::Node* n = dit.node();
             curVolObj.ref<uchar>(n->idx) = I_MAX;
         }
         vmtList.push_back(curVolObj);
+        if (vmtList.length() >= 2) vmtList.pop_front();
+        int a = vmtList.length();
     }
 
     return vmtList.back();
 }
 
-vector<cv::SparseMat> VmtFunctions::ConstructVMTs(const vector<cv::SparseMat>& volumeObjectDifferences)
-{
-    vector<cv::SparseMat> vmtList;
-    cv::SparseMat curVmt;
-    cv::SparseMat prevVmt;
-    //Formulation:
-    //VMT(x, y, z, t) = 255 if volumeObjectDifference(x, y, z, t) == 1
-    //				  = max(0, VMT(x, y, z, t-1)-(attenuationConstant)*(magnitudeOfMotion(t)), otherwise
+//vector<cv::SparseMat> VmtFunctions::ConstructVMTs(const vector<cv::SparseMat>& volumeObjectDifferences)
+//{
+//    vector<cv::SparseMat> vmtList;
+//    cv::SparseMat curVmt;
+//    cv::SparseMat prevVmt;
+//    //Formulation:
+//    //VMT(x, y, z, t) = 255 if volumeObjectDifference(x, y, z, t) == 1
+//    //				  = max(0, VMT(x, y, z, t-1)-(attenuationConstant)*(magnitudeOfMotion(t)), otherwise
 
-    //calculate attenuation constant for the set:
-    double attConst = AttenuationConstantForAnAction(volumeObjectDifferences);
-    int curMagnituteOfMotion = 0;
+//    //calculate attenuation constant for the set:
+//    double attConst = AttenuationConstantForAnAction(volumeObjectDifferences);
+//    int curMagnituteOfMotion = 0;
 
-    //repeat for all volume differences:
-    for(vector<cv::SparseMat>::const_iterator deltaIt=volumeObjectDifferences.begin(); deltaIt != volumeObjectDifferences.end(); ++deltaIt)
-    {
-        curVmt = cv::SparseMat(this->dims, deltaIt->size(), deltaIt->type()); //create a sparse matrix
-        curMagnituteOfMotion = MagnitudeOfMotion(*deltaIt); //calculate magnitute of motion of current volume difference
+//    //repeat for all volume differences:
+//    for(vector<cv::SparseMat>::const_iterator deltaIt=volumeObjectDifferences.begin(); deltaIt != volumeObjectDifferences.end(); ++deltaIt)
+//    {
+//        curVmt = cv::SparseMat(this->dims, deltaIt->size(), deltaIt->type()); //create a sparse matrix
+//        curMagnituteOfMotion = MagnitudeOfMotion(*deltaIt); //calculate magnitute of motion of current volume difference
 
-        //for all delta, except the first one:
-        if (deltaIt != volumeObjectDifferences.begin())
-        {
-            //take the previous VMT
-            prevVmt = vmtList.back();
-            double constant = attConst*curMagnituteOfMotion;
-            //for all nonzero values of previous VMT
-            for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
-            {
-                const cv::SparseMat::Node* n = pit.node();
+//        //for all delta, except the first one:
+//        if (deltaIt != volumeObjectDifferences.begin())
+//        {
+//            //take the previous VMT
+//            prevVmt = vmtList.back();
+//            double constant = attConst*curMagnituteOfMotion;
+//            //for all nonzero values of previous VMT
+//            for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
+//            {
+//                const cv::SparseMat::Node* n = pit.node();
 
-                if (deltaIt->value<uchar>(n->idx) <= 0) //if difference is zero at that point
-                {
-                    //and if value is bigger than attenuation constant times magnitute of motion
-                    uchar newValue = pit.value<uchar>() - (uchar)(constant);
-                    if (newValue > 0)
-                    {
-                        curVmt.ref<uchar>(n->idx) = newValue;
-                    }
-                }
-            }
-        }
+//                if (deltaIt->value<uchar>(n->idx) <= 0) //if difference is zero at that point
+//                {
+//                    //and if value is bigger than attenuation constant times magnitute of motion
+//                    uchar newValue = pit.value<uchar>() - (uchar)(constant);
+//                    if (newValue > 0)
+//                    {
+//                        curVmt.ref<uchar>(n->idx) = newValue;
+//                    }
+//                }
+//            }
+//        }
 
-        //for all, set points of current VMT to I_MAX where difference is non-zero:
-        for(cv::SparseMatConstIterator dit = deltaIt->begin(); dit != deltaIt->end(); ++dit)
-        {
-            const cv::SparseMat::Node* n = dit.node();
-            curVmt.ref<uchar>(n->idx) = I_MAX;
-        }
-        cout << "VMT constructed. nonzero: " << (int)curVmt.nzcount() << endl;
-        vmtList.push_back(curVmt);
-    }
+//        //for all, set points of current VMT to I_MAX where difference is non-zero:
+//        for(cv::SparseMatConstIterator dit = deltaIt->begin(); dit != deltaIt->end(); ++dit)
+//        {
+//            const cv::SparseMat::Node* n = dit.node();
+//            curVmt.ref<uchar>(n->idx) = I_MAX;
+//        }
+//        cout << "VMT constructed. nonzero: " << (int)curVmt.nzcount() << endl;
+//        vmtList.push_back(curVmt);
+//    }
 
-    return vmtList;
-}
+//    return vmtList;
+//}
 
 
 //unused methods------------------------------------------------------------------------------------------------

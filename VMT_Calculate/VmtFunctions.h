@@ -91,11 +91,11 @@ protected:
     vector<cv::SparseMat> CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects);
     vector<cv::SparseMat> CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects, int depthTolerance);
 
-    double AttenuationConstantForAnAction(const vector<cv::SparseMat>& volumeObjects);
+    double AttenuationConstantForAnAction(const QList<cv::SparseMat> &volumeObjects);
     int MagnitudeOfMotion(const cv::SparseMat& sparseMat);
 
-    cv::SparseMat ConstructVMT(const vector<cv::SparseMat>& volumeObjectDifferences);
-    vector<cv::SparseMat> ConstructVMTs(const vector<cv::SparseMat>& volumeObjectDifferences);
+    cv::SparseMat ConstructVMT(const QList<cv::SparseMat>& volumeObjectDifferences);
+//    vector<cv::SparseMat> ConstructVMTs(const vector<cv::SparseMat>& volumeObjectDifferences);
 
     cv::SparseMat CalculateD_Old(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject);
     cv::SparseMat CalculateD_New(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject);
