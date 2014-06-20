@@ -13,9 +13,10 @@
 //#define PREDEFINED_THRESHOLD 150 //156
 #define X_SIZE 640
 #define Y_SIZE 480
-#define Z_SIZE 2047
+#define Z_SIZE 4000
 #define MIN_Z 0
 #define MAX_Z Z_SIZE
+#define NORMALIZATION_VAL 500
 
 //to calculate volume object differences:
 #define DEPTH_TOLERANCE 30
@@ -47,6 +48,20 @@ private:
 			return 1.0 / (raw_depth * -0.0030711016 + 3.3309495161);
 		return 0;
 	}
+
+    struct VmtInfo
+    {
+        int numberOfPoints;
+        int sizeInX;
+        int sizeInY;
+        int sizeInZ;
+        int maxX;
+        int maxY;
+        int maxZ;
+        int minX;
+        int minY;
+        int minZ;
+    };
 
 public:
 	//constructor for 3D VMTs
@@ -96,6 +111,11 @@ protected:
 
     cv::SparseMat RotateVMT(const cv::SparseMat& vmt, const cv::Matx33d& rotationMatrix);
     cv::Mat ProjectVMTOntoXY(const cv::SparseMat& vmt);
+
+    //Get basic info of a 3d sparse mat
+    VmtInfo GetVmtInfo(const cv::SparseMat &vmt) const;
+    //shrink & trim the 3d sparse mat to get rid of unnecessarily large size
+    cv::SparseMat TrimVmt(const cv::SparseMat &vmt);
 
 };
 

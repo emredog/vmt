@@ -1,6 +1,7 @@
 #include "VmtFunctions.h"
 #include "HelperFunctions.h"
 #include "boundingbox.h"
+#include "PointCloudFunctions.h"
 
 #include <stdio.h>
 
@@ -16,7 +17,7 @@
 
 VmtFunctions::VmtFunctions(int xSize, int ySize)
 {
-    this->permittedMinZ = MIN_Z;
+    this->permittedMinZ = (MIN_Z == 0)? MIN_Z + 1 : MIN_Z; //--> to make it none-zero
     this->permittedMaxZ = MAX_Z;
 
     this->matrixSize = new int[this->dims];
@@ -75,6 +76,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
     QList<cv::SparseMat> volumeObjects;
     QList<cv::SparseMat> volumeObjectDifferences;
 
+    int counter = 1; //FIXME: delete this
     //calculate volume object for each depth frame
     foreach(BoundingBox bb, bboxSequence)
     {
@@ -93,7 +95,14 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
             return cv::SparseMat();
         }
 
+
+        //cut the bounding box if it's outside of the frame // FIXME--> this shouldn't happen?!
+        if (bb.x + bb.width >= depthImg.cols) bb.width = depthImg.cols - bb.x;
+        if (bb.y + bb.height >= depthImg.rows) bb.height = depthImg.rows - bb.y;
+
+
         cv::Rect roi(bb.x, bb.y, bb.width, bb.height);
+
         cv::Mat croppedDepthImg = depthImg(roi);
 
         cv::SparseMat currentSparseVolumeObj = this->GenerateSparseVolumeObject(croppedDepthImg, downsamplingRate);
@@ -105,18 +114,31 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
             cv::SparseMat difference = this->SubtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj, DEPTH_TOLERANCE, X_TOLERANCE, Y_TOLERANCE);
 
             volumeObjectDifferences.append(difference);
+            //FIXME: delete this
+            QString filename2 = QString("/home/emredog/Documents/output/volObjDiff-%1.pcd").arg(counter);
+            //PointCloudFunctions::saveVmtAsCloud(difference, filename2.toStdString());
         }
 
         volumeObjects.append(currentSparseVolumeObj);
+
+
+        //FIXME: delete this
+        QString filename = QString("/home/emredog/Documents/output/volObj-%1.pcd").arg(counter);
+        //PointCloudFunctions::saveVmtAsCloud(currentSparseVolumeObj, filename.toStdString());
+
+        counter++;
     }
 
-    int a = volumeObjects.length();
-    a = volumeObjectDifferences.length();
     //FIXME: modify ConstructVMT to accept QList
     QVector<cv::SparseMat> tempVec = volumeObjectDifferences.toVector();
 
     cv::SparseMat vmt = this->ConstructVMT(tempVec.toStdVector());
+    PointCloudFunctions::saveVmtAsCloud(vmt, "/home/emredog/Documents/output/vmt500.pcd");
+    VmtInfo vmtInfo = GetVmtInfo(vmt);
 
+    cv::SparseMat trimmed = this->TrimVmt(vmt);
+    PointCloudFunctions::saveVmtAsCloud(trimmed, "/home/emredog/Documents/output/vmt_trimmed500.pcd");
+    VmtInfo vmtInfo2 = GetVmtInfo(trimmed);
 
     return cv::SparseMat();
 }
@@ -139,6 +161,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
     unsigned short depth;
     unsigned int depthInMillimeters;
 
+
     //NOTE: because of memory restrictions, if downsamplingRate == 2, x and y are incremented by 2 (~downsampling by 1/4)
     for (int y = 0; y < image.rows-1; y+=downsamplingRate)
     {
@@ -156,7 +179,16 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
             {
                 //FIXME: verify this translation!!
                 depthInMillimeters -= this->permittedMinZ; //translate all points to fit between min-max permitted range
-                sparse_mat.ref<uchar>(y, x, depthInMillimeters) = I_MAX;
+                //std::cout << "\tTranslated: " << depthInMillimeters << std::endl;
+
+                //try normalizing the depth value between [0, NORMALIZATION]:
+                unsigned int normalizedDepth = ((double)(NORMALIZATION_VAL)/(double)(this->permittedMaxZ - this->permittedMinZ))*depthInMillimeters;
+
+
+
+
+//                sparse_mat.ref<uchar>(y, x, depthInMillimeters) = I_MAX;
+                sparse_mat.ref<uchar>(y, x, normalizedDepth) = I_MAX;
             }
         }
     }
@@ -517,8 +549,8 @@ double VmtFunctions::AttenuationConstantForAnAction(const vector<cv::SparseMat>&
 cv::SparseMat VmtFunctions::ConstructVMT(const vector<cv::SparseMat>& volumeObjectDifferences)
 {
     vector<cv::SparseMat> vmtList;
-    cv::SparseMat curVmt;
-    cv::SparseMat prevVmt;
+    cv::SparseMat curVolObj;
+    cv::SparseMat prevVolObj        ;
     //Formulation:
     //VMT(x, y, z, t) = 255 if volumeObjectDifference(x, y, z, t) == 1
     //				  = max(0, VMT(x, y, z, t-1)-(attenuationConstant)*(magnitudeOfMotion(t)), otherwise
@@ -530,17 +562,17 @@ cv::SparseMat VmtFunctions::ConstructVMT(const vector<cv::SparseMat>& volumeObje
     //repeat for all volume differences:
     for(vector<cv::SparseMat>::const_iterator deltaIt=volumeObjectDifferences.begin(); deltaIt != volumeObjectDifferences.end(); ++deltaIt)
     {
-        curVmt = cv::SparseMat(this->dims, deltaIt->size(), deltaIt->type()); //create a sparse matrix
+        curVolObj = cv::SparseMat(this->dims, deltaIt->size(), deltaIt->type()); //create a sparse matrix
         curMagnituteOfMotion = MagnitudeOfMotion(*deltaIt); //calculate magnitute of motion of current volume difference
 
         //for all delta, except the first one:
         if (deltaIt != volumeObjectDifferences.begin())
         {
             //take the previous VMT
-            prevVmt = vmtList.back();
+            prevVolObj = vmtList.back();
             double constant = attConst*curMagnituteOfMotion;
             //for all nonzero values of previous VMT
-            for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
+            for(cv::SparseMatConstIterator pit = prevVolObj.begin(); pit != prevVolObj.end(); ++pit)
             {
                 const cv::SparseMat::Node* n = pit.node();
 
@@ -550,7 +582,7 @@ cv::SparseMat VmtFunctions::ConstructVMT(const vector<cv::SparseMat>& volumeObje
                     uchar newValue = pit.value<uchar>() - (uchar)(constant);
                     if (newValue > 0)
                     {
-                        curVmt.ref<uchar>(n->idx) = newValue;
+                        curVolObj.ref<uchar>(n->idx) = newValue;
                     }
                 }
             }
@@ -560,9 +592,9 @@ cv::SparseMat VmtFunctions::ConstructVMT(const vector<cv::SparseMat>& volumeObje
         for(cv::SparseMatConstIterator dit = deltaIt->begin(); dit != deltaIt->end(); ++dit)
         {
             const cv::SparseMat::Node* n = dit.node();
-            curVmt.ref<uchar>(n->idx) = I_MAX;
+            curVolObj.ref<uchar>(n->idx) = I_MAX;
         }
-        vmtList.push_back(curVmt);
+        vmtList.push_back(curVolObj);
     }
 
     return vmtList.back();
@@ -948,4 +980,75 @@ void VmtFunctions::Save3DMatrix(cv::Mat mat, QString filePath)
     }
     myfile.close();
 }
+
+VmtFunctions::VmtInfo VmtFunctions::GetVmtInfo(const cv::SparseMat &vmt) const
+{
+    VmtInfo info;
+    //Get size of vmt
+    const int* sizes = vmt.size();
+    //FIXME: check if it matches
+    info.sizeInX = sizes[X];
+    info.sizeInY = sizes[Y];
+    info.sizeInZ = sizes[Z];
+
+    //Get number of points
+    info.numberOfPoints = (int)vmt.nzcount();
+
+    int minX = INT_MAX, minY = INT_MAX, minZ = INT_MAX,
+        maxX = INT_MIN, maxY = INT_MIN, maxZ = INT_MIN;
+
+    //Get boundaries
+    for (cv::SparseMatConstIterator it=vmt.begin(); it != vmt.end(); ++it)
+    {
+        const cv::SparseMat::Node* n = it.node();
+        int x = n->idx[0];
+        int y = n->idx[1];
+        int z = n->idx[2];
+
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+        if (z > maxZ) maxZ = z;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (z < minZ) minZ = z;
+    }
+
+    //FIXME: chech if itmatches
+    info.maxX = maxX;
+    info.maxY = maxY;
+    info.maxZ = maxZ;
+    info.minX = minX;
+    info.minY = minY;
+    info.minZ = minZ;
+
+    return info;
+}
+
+cv::SparseMat VmtFunctions::TrimVmt(const cv::SparseMat &vmt)
+{
+    VmtInfo info = GetVmtInfo(vmt);
+
+    int sizes[3];
+    sizes[X] = info.maxX - info.minX;
+    sizes[Y] = info.maxY - info.minY;
+    sizes[Z] = info.maxZ - info.minZ;
+
+    cv::SparseMat trimmed(vmt.dims(), sizes, vmt.type());
+
+    //parse & copy points to new locations
+    for (cv::SparseMatConstIterator it=vmt.begin(); it != vmt.end(); ++it)
+    {
+        const cv::SparseMat::Node* n = it.node();
+
+        //FIXME: check if indices match
+        int newX = n->idx[0] - info.minX;
+        int newY = n->idx[1] - info.minY;
+        int newZ = n->idx[2] - info.minZ;
+
+        trimmed.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n);
+    }
+
+    return trimmed;
+}
+
 

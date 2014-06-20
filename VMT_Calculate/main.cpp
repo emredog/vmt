@@ -6,8 +6,8 @@ int main()
 {
 
 
-    QString videoPath = "/home/emredog/LIRIS-data/training-validation/vid0002";
-    QString trackFile = "/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/vid0002_1_discussion_(1-41).track";
+    QString videoPath = "/home/emredog/LIRIS-data/training-validation/vid0025";
+    QString trackFile = "/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/vid0025_1_unlock-enter_(110-150).track";
     int downsamplingRate = 1; // --> no downsampling
 
 
