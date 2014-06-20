@@ -37,8 +37,8 @@ private:
 
 	enum DimIndex
 	{
-		Y = 0,
-		X = 1,
+        Y = 1,
+        X = 0,
 		Z = 2
 	};
 
@@ -116,6 +116,8 @@ protected:
     VmtInfo GetVmtInfo(const cv::SparseMat &vmt) const;
     //shrink & trim the 3d sparse mat to get rid of unnecessarily large size
     cv::SparseMat TrimVmt(const cv::SparseMat &vmt);
+
+    cv::SparseMat SpatiallyNormalizeVMT(cv::SparseMat vmt);
 
 };
 

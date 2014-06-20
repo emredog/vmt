@@ -22,8 +22,8 @@ bool PointCloudFunctions::saveVmtAsCloud(const cv::SparseMat &vmt, std::string f
 		const cv::SparseMat::Node* n = it.node();
 		uchar val = it.value<uchar>();
 
-		cloud.points[i].x = n->idx[1];
-		cloud.points[i].y = n->idx[0];
+        cloud.points[i].x = n->idx[0];
+        cloud.points[i].y = n->idx[1]; //FIXME 0? 1?
 		cloud.points[i].z = n->idx[2];
 		cloud.points[i].intensity = static_cast<float>(val);
 
@@ -46,8 +46,8 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::convertToPointCloud(const cv::Sp
 		const cv::SparseMat::Node* n = it.node();
 		uchar val = it.value<uchar>();
 
-		cloud->points[i].x = n->idx[1];
-		cloud->points[i].y = n->idx[0];
+        cloud->points[i].x = n->idx[0];
+        cloud->points[i].y = n->idx[1]; //FIXME 0? 1?
 		cloud->points[i].z = n->idx[2];
 		cloud->points[i].intensity = static_cast<float>(val);
 

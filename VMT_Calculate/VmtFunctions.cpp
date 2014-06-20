@@ -105,26 +105,21 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
 
         cv::Mat croppedDepthImg = depthImg(roi);
 
+        depthImg.release();
+
         cv::SparseMat currentSparseVolumeObj = this->GenerateSparseVolumeObject(croppedDepthImg, downsamplingRate);
 
+        croppedDepthImg.release();
 
         if (volumeObjects.length() >= 1) //there are at least 2 volume objects
         {
             cv::SparseMat prevSparseVolumeObj = volumeObjects.last();
             cv::SparseMat difference = this->SubtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj, DEPTH_TOLERANCE, X_TOLERANCE, Y_TOLERANCE);
 
-            volumeObjectDifferences.append(difference);
-            //FIXME: delete this
-            QString filename2 = QString("/home/emredog/Documents/output/volObjDiff-%1.pcd").arg(counter);
-            //PointCloudFunctions::saveVmtAsCloud(difference, filename2.toStdString());
+            volumeObjectDifferences.append(difference);            
         }
 
         volumeObjects.append(currentSparseVolumeObj);
-
-
-        //FIXME: delete this
-        QString filename = QString("/home/emredog/Documents/output/volObj-%1.pcd").arg(counter);
-        //PointCloudFunctions::saveVmtAsCloud(currentSparseVolumeObj, filename.toStdString());
 
         counter++;
     }
@@ -133,14 +128,13 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
     QVector<cv::SparseMat> tempVec = volumeObjectDifferences.toVector();
 
     cv::SparseMat vmt = this->ConstructVMT(tempVec.toStdVector());
-    PointCloudFunctions::saveVmtAsCloud(vmt, "/home/emredog/Documents/output/vmt500.pcd");
-    VmtInfo vmtInfo = GetVmtInfo(vmt);
 
-    cv::SparseMat trimmed = this->TrimVmt(vmt);
-    PointCloudFunctions::saveVmtAsCloud(trimmed, "/home/emredog/Documents/output/vmt_trimmed500.pcd");
-    VmtInfo vmtInfo2 = GetVmtInfo(trimmed);
+    cv::SparseMat normalized = this->SpatiallyNormalizeVMT(vmt);    
+    cv::SparseMat trimmed = this->TrimVmt(normalized);
+    vmt.release();
+    normalized.release();
 
-    return cv::SparseMat();
+    return trimmed;
 }
 
 cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsamplingRate)
@@ -176,19 +170,9 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
             depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
 
             if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
-            {
-                //FIXME: verify this translation!!
+            {                
                 depthInMillimeters -= this->permittedMinZ; //translate all points to fit between min-max permitted range
-                //std::cout << "\tTranslated: " << depthInMillimeters << std::endl;
-
-                //try normalizing the depth value between [0, NORMALIZATION]:
-                unsigned int normalizedDepth = ((double)(NORMALIZATION_VAL)/(double)(this->permittedMaxZ - this->permittedMinZ))*depthInMillimeters;
-
-
-
-
-//                sparse_mat.ref<uchar>(y, x, depthInMillimeters) = I_MAX;
-                sparse_mat.ref<uchar>(y, x, normalizedDepth) = I_MAX;
+                sparse_mat.ref<uchar>(x, image.rows-y, depthInMillimeters) = I_MAX;
             }
         }
     }
@@ -905,6 +889,7 @@ void VmtFunctions::Print3DSparseMatrix(cv::SparseMat sparse_mat)
         {
             for (int k=0; k<this->matrixSize[Z] ; ++k)
             {
+                //FIXME: it isnt the same indices??!
                 idx[0] = i; idx[1] = j; idx[2] = k;
                 uchar value = denseMat.at<uchar>(idx);
                 if (value > 0)
@@ -937,7 +922,8 @@ void VmtFunctions::Save3DSparseMatrix(cv::SparseMat sparse_mat, QString filePath
         {
             for (int k=0; k<this->matrixSize[Z] ; ++k)
             {
-                idx[0] = i; idx[1] = j; idx[2] = k;
+                //FIXME: it isnt the same indices??!
+                idx[0] = j; idx[1] = i; idx[2] = k;
                 uchar value = denseMat.at<uchar>(idx);
                 if (value > 0)
                 {
@@ -969,6 +955,7 @@ void VmtFunctions::Save3DMatrix(cv::Mat mat, QString filePath)
         {
             for (int k=0; k<this->matrixSize[Z] ; ++k)
             {
+                //FIXME check the indices
                 idx[0] = i; idx[1] = j; idx[2] = k;
                 uchar value = mat.at<uchar>(idx);
                 if (value > 0)
@@ -1049,6 +1036,26 @@ cv::SparseMat VmtFunctions::TrimVmt(const cv::SparseMat &vmt)
     }
 
     return trimmed;
+}
+
+cv::SparseMat VmtFunctions::SpatiallyNormalizeVMT(cv::SparseMat vmt)
+{
+    cv::SparseMat normalizedVmt(vmt.dims(), vmt.size(), vmt.type());
+
+    //parse & copy points to new locations
+    for (cv::SparseMatConstIterator it=vmt.begin(); it != vmt.end(); ++it)
+    {
+        const cv::SparseMat::Node* n = it.node();
+
+        //FIXME: check if indices match
+        int newX = n->idx[0];
+        int newY = n->idx[1];
+        int newZ = ((double)(NORMALIZATION_VAL)/(double)(this->permittedMaxZ - this->permittedMinZ))*n->idx[2];
+
+        normalizedVmt.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n);
+    }
+
+    return normalizedVmt;
 }
 
 
