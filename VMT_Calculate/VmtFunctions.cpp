@@ -17,7 +17,7 @@
 
 VmtFunctions::VmtFunctions(int xSize, int ySize)
 {
-    this->permittedMinZ = (MIN_Z == 0)? MIN_Z + 1 : MIN_Z; //--> to make it none-zero
+    this->permittedMinZ = MIN_Z;
     this->permittedMaxZ = MAX_Z;
 
     this->matrixSize = new int[this->dims];
@@ -30,6 +30,9 @@ VmtFunctions::VmtFunctions(int xSize, int ySize)
 
 
     this->matrixSize[Z] = this->permittedMaxZ - this->permittedMinZ;
+
+    cout << "VMT core constructed with X: [0, " << xSize << "]\tY: [0, " << ySize << "]\tZ: [" << this->permittedMinZ << ", " << this->permittedMaxZ << "]\n";
+    cout << "Normalization interval for depth range: [0, " << NORMALIZATION_INTERVAL << "]\n";
 }
 
 
@@ -91,7 +94,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
         //Check for invalid input
         if(! depthImg.data )
         {
-            std::cout <<  "Could not open or find the image: " << videoDir.absoluteFilePath(fileName).toStdString() << endl ;
+            cout <<  "Could not open or find the image: " << videoDir.absoluteFilePath(fileName).toStdString() << endl ;
             return cv::SparseMat();
         }
 
@@ -124,9 +127,13 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
         counter++;
     }
 
+    //construct the VMT based on volume object differences over the track file
     cv::SparseMat vmt = this->ConstructVMT(volumeObjectDifferences);
 
-    cv::SparseMat normalized = this->SpatiallyNormalizeVMT(vmt);    
+    //normalize the depth dimension and scale it between [0, NORMALIZATION_INTERVAL]
+    cv::SparseMat normalized = this->SpatiallyNormalizeVMT(vmt);
+
+    //trim the sparse matrix, by cutting out the parts that contain no points
     cv::SparseMat trimmed = this->TrimVmt(normalized);
     vmt.release();
     normalized.release();
@@ -167,10 +174,11 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
             depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
 
             if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
-            {                
-                depthInMillimeters -= this->permittedMinZ; //translate all points to fit between min-max permitted range
+            {                                
                 sparse_mat.ref<uchar>(x, image.rows-y, depthInMillimeters) = I_MAX;
             }
+//            else
+//                cout << "Point dropped on Z: " << depthInMillimeters << endl;
         }
     }
 
@@ -191,7 +199,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(QString imagePath, int do
     //Check for invalid input
     if(! image.data )
     {
-        std::cout <<  "Could not open or find the image: " << imagePath.toStdString() << endl ;
+        cout <<  "Could not open or find the image: " << imagePath.toStdString() << endl ;
         return emptySparseMat;
     }
 
@@ -292,7 +300,7 @@ vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const
     vector<cv::SparseMat> volumeObjectDifferences;
     short counter = 2;
 
-    for (std::vector<cv::SparseMat>::const_iterator it = volumeObjects.begin() ; it != volumeObjects.end(); ++it)
+    for (vector<cv::SparseMat>::const_iterator it = volumeObjects.begin() ; it != volumeObjects.end(); ++it)
     {
         if (it == volumeObjects.begin()) //skip the first one
         {
@@ -359,28 +367,30 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     {
         const cv::SparseMat::Node* n = op2It.node();
         uchar val2 = op2It.value<uchar>();
-        uchar val1 = 0;
+        uchar val1 = operand1.value<uchar>(n->idx[0], n->idx[1], n->idx[2]);                
 
-        //search for the neighborhood of z (to handle noise from kinect)
-        for (int offsetZ = -depthTolerance; offsetZ<=depthTolerance; offsetZ++)
+        if (val1 <= 0) //if no value was found on that location:
         {
-            for (int offsetX = -xTolerance; offsetX<=xTolerance; offsetX++) //search for the neighborhood of x
+            //search for the neighborhood of z (to handle noise from kinect)
+            for (int offsetZ = -depthTolerance; offsetZ<=depthTolerance; offsetZ++)
             {
-                for (int offsetY = -yTolerance; offsetY<=yTolerance; offsetY++) //search for the neighborhood of y
+                for (int offsetX = -xTolerance; offsetX<=xTolerance; offsetX++) //search for the neighborhood of x
                 {
-                    //WARNING: do not replace following idx[0-1-2] with idx[X-Y-Z]
-                    uchar temp = operand1.value<uchar>(n->idx[0]+offsetX, n->idx[1]+offsetY, n->idx[2]+offsetZ);
-                    if (temp > 0)
+                    for (int offsetY = -yTolerance; offsetY<=yTolerance; offsetY++) //search for the neighborhood of y
                     {
-                        val1 = temp;
-                        //cout << "Found one in the neighborhood! (1)" << endl;
-                        break;
+                        uchar temp = operand1.value<uchar>(n->idx[0]+offsetX, n->idx[1]+offsetY, n->idx[2]+offsetZ); //if the element did not exist, the methods return 0.
+                        if (temp > 0)
+                        {
+                            val1 = temp;
+//                            cout << "Found one in the neighborhood! (1)" << endl;
+                            break;
+                        }
                     }
                 }
             }
         }
 
-        if (val1 <= 0)
+        if (val1 <= 0) //if still no value (after the neighborhood search)
             difference.ref<uchar>(n->idx) = val2;
     }
     //go through nonzero values of operand1, and set diff to 1 if operand2(x,y,z)==0
@@ -388,28 +398,31 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     {
         const cv::SparseMat::Node* n = op1It.node();
         uchar val1 = op1It.value<uchar>();
-        uchar val2 = 0;
+        uchar val2 = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]);
 
-        //search for the neighborhood of z (to handle noise from kinect)
-        for (int offset = -depthTolerance; offset<=depthTolerance; offset++)
+        if (val2 <= 0) //if no value was found on that location:
         {
-            for (int offsetX = -xTolerance; offsetX<=xTolerance; offsetX++) //search for the neighborhood of x
+            //search for the neighborhood of z (to handle noise from kinect)
+            for (int offset = -depthTolerance; offset<=depthTolerance; offset++)
             {
-                for (int offsetY = -yTolerance; offsetY<=yTolerance; offsetY++) //search for the neighborhood of y
+                for (int offsetX = -xTolerance; offsetX<=xTolerance; offsetX++) //search for the neighborhood of x
                 {
-                    //WARNING: do not replace following idx[0-1-2] with idx[X-Y-Z]
-                    uchar temp = operand2.value<uchar>(n->idx[0]+offsetX, n->idx[1]+offsetY, n->idx[2]+offset);
-                    if (temp > 0)
+                    for (int offsetY = -yTolerance; offsetY<=yTolerance; offsetY++) //search for the neighborhood of y
                     {
-                        val2 = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
-                        //cout << "Found one in the neighborhood! (2)" << endl;
-                        break;
+                        //WARNING: do not replace following idx[0-1-2] with idx[X-Y-Z]
+                        uchar temp = operand2.value<uchar>(n->idx[0]+offsetX, n->idx[1]+offsetY, n->idx[2]+offset);
+                        if (temp > 0)
+                        {
+                            val2 = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
+//                            cout << "Found one in the neighborhood! (2)" << endl;
+                            break;
+                        }
                     }
                 }
             }
         }
 
-        if (val2 <= 0)
+        if (val2 <= 0) //if still no value (after the neighborhood search)
             difference.ref<uchar>(n->idx) = val1;
     }
 
@@ -425,7 +438,7 @@ vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const
     vector<cv::SparseMat> volumeObjectDifferences;
     short counter = 2;
 
-    for (std::vector<cv::SparseMat>::const_iterator it = volumeObjects.begin() ; it != volumeObjects.end(); ++it)
+    for (vector<cv::SparseMat>::const_iterator it = volumeObjects.begin() ; it != volumeObjects.end(); ++it)
     {
         if (it == volumeObjects.begin()) //skip the first one
         {
@@ -511,51 +524,80 @@ int VmtFunctions::MagnitudeOfMotion(const cv::SparseMat& sparseMat)
     return (int)sparseMat.nzcount();
 }
 
-double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjects)
+double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
 {
     double attConst = 0.0;
     int sumOfMagnitutedOfMotion = 0;
     int curMagnituteOfMotion = 0;
 
-    for(int i=0; i<volumeObjects.length(); i++)
-    {
-        cv::SparseMat it = volumeObjects.at(i);
-        curMagnituteOfMotion = MagnitudeOfMotion((it));
-        sumOfMagnitutedOfMotion += curMagnituteOfMotion;
-    }
-    attConst = (double)(I_MAX - 1) / (double)sumOfMagnitutedOfMotion;
+    double curAttConst = 0.0;
+    double sumOfAttConst = 0.0;
 
-    return attConst;
+    int numberOfDiffs = volumeObjectsDifferences.length();
+
+    for(int i=0; i< numberOfDiffs; i++)
+    {
+        cv::SparseMat it = volumeObjectsDifferences.at(i); //i'th difference = difference between i-1'th and i'th volume objects
+        curMagnituteOfMotion = MagnitudeOfMotion((it)); // magnitude of motion for this volume obj difference
+        sumOfMagnitutedOfMotion += curMagnituteOfMotion; //sum, so far
+
+        //for each difference object, attenuating constant is calculated over the sum of previous magnitudes of motion
+        curAttConst = (double)(I_MAX - 1) / (double)sumOfMagnitutedOfMotion;
+        sumOfAttConst += curAttConst;
+    }
+
+    attConst = sumOfAttConst / (double)numberOfDiffs; //attenating constant for this interval is the average of attenuating constants over this interval
+
+    return attConst; //FIXME!!!!!!!
 }
+
+//double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
+//{
+//    double attConst = 0.0;
+//    int sumOfMagnitutedOfMotion = 0;
+//    int curMagnituteOfMotion = 0;
+
+//    for(int i=0; i<volumeObjectsDifferences.length(); i++)
+//    {
+//        cv::SparseMat it = volumeObjectsDifferences.at(i); //i'th difference = difference between i-1'th and i'th volume objects
+//        curMagnituteOfMotion = MagnitudeOfMotion((it));
+//        sumOfMagnitutedOfMotion += curMagnituteOfMotion;
+//    }
+//    attConst = (double)(I_MAX - 1) / (double)sumOfMagnitutedOfMotion;
+
+//    return attConst;
+//}
 
 cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjectDifferences)
 {
     QList<cv::SparseMat> vmtList;
-    cv::SparseMat curVolObj;
-    cv::SparseMat prevVolObj        ;
+    cv::SparseMat curVmt;
+    cv::SparseMat prevVmt;
     //Formulation:
-    //VMT(x, y, z, t) = 255 if volumeObjectDifference(x, y, z, t) == 1
-    //				  = max(0, VMT(x, y, z, t-1)-(attenuationConstant)*(magnitudeOfMotion(t)), otherwise
+    //VMT(x, y, z, t) = 255 if volumeObjectDifference(x, y, z, t) == 1 (--> it's a recent point, start it with high intensity)
+    //				  = max(0, VMT(x, y, z, t-1)-(attenuationConstant)*(magnitudeOfMotion(t)), otherwise (it's an old point, decrease its intensity, or set it to 0)
 
     //calculate attenuation constant for the set:
     double attConst = AttenuationConstantForAnAction(volumeObjectDifferences);
+    cout << "Attenuating constant: " << attConst << endl;
     int curMagnituteOfMotion = 0;
 
     //repeat for all volume differences:
     for(int i=0; i<volumeObjectDifferences.length(); i++)
     {
         cv::SparseMat deltaIt = volumeObjectDifferences.at(i);
-        curVolObj = cv::SparseMat(this->dims, deltaIt.size(), deltaIt.type()); //create a sparse matrix
+        curVmt = cv::SparseMat(this->dims, deltaIt.size(), deltaIt.type()); //create a sparse matrix
         curMagnituteOfMotion = MagnitudeOfMotion(deltaIt); //calculate magnitute of motion of current volume difference
 
         //for all delta, except the first one:
         if (i > 0)
         {
             //take the previous VMT
-            prevVolObj = vmtList.back();
+            prevVmt = vmtList.back();
             double constant = attConst*curMagnituteOfMotion;
+            cout << "Disappearing rate: " << constant << endl;
             //for all nonzero values of previous VMT
-            for(cv::SparseMatConstIterator pit = prevVolObj.begin(); pit != prevVolObj.end(); ++pit)
+            for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
             {
                 const cv::SparseMat::Node* n = pit.node();
 
@@ -565,7 +607,7 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
                     uchar newValue = pit.value<uchar>() - (uchar)(constant);
                     if (newValue > 0)
                     {
-                        curVolObj.ref<uchar>(n->idx) = newValue;
+                        curVmt.ref<uchar>(n->idx) = newValue;
                     }
                 }
             }
@@ -575,11 +617,10 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
         for(cv::SparseMatConstIterator dit = deltaIt.begin(); dit != deltaIt.end(); ++dit)
         {
             const cv::SparseMat::Node* n = dit.node();
-            curVolObj.ref<uchar>(n->idx) = I_MAX;
+            curVmt.ref<uchar>(n->idx) = I_MAX;
         }
-        vmtList.push_back(curVolObj);
-        if (vmtList.length() >= 2) vmtList.pop_front();
-        int a = vmtList.length();
+        vmtList.push_back(curVmt);
+        if (vmtList.length() >= 2) vmtList.pop_front();        
     }
 
     return vmtList.back();
@@ -1029,9 +1070,9 @@ cv::SparseMat VmtFunctions::TrimVmt(const cv::SparseMat &vmt)
         const cv::SparseMat::Node* n = it.node();
 
         //FIXME: check if indices match
-        int newX = n->idx[0] - info.minX;
-        int newY = n->idx[1] - info.minY;
-        int newZ = n->idx[2] - info.minZ;
+        int newX = n->idx[X] - info.minX;
+        int newY = n->idx[Y] - info.minY;
+        int newZ = n->idx[Z] - info.minZ;
 
         trimmed.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n);
     }
@@ -1051,7 +1092,7 @@ cv::SparseMat VmtFunctions::SpatiallyNormalizeVMT(cv::SparseMat vmt)
         //FIXME: check if indices match
         int newX = n->idx[0];
         int newY = n->idx[1];
-        int newZ = ((double)(NORMALIZATION_VAL)/(double)(this->permittedMaxZ - this->permittedMinZ))*n->idx[2];
+        int newZ = ((double)(NORMALIZATION_INTERVAL)/(double)(this->permittedMaxZ - this->permittedMinZ))*n->idx[2];
 
         normalizedVmt.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n);
     }

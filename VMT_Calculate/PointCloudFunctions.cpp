@@ -22,9 +22,11 @@ bool PointCloudFunctions::saveVmtAsCloud(const cv::SparseMat &vmt, std::string f
 		const cv::SparseMat::Node* n = it.node();
 		uchar val = it.value<uchar>();
 
+        int maxZ = vmt.size()[2];
+
         cloud.points[i].x = n->idx[0];
         cloud.points[i].y = n->idx[1]; //FIXME 0? 1?
-		cloud.points[i].z = n->idx[2];
+        cloud.points[i].z = maxZ - n->idx[2];
 		cloud.points[i].intensity = static_cast<float>(val);
 
 		i++;	

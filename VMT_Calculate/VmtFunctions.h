@@ -13,13 +13,13 @@
 //#define PREDEFINED_THRESHOLD 150 //156
 #define X_SIZE 640
 #define Y_SIZE 480
-#define Z_SIZE 4000
-#define MIN_Z 0
+#define Z_SIZE 8000
+#define MIN_Z 10
 #define MAX_Z Z_SIZE
-#define NORMALIZATION_VAL 500
+#define NORMALIZATION_INTERVAL 2000 //(MAX_Z - MIN_Z) // ==> no normalization
 
 //to calculate volume object differences:
-#define DEPTH_TOLERANCE 30
+#define DEPTH_TOLERANCE 10
 #define X_TOLERANCE 0
 #define Y_TOLERANCE 0
 
@@ -44,7 +44,7 @@ private:
 
 	inline float raw_depth_to_meters(int raw_depth)
 	{
-		if (raw_depth < 2047)
+        if (raw_depth <= 2047)
 			return 1.0 / (raw_depth * -0.0030711016 + 3.3309495161);
 		return 0;
 	}
@@ -91,7 +91,7 @@ protected:
     vector<cv::SparseMat> CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects);
     vector<cv::SparseMat> CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects, int depthTolerance);
 
-    double AttenuationConstantForAnAction(const QList<cv::SparseMat> &volumeObjects);
+    double AttenuationConstantForAnAction(const QList<cv::SparseMat> &volumeObjectsDifferences);
     int MagnitudeOfMotion(const cv::SparseMat& sparseMat);
 
     cv::SparseMat ConstructVMT(const QList<cv::SparseMat>& volumeObjectDifferences);

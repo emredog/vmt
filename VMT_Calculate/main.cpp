@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     QString fileName = nameParts.last();
     fileName.chop(6); //remove the extension
     if (PointCloudFunctions::saveVmtAsCloud(vmt, outputFolder.append(fileName).append(".pcd").toStdString()))
-        std::cout << "Successfully saved as a point cloud.\n";
+        std::cout << "Successfully saved as a point cloud with " << vmt.nzcount() << " points.\n";
     else
         std::cout << "Saving as point cloud have failed.\n";
 }
