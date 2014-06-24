@@ -48,4 +48,8 @@ int main(int argc, char *argv[])
         std::cout << "Successfully saved as a point cloud with " << vmt.nzcount() << " points.\n";
     else
         std::cout << "Saving as point cloud have failed.\n";
+
+    vmtCore->Save3DSparseMatrix(vmt, outputFolder.append(fileName).append(".dat"));
+        std::cout << "Successfully saved as a sparse matrix with " << vmt.size()[0]*vmt.size()[1]*vmt.size()[2] << " lines.\n";
+
 }

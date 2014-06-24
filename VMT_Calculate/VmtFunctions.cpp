@@ -920,17 +920,17 @@ void VmtFunctions::Print3x3Matrix(const cv::Matx33d& mat)
 
 }
 
-void VmtFunctions::Print3DSparseMatrix(cv::SparseMat sparse_mat)
+void VmtFunctions::Print3DSparseMatrix(const cv::SparseMat &sparse_mat)
 {		
     cv::Mat denseMat;
     sparse_mat.convertTo(denseMat, CV_8UC1);
 
     int idx[3];
-    for (int i=0; i<this->matrixSize[Y] ; ++i)
+    for (int i=0; i<sparse_mat.size()[X] ; ++i)
     {
-        for (int j=0; j<this->matrixSize[X] ; ++j)
+        for (int j=0; j<sparse_mat.size()[Y] ; ++j)
         {
-            for (int k=0; k<this->matrixSize[Z] ; ++k)
+            for (int k=0; k<sparse_mat.size()[Z] ; ++k)
             {
                 //FIXME: it isnt the same indices??!
                 idx[0] = i; idx[1] = j; idx[2] = k;
@@ -944,7 +944,7 @@ void VmtFunctions::Print3DSparseMatrix(cv::SparseMat sparse_mat)
     }
 }
 
-void VmtFunctions::Save3DSparseMatrix(cv::SparseMat sparse_mat, QString filePath)
+void VmtFunctions::Save3DSparseMatrix(const cv::SparseMat &sparse_mat, QString filePath)
 {
     QFile myfile(filePath);
     if (!myfile.open(QFile::ReadWrite))
@@ -959,14 +959,14 @@ void VmtFunctions::Save3DSparseMatrix(cv::SparseMat sparse_mat, QString filePath
     sparse_mat.convertTo(denseMat, CV_8UC1);
 
     int idx[3];
-    for (int i=0; i<this->matrixSize[Y] ; ++i)
+    for (int i=0; i<sparse_mat.size()[X] ; ++i)
     {
-        for (int j=0; j<this->matrixSize[X] ; ++j)
+        for (int j=0; j<sparse_mat.size()[Y] ; ++j)
         {
-            for (int k=0; k<this->matrixSize[Z] ; ++k)
+            for (int k=0; k<sparse_mat.size()[Z] ; ++k)
             {
                 //FIXME: it isnt the same indices??!
-                idx[0] = j; idx[1] = i; idx[2] = k;
+                idx[X] = j; idx[Y] = i; idx[Z] = k;
                 uchar value = denseMat.at<uchar>(idx);
                 if (value > 0)
                 {
@@ -980,7 +980,7 @@ void VmtFunctions::Save3DSparseMatrix(cv::SparseMat sparse_mat, QString filePath
     myfile.close();
 }
 
-void VmtFunctions::Save3DMatrix(cv::Mat mat, QString filePath)
+void VmtFunctions::Save3DMatrix(const cv::Mat &mat, QString filePath)
 {
     QFile myfile(filePath);
     if (!myfile.open(QFile::ReadWrite))
@@ -992,14 +992,14 @@ void VmtFunctions::Save3DMatrix(cv::Mat mat, QString filePath)
     QTextStream stream(&myfile);
 
     int idx[3];
-    for (int i=0; i<this->matrixSize[Y] ; ++i)
+    for (int i=0; i<mat.size[X] ; ++i)
     {
-        for (int j=0; j<this->matrixSize[X] ; ++j)
+        for (int j=0; j<mat.size[Y] ; ++j)
         {
-            for (int k=0; k<this->matrixSize[Z] ; ++k)
+            for (int k=0; k<mat.size[Z] ; ++k)
             {
                 //FIXME check the indices
-                idx[0] = i; idx[1] = j; idx[2] = k;
+                idx[X] = i; idx[Y] = j; idx[Z] = k;
                 uchar value = mat.at<uchar>(idx);
                 if (value > 0)
                 {
