@@ -19,9 +19,9 @@
 #define NORMALIZATION_INTERVAL 2000 //(MAX_Z - MIN_Z) // ==> no normalization
 
 //to calculate volume object differences:
-#define DEPTH_TOLERANCE 10
-#define X_TOLERANCE 0
-#define Y_TOLERANCE 0
+#define DEPTH_TOLERANCE 30
+#define X_TOLERANCE 1
+#define Y_TOLERANCE 1
 
 
 

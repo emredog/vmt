@@ -248,6 +248,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(QString imagePath, int do
     return sparse_mat;
 }
 
+//FIXME: this function is not tested
 cv::Mat VmtFunctions::GenerateVolumeObject(cv::Mat image, int downsamplingRate)
 {
     cv::Mat volumeObject(this->dims, this->matrixSize, CV_8UC1);
@@ -685,7 +686,7 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
 //unused methods------------------------------------------------------------------------------------------------
 cv::SparseMat VmtFunctions::CalculateD_Old(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject) //equation (8) from the paper
 {
-    cv::SparseMat d_Old(3, lastVolumeObject.size(), lastVolumeObject.type());
+    cv::SparseMat d_Old(lastVolumeObject.dims(), lastVolumeObject.size(), lastVolumeObject.type());
 
     //only condition where d_old is non-zero is first>0 and last=0 (see below)
     for (cv::SparseMatConstIterator opIt=lastVolumeObject.begin(); opIt != lastVolumeObject.end(); ++opIt)
@@ -731,7 +732,7 @@ cv::SparseMat VmtFunctions::CalculateD_Old(cv::SparseMat lastVolumeObject, cv::S
 
 cv::SparseMat VmtFunctions::CalculateD_New(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject) //equation (7) from the paper
 {
-    cv::SparseMat d_New(3, lastVolumeObject.size(), lastVolumeObject.type());
+    cv::SparseMat d_New(lastVolumeObject.dims(), lastVolumeObject.size(), lastVolumeObject.type());
 
     //only condition where d_old is non-zero is first>0 and last=0 (see below)
     for (cv::SparseMatConstIterator opIt=lastVolumeObject.begin(); opIt != lastVolumeObject.end(); ++opIt)
@@ -754,7 +755,7 @@ cv::SparseMat VmtFunctions::CalculateD_New(cv::SparseMat lastVolumeObject, cv::S
 
 cv::Vec3i VmtFunctions::CalculateMomentVector(cv::SparseMat volumeObjectSparse) //equation (9) from the paper
 {
-    int sumOfAllElements = (int)volumeObjectSparse.nzcount(); //sum of all elements of a volumeObject is equal to number of nonzero (=1) elements
+    int numOfAllElements = (int)volumeObjectSparse.nzcount(); //number of all elements of a volumeObject is equal to number of nonzero (=1) elements
 
     cv::Vec3i sumVector(0, 0, 0);
     for(cv::SparseMatConstIterator it = volumeObjectSparse.begin(); it != volumeObjectSparse.end(); ++it)
@@ -764,7 +765,7 @@ cv::Vec3i VmtFunctions::CalculateMomentVector(cv::SparseMat volumeObjectSparse) 
         sumVector += currentVector;
     }
 
-    cv::Vec3i momentVector((int)(sumVector.val[0]/sumOfAllElements), (int)(sumVector.val[1]/sumOfAllElements), (int)(sumVector.val[2]/sumOfAllElements));
+    cv::Vec3i momentVector((int)(sumVector.val[0]/numOfAllElements), (int)(sumVector.val[1]/numOfAllElements), (int)(sumVector.val[2]/numOfAllElements));
 
     return momentVector;
 }
