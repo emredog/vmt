@@ -958,6 +958,10 @@ void VmtFunctions::Save3DSparseMatrix(const cv::SparseMat &sparse_mat, QString f
     cv::Mat denseMat;
     sparse_mat.convertTo(denseMat, CV_8UC1);
 
+    //write header:
+    stream << sparse_mat.size()[X] << "x" << sparse_mat.size()[Y] << "x" << sparse_mat.size()[Z];
+
+    //write non-zero values:
     int idx[3];
     for (int i=0; i<sparse_mat.size()[X] ; ++i)
     {
@@ -991,6 +995,10 @@ void VmtFunctions::Save3DMatrix(const cv::Mat &mat, QString filePath)
 
     QTextStream stream(&myfile);
 
+    //write header:
+    stream << mat.size[X] << "x" << mat.size[Y] << "x" << mat.size[Z];
+
+    //write non-zero values:
     int idx[3];
     for (int i=0; i<mat.size[X] ; ++i)
     {
