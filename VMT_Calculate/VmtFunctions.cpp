@@ -42,7 +42,7 @@ VmtFunctions::~VmtFunctions(void)
 }
 
 
-cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString trackFilePath, int downsamplingRate)
+cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString trackFilePath, int downsamplingRate)
 {
     //read track file
     QFile trackFile(trackFilePath);
@@ -119,7 +119,15 @@ cv::SparseMat VmtFunctions::GenerateSparseVMT(QString videoFolderPath, QString t
             cv::SparseMat prevSparseVolumeObj = volumeObjects.last();
             cv::SparseMat difference = this->SubtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj, DEPTH_TOLERANCE, X_TOLERANCE, Y_TOLERANCE);
 
-            volumeObjectDifferences.append(difference);            
+//            PointCloudFunctions::saveVmtAsCloud(difference, QString("/home/emredog/Documents/output/%1_diff.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+
+            cv::SparseMat cleanedUpDifference = this->CleanUpVolumeObjectDifference(difference);
+            difference.release();
+
+//            PointCloudFunctions::saveVmtAsCloud(cleanedUpDifference, QString("/home/emredog/Documents/output/%1_diffCleaned.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+
+//            volumeObjectDifferences.append(difference);
+            volumeObjectDifferences.append(cleanedUpDifference);
         }
 
         volumeObjects.append(currentSparseVolumeObj);
@@ -430,6 +438,50 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     //all of the remaining points of difference should be equal to 0.
 
     return difference;
+}
+
+cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& volObjDiff) const
+{
+    cv::SparseMat cleanedUpVolObjDiff(volObjDiff.dims(), volObjDiff.size(), volObjDiff.type());    
+
+    QHash<QPoint, int> processedPoints; // <point in [X, Y], Zindex>
+
+    for (cv::SparseMatConstIterator it=volObjDiff.begin(); it != volObjDiff.end(); ++it)
+    {
+        const cv::SparseMat::Node* n = it.node();
+
+        QPoint curPoint = QPoint(n->idx[X], n->idx[Y]);
+
+        if (processedPoints.contains(curPoint)) //we already saw a point in this [X,Y]
+        {
+            int currentZIndex = n->idx[Z];
+            int existingZIndex = processedPoints.value(curPoint);
+
+            if (currentZIndex < existingZIndex) //if it's nearer to the camera:
+                processedPoints[curPoint] = currentZIndex; //set it to the current Z index
+        }
+        else //first time we process a point in this [X, Y]
+        {
+            processedPoints.insert(curPoint, n->idx[Z]);
+        }
+    }
+
+    cout << "\tAll points parsed. Fetched " << processedPoints.keys().length() << " out of " << (int)volObjDiff.nzcount() << " points.\n";
+
+    //create the cleaned-up sparse mat:
+    QHashIterator<QPoint, int> it(processedPoints);
+    while (it.hasNext())
+    {
+        it.next();
+        QPoint p = it.key();
+        int z = it.value();
+        cleanedUpVolObjDiff.ref<uchar>(p.x(), p.y(), z) = volObjDiff.value<uchar>(p.x(), p.y(), z);
+    }
+
+    cout << "\tNew SparseMat is created with " << (int)cleanedUpVolObjDiff.nzcount() << " points.\n";
+
+
+    return cleanedUpVolObjDiff;
 }
 
 
@@ -956,10 +1008,10 @@ void VmtFunctions::Save3DSparseMatrix(const cv::SparseMat &sparse_mat, QString f
     QTextStream stream(&myfile);
 
     cv::Mat denseMat;
-    sparse_mat.convertTo(denseMat, CV_8UC1);
+    sparse_mat.convertTo(denseMat, CV_8UC1); //FIXME!!!!!!
 
     //write header:
-    stream << sparse_mat.size()[X] << "x" << sparse_mat.size()[Y] << "x" << sparse_mat.size()[Z];
+    stream << sparse_mat.size()[X] << "x" << sparse_mat.size()[Y] << "x" << sparse_mat.size()[Z] << endl;
 
     //write non-zero values:
     int idx[3];
@@ -996,7 +1048,7 @@ void VmtFunctions::Save3DMatrix(const cv::Mat &mat, QString filePath)
     QTextStream stream(&myfile);
 
     //write header:
-    stream << mat.size[X] << "x" << mat.size[Y] << "x" << mat.size[Z];
+    stream << mat.size[X] << "x" << mat.size[Y] << "x" << mat.size[Z] << endl;
 
     //write non-zero values:
     int idx[3];
@@ -1066,6 +1118,8 @@ cv::SparseMat VmtFunctions::TrimVmt(const cv::SparseMat &vmt)
 {
     VmtInfo info = GetVmtInfo(vmt);
 
+    cout << "\tSize before trimming: " << vmt.size()[X] << "x" << vmt.size()[Y] << "x" << vmt.size()[Z] << endl;
+
     int sizes[3];
     sizes[X] = info.maxX - info.minX;
     sizes[Y] = info.maxY - info.minY;
@@ -1086,6 +1140,8 @@ cv::SparseMat VmtFunctions::TrimVmt(const cv::SparseMat &vmt)
         trimmed.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n);
     }
 
+
+    cout << "\tSize after trimming: " << trimmed.size()[X] << "x" << trimmed.size()[Y] << "x" << trimmed.size()[Z] << endl;
     return trimmed;
 }
 

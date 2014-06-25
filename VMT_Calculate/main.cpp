@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
     QTime myTimer;
     myTimer.start();
-    cv::SparseMat vmt = vmtCore->GenerateSparseVMT(videoPath, trackFile, downsamplingRate);
+    cv::SparseMat vmt = vmtCore->ConstructSparseVMT(videoPath, trackFile, downsamplingRate);
     int mSecs = myTimer.elapsed();
     std::cout << "VMT is generated in " << (double)mSecs / 1000.0 << "\n";
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     else
         std::cout << "Saving as point cloud have failed.\n";
 
-    vmtCore->Save3DSparseMatrix(vmt, outputFolder.append(fileName).append(".dat"));
-        std::cout << "Successfully saved as a sparse matrix with " << vmt.size()[0]*vmt.size()[1]*vmt.size()[2] << " lines.\n";
+//    vmtCore->Save3DSparseMatrix(vmt, outputFolder.append(fileName).append(".dat"));
+//        std::cout << "Successfully saved as a sparse matrix with " << vmt.size()[0]*vmt.size()[1]*vmt.size()[2] << " lines.\n";
 
 }
