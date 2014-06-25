@@ -15,7 +15,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 
-VmtFunctions::VmtFunctions(int xSize, int ySize)
+VmtFunctions::VmtFunctions(int xSize, int ySize, unsigned int tolX, unsigned int tolY, unsigned int tolZ)
+    : toleranceX(tolX), toleranceY(tolY), toleranceZ(tolZ)
 {
     this->permittedMinZ = MIN_Z;
     this->permittedMaxZ = MAX_Z;
@@ -80,6 +81,7 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
     QList<cv::SparseMat> volumeObjectDifferences;
 
     int counter = 1; //FIXME: delete this
+
     //calculate volume object for each depth frame
     foreach(BoundingBox bb, bboxSequence)
     {
@@ -88,9 +90,9 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
               !fileName.contains(QString::number(bb.frameNr)))
             return cv::SparseMat();
 
-
         //Read the file
         cv::Mat depthImg = cv::imread(videoDir.absoluteFilePath(fileName).toStdString(), CV_LOAD_IMAGE_UNCHANGED);
+
         //Check for invalid input
         if(! depthImg.data )
         {
@@ -106,6 +108,7 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
 
         cv::Rect roi(bb.x, bb.y, bb.width, bb.height);
 
+        //Crop the depth image with the bounding box obtained from track file
         cv::Mat croppedDepthImg = depthImg(roi);
 
         depthImg.release();
@@ -117,21 +120,25 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
         if (volumeObjects.length() >= 1) //there are at least 2 volume objects
         {
             cv::SparseMat prevSparseVolumeObj = volumeObjects.last();
-            cv::SparseMat difference = this->SubtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj, DEPTH_TOLERANCE, X_TOLERANCE, Y_TOLERANCE);
+            cv::SparseMat delta = this->SubtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);
+            cv::SparseMat cleanedUpDelta = this->CleanUpVolumeObjectDifference(delta);
+            delta.release();
 
-//            PointCloudFunctions::saveVmtAsCloud(difference, QString("/home/emredog/Documents/output/%1_diff.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+            //FIXME!!!
+            return cv::SparseMat();
 
-            cv::SparseMat cleanedUpDifference = this->CleanUpVolumeObjectDifference(difference);
-            difference.release();
+            //TODO: remove this after debug
+//            norDelta = this->SpatiallyNormalizeSparseMat(cleanedUpDelta);
+//            trimDelta = this->TrimSparseMat(norDelta);
 
-//            PointCloudFunctions::saveVmtAsCloud(cleanedUpDifference, QString("/home/emredog/Documents/output/%1_diffCleaned.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+//            PointCloudFunctions::saveVmtAsCloud(trimDelta, QString("/home/emredog/Documents/output/70_110/%1_diffCleaned.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+//            norDelta.release();
+//            trimDelta.release();
+            //-------------------------------
 
-//            volumeObjectDifferences.append(difference);
-            volumeObjectDifferences.append(cleanedUpDifference);
+            volumeObjectDifferences.append(cleanedUpDelta);
         }
-
         volumeObjects.append(currentSparseVolumeObj);
-
         counter++;
     }
 
@@ -139,10 +146,10 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
     cv::SparseMat vmt = this->ConstructVMT(volumeObjectDifferences);
 
     //normalize the depth dimension and scale it between [0, NORMALIZATION_INTERVAL]
-    cv::SparseMat normalized = this->SpatiallyNormalizeVMT(vmt);
+    cv::SparseMat normalized = this->SpatiallyNormalizeSparseMat(vmt);
 
     //trim the sparse matrix, by cutting out the parts that contain no points
-    cv::SparseMat trimmed = this->TrimVmt(normalized);
+    cv::SparseMat trimmed = this->TrimSparseMat(normalized);
     vmt.release();
     normalized.release();
 
@@ -185,8 +192,8 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
             {                                
                 sparse_mat.ref<uchar>(x, image.rows-y, depthInMillimeters) = I_MAX;
             }
-//            else
-//                cout << "Point dropped on Z: " << depthInMillimeters << endl;
+//          else
+//              cout << "Point dropped on Z: " << depthInMillimeters << endl;
         }
     }
 
@@ -197,172 +204,9 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
 }
 
 
-cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(QString imagePath, int downsamplingRate)
-{
-    cv::SparseMat emptySparseMat;
-    cv::Mat image, temp;
-
-    //Read the file
-    image = cv::imread(imagePath.toStdString(), CV_LOAD_IMAGE_UNCHANGED);   //ATTENTION: LIRIS DATA HAS 16BIT DEPTH IMAGES
-    //Check for invalid input
-    if(! image.data )
-    {
-        cout <<  "Could not open or find the image: " << imagePath.toStdString() << endl ;
-        return emptySparseMat;
-    }
-
-    image.convertTo(temp, CV_16UC1);
-    image.release();
-    temp.assignTo(image);
-    temp.release();
-
-    //THRESHOLD TO GET SILHOUETTE
-    //cv::Mat image8bit;
-    //image.convertTo(image8bit, CV_8UC1, 1.0/256.0);
-    //cv::adaptiveThreshold(image8bit, binImage, I_MAX, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 3, 0);
-
-    //Generate Volume Object:
-    cv::SparseMat sparse_mat(this->dims, this->matrixSize, CV_8UC1);
-
-    unsigned short pixelValue;
-    unsigned short mostSig13Digits;
-    unsigned short depth;
-    unsigned int depthInMillimeters;
-
-    //NOTE: because of memory restrictions, if downsamplingRate == 2, x and y are incremented by 2 (~downsampling by 1/4)
-    for (int y = 0; y < image.rows-1; y+=downsamplingRate)
-    {
-        const unsigned short* ithRow = image.ptr<unsigned short>(y); //take a whole row
-
-        for (int x = 0; x < image.cols-1; x+=downsamplingRate)
-        {
-            pixelValue = ithRow[x];
-            mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
-            depth = mostSig13Digits >> 5;
-
-            depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
-
-            if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
-            {
-                //FIXME: verify this translation!!
-                depthInMillimeters -= this->permittedMinZ; //translate all points to fit between min-max permitted range
-                sparse_mat.ref<uchar>(y, x, depthInMillimeters) = I_MAX;
-            }
-        }
-    }
-
-    image.release();
-
-    return sparse_mat;
-}
-
-//FIXME: this function is not tested
-cv::Mat VmtFunctions::GenerateVolumeObject(cv::Mat image, int downsamplingRate)
-{
-    cv::Mat volumeObject(this->dims, this->matrixSize, CV_8UC1);
-    cv::Mat temp;
-    //format issues
-    image.convertTo(temp, CV_16UC1);
-    image.release();
-    temp.assignTo(image);
-    temp.release();
-
-    unsigned short pixelValue;
-    unsigned short mostSig13Digits;
-    unsigned short depth;
-    unsigned int depthInMillimeters;
-
-    //NOTE: because of memory restrictions, if downsamplingRate == 2, x and y are incremented by 2 (~downsampling by 1/4)
-    for (int y = 0; y < image.rows-1; y+=downsamplingRate)
-    {
-        const unsigned short* ithRow = image.ptr<unsigned short>(y); //take a whole row
-
-        for (int x = 0; x < image.cols-1; x+=downsamplingRate)
-        {
-            pixelValue = ithRow[x];
-            mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
-            depth = mostSig13Digits >> 5;
-
-            depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
-
-            if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
-            {
-                //FIXME: verify this translation!!
-                depthInMillimeters -= this->permittedMinZ; //translate all points to fit between min-max permitted range
-
-                volumeObject.at<uchar>(y, x, depthInMillimeters) = I_MAX;
 
 
-                //ref<uchar>(y, x, depthInMillimeters) = I_MAX;
-            }
-        }
-    }
-
-    image.release();
-
-    return volumeObject;
-}
-
-vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects)
-{
-    cv::SparseMat operand1, operand2;
-    vector<cv::SparseMat> volumeObjectDifferences;
-    short counter = 2;
-
-    for (vector<cv::SparseMat>::const_iterator it = volumeObjects.begin() ; it != volumeObjects.end(); ++it)
-    {
-        if (it == volumeObjects.begin()) //skip the first one
-        {
-            it->assignTo(operand2);
-            continue;
-        }
-
-        operand1.release();
-        operand2.copyTo(operand1);
-        operand2.release();
-        it->assignTo(operand2);
-
-        // now operand2 is current volume object, operand1 is previous volume object
-        //diff(x, y, z) = |operand2(x,y,z) - operand1(x,y,z)|
-        //				= 1 if |1 - 0| or |0 - 1|
-        //				= 0 if |0 - 0| or |1 - 1|
-
-        //init difference:
-        cv::SparseMat difference = cv::SparseMat(this->dims, this->matrixSize, operand2.type());
-
-        //go through nonzero values of operand2, and set diff to 1 if operand1(x,y,z)==0
-        for (cv::SparseMatConstIterator opIt=operand2.begin(); opIt != operand2.end(); ++opIt)
-        {
-            const cv::SparseMat::Node* n = opIt.node();
-            uchar val2 = opIt.value<uchar>();
-            uchar val1 = operand1.value<uchar>(n->idx);
-            if (val1 <= 0)
-                difference.ref<uchar>(n->idx) = val2;
-        }
-        //go through nonzero values of operand1, and set diff to 1 if operand2(x,y,z)==0
-        for (cv::SparseMatConstIterator opIt=operand1.begin(); opIt != operand1.end(); ++opIt)
-        {
-            const cv::SparseMat::Node* n = opIt.node();
-            uchar val1 = opIt.value<uchar>();
-            uchar val2 = operand2.value<uchar>(n->idx);
-            if (val2 <= 0)
-                difference.ref<uchar>(n->idx) = val1;
-        }
-
-        //all of the remaining points of difference should be equal to 0.
-
-        cout << "Difference calculated [" << counter << ", " << counter - 1 << "], nonzero: " << (int)difference.nzcount() << endl;
-        volumeObjectDifferences.push_back(difference);
-        counter++;
-        difference.release();
-    }
-    operand1.release();
-    operand2.release();
-
-    return volumeObjectDifferences;
-}
-
-cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, const cv::SparseMat& operand2, int depthTolerance, int xTolerance, int yTolerance)
+cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, const cv::SparseMat& operand2)
 {	
     //diff(x, y, z) = |operand2(x,y,z) - operand1(x,y,z)|
     //				= 1 if |1 - 0| or |0 - 1|
@@ -376,22 +220,21 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     {
         const cv::SparseMat::Node* n = op2It.node();
         uchar val2 = op2It.value<uchar>();
-        uchar val1 = operand1.value<uchar>(n->idx[0], n->idx[1], n->idx[2]);                
+        uchar val1 = operand1.value<uchar>(n->idx[X], n->idx[Y], n->idx[Z]);
 
         if (val1 <= 0) //if no value was found on that location:
         {
             //search for the neighborhood of z (to handle noise from kinect)
-            for (int offsetZ = -depthTolerance; offsetZ<=depthTolerance; offsetZ++)
+            for (int offsetZ = -(this->toleranceZ); offsetZ <= (int)this->toleranceZ; offsetZ++)
             {
-                for (int offsetX = -xTolerance; offsetX<=xTolerance; offsetX++) //search for the neighborhood of x
+                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
                 {
-                    for (int offsetY = -yTolerance; offsetY<=yTolerance; offsetY++) //search for the neighborhood of y
+                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
                     {
-                        uchar temp = operand1.value<uchar>(n->idx[0]+offsetX, n->idx[1]+offsetY, n->idx[2]+offsetZ); //if the element did not exist, the methods return 0.
+                        uchar temp = operand1.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
                         if (temp > 0)
                         {
                             val1 = temp;
-//                            cout << "Found one in the neighborhood! (1)" << endl;
                             break;
                         }
                     }
@@ -407,23 +250,21 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     {
         const cv::SparseMat::Node* n = op1It.node();
         uchar val1 = op1It.value<uchar>();
-        uchar val2 = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]);
+        uchar val2 = operand2.value<uchar>(n->idx[X], n->idx[Y], n->idx[Z]);
 
         if (val2 <= 0) //if no value was found on that location:
         {
             //search for the neighborhood of z (to handle noise from kinect)
-            for (int offset = -depthTolerance; offset<=depthTolerance; offset++)
-            {
-                for (int offsetX = -xTolerance; offsetX<=xTolerance; offsetX++) //search for the neighborhood of x
+            for (int offsetZ = -(this->toleranceZ); offsetZ <= (int)this->toleranceZ; offsetZ++)
+            {                
+                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
                 {
-                    for (int offsetY = -yTolerance; offsetY<=yTolerance; offsetY++) //search for the neighborhood of y
-                    {
-                        //WARNING: do not replace following idx[0-1-2] with idx[X-Y-Z]
-                        uchar temp = operand2.value<uchar>(n->idx[0]+offsetX, n->idx[1]+offsetY, n->idx[2]+offset);
+                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
+                    {                        
+                        uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
                         if (temp > 0)
                         {
-                            val2 = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
-//                            cout << "Found one in the neighborhood! (2)" << endl;
+                            val2 = temp;
                             break;
                         }
                     }
@@ -458,8 +299,13 @@ cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& v
             int existingZIndex = processedPoints.value(curPoint);
 
             if (currentZIndex < existingZIndex) //if it's nearer to the camera:
+            {
                 processedPoints[curPoint] = currentZIndex; //set it to the current Z index
-        }
+//                cout << "Point updated (" << curPoint.x() << ", " << curPoint.y() << ") Z: " << existingZIndex << " --> " << currentZIndex << endl;
+            }
+            else //, just discard it
+//                cout << "Discarded point on clean-up (" << curPoint.x() << ", " << curPoint.y() << ", " << currentZIndex << ")\n";
+            }
         else //first time we process a point in this [X, Y]
         {
             processedPoints.insert(curPoint, n->idx[Z]);
@@ -484,93 +330,6 @@ cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& v
     return cleanedUpVolObjDiff;
 }
 
-
-vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects, int depthTolerance)
-{
-    cv::SparseMat operand1, operand2;
-    vector<cv::SparseMat> volumeObjectDifferences;
-    short counter = 2;
-
-    for (vector<cv::SparseMat>::const_iterator it = volumeObjects.begin() ; it != volumeObjects.end(); ++it)
-    {
-        if (it == volumeObjects.begin()) //skip the first one
-        {
-            it->assignTo(operand2);
-            continue;
-        }
-
-        operand1.release();
-        operand2.copyTo(operand1);
-        operand2.release();
-        it->assignTo(operand2);
-
-        // now operand2 is current volume object, operand1 is previous volume object
-        //diff(x, y, z) = |operand2(x,y,z) - operand1(x,y,z)|
-        //				= 1 if |1 - 0| or |0 - 1|
-        //				= 0 if |0 - 0| or |1 - 1|
-
-        //init difference:
-        cv::SparseMat difference = cv::SparseMat(this->dims, this->matrixSize, operand2.type());
-
-        //go through nonzero values of operand2, and set diff to 1 if operand1(x,y,z)==0
-        for (cv::SparseMatConstIterator op2It=operand2.begin(); op2It != operand2.end(); ++op2It)
-        {
-            const cv::SparseMat::Node* n = op2It.node();
-            uchar val2 = op2It.value<uchar>();
-            uchar val1 = 0;
-
-            //search for the neighborhood of z (to handle noise from kinect)
-            for (int offset = -depthTolerance; offset<depthTolerance; offset++)
-            {
-                //WARNING: do not replace following idx[0-1-2] with idx[X-Y-Z]
-                uchar temp = operand1.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
-                if (temp > 0)
-                {
-                    val1 = temp;
-                    //cout << "Found one in the neighborhood! (1)" << endl;
-                    break;
-                }
-            }
-
-            if (val1 <= 0)
-                difference.ref<uchar>(n->idx) = val2;
-        }
-        //go through nonzero values of operand1, and set diff to 1 if operand2(x,y,z)==0
-        for (cv::SparseMatConstIterator op1It=operand1.begin(); op1It != operand1.end(); ++op1It)
-        {
-            const cv::SparseMat::Node* n = op1It.node();
-            uchar val1 = op1It.value<uchar>();
-            uchar val2 = 0;
-
-            //search for the neighborhood of z (to handle noise from kinect)
-            for (int offset = -depthTolerance; offset<depthTolerance; offset++)
-            {
-                //WARNING: do not replace following idx[0-1-2] with idx[X-Y-Z]
-                uchar temp = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
-                if (temp > 0)
-                {
-                    val2 = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
-                    //cout << "Found one in the neighborhood! (2)" << endl;
-                    break;
-                }
-            }
-
-            if (val2 <= 0)
-                difference.ref<uchar>(n->idx) = val1;
-        }
-
-        //all of the remaining points of difference should be equal to 0.
-
-        cout << "Difference calculated [" << counter << ", " << counter - 1 << "], nonzero: " << (int)difference.nzcount() << endl;
-        volumeObjectDifferences.push_back(difference);
-        counter++;
-        difference.release();
-    }
-    operand1.release();
-    operand2.release();
-
-    return volumeObjectDifferences;
-}
 
 int VmtFunctions::MagnitudeOfMotion(const cv::SparseMat& sparseMat)
 {
@@ -623,7 +382,6 @@ double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& 
 
 cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjectDifferences)
 {
-    QList<cv::SparseMat> vmtList;
     cv::SparseMat curVmt;
     cv::SparseMat prevVmt;
     //Formulation:
@@ -638,101 +396,56 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
     //repeat for all volume differences:
     for(int i=0; i<volumeObjectDifferences.length(); i++)
     {
-        cv::SparseMat deltaIt = volumeObjectDifferences.at(i);
-        curVmt = cv::SparseMat(this->dims, deltaIt.size(), deltaIt.type()); //create a sparse matrix
-        curMagnituteOfMotion = MagnitudeOfMotion(deltaIt); //calculate magnitute of motion of current volume difference
+        cv::SparseMat deltaT = volumeObjectDifferences.at(i);
+        curVmt.clear();
+        curVmt.release();
+        curVmt = cv::SparseMat(this->dims, deltaT.size(), deltaT.type()); //create a sparse matrix
+        curMagnituteOfMotion = MagnitudeOfMotion(deltaT); //calculate magnitute of motion of current volume difference
+
+        //for all, set points of current VMT to I_MAX where difference is non-zero:
+        for(cv::SparseMatConstIterator dit = deltaT.begin(); dit != deltaT.end(); ++dit)
+        {
+            const cv::SparseMat::Node* n = dit.node();
+            curVmt.ref<uchar>(n->idx) = I_MAX;
+        }
 
         //for all delta, except the first one:
         if (i > 0)
         {
-            //take the previous VMT
-            prevVmt = vmtList.back();
-            double constant = attConst*curMagnituteOfMotion;
-            cout << "Disappearing rate: " << constant << endl;
+            double disappearRate = attConst*curMagnituteOfMotion;
+            cout << "Disappearing rate at t= " << i << ": " << disappearRate << endl;
             //for all nonzero values of previous VMT
             for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
             {
                 const cv::SparseMat::Node* n = pit.node();
 
-                if (deltaIt.value<uchar>(n->idx) <= 0) //if difference is zero at that point
+                if (deltaT.value<uchar>(n->idx) <= 0) //if difference is zero at that point
                 {
                     //and if value is bigger than [attenuation constant times magnitute of motion]
-                    uchar newValue = pit.value<uchar>() - (uchar)(constant);
+                    int newValue = (int)((double)pit.value<uchar>() - disappearRate);
                     if (newValue > 0)
                     {
-                        curVmt.ref<uchar>(n->idx) = newValue;
+                        curVmt.ref<uchar>(n->idx) = (uchar)newValue;
                     }
                 }
             }
         }
 
-        //for all, set points of current VMT to I_MAX where difference is non-zero:
-        for(cv::SparseMatConstIterator dit = deltaIt.begin(); dit != deltaIt.end(); ++dit)
-        {
-            const cv::SparseMat::Node* n = dit.node();
-            curVmt.ref<uchar>(n->idx) = I_MAX;
-        }
-        vmtList.push_back(curVmt);
-        if (vmtList.length() >= 2) vmtList.pop_front();        
+
+
+        //clear prevVmt and copy curVmt --> prevVmt
+        prevVmt.clear();
+        prevVmt.release();
+        curVmt.copyTo(prevVmt); //"The destination will be reallocated if needed."
+
+//        vmtList.append(curVmt); //add current VMT to end of the list
+//        if (vmtList.length() >= 2) vmtList.removeFirst(); //if there are more than 2 vmt's, remove the first one (the oldest one)
     }
 
-    return vmtList.back();
+    return curVmt;
 }
 
-//vector<cv::SparseMat> VmtFunctions::ConstructVMTs(const vector<cv::SparseMat>& volumeObjectDifferences)
-//{
-//    vector<cv::SparseMat> vmtList;
-//    cv::SparseMat curVmt;
-//    cv::SparseMat prevVmt;
-//    //Formulation:
-//    //VMT(x, y, z, t) = 255 if volumeObjectDifference(x, y, z, t) == 1
-//    //				  = max(0, VMT(x, y, z, t-1)-(attenuationConstant)*(magnitudeOfMotion(t)), otherwise
 
-//    //calculate attenuation constant for the set:
-//    double attConst = AttenuationConstantForAnAction(volumeObjectDifferences);
-//    int curMagnituteOfMotion = 0;
-
-//    //repeat for all volume differences:
-//    for(vector<cv::SparseMat>::const_iterator deltaIt=volumeObjectDifferences.begin(); deltaIt != volumeObjectDifferences.end(); ++deltaIt)
-//    {
-//        curVmt = cv::SparseMat(this->dims, deltaIt->size(), deltaIt->type()); //create a sparse matrix
-//        curMagnituteOfMotion = MagnitudeOfMotion(*deltaIt); //calculate magnitute of motion of current volume difference
-
-//        //for all delta, except the first one:
-//        if (deltaIt != volumeObjectDifferences.begin())
-//        {
-//            //take the previous VMT
-//            prevVmt = vmtList.back();
-//            double constant = attConst*curMagnituteOfMotion;
-//            //for all nonzero values of previous VMT
-//            for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
-//            {
-//                const cv::SparseMat::Node* n = pit.node();
-
-//                if (deltaIt->value<uchar>(n->idx) <= 0) //if difference is zero at that point
-//                {
-//                    //and if value is bigger than attenuation constant times magnitute of motion
-//                    uchar newValue = pit.value<uchar>() - (uchar)(constant);
-//                    if (newValue > 0)
-//                    {
-//                        curVmt.ref<uchar>(n->idx) = newValue;
-//                    }
-//                }
-//            }
-//        }
-
-//        //for all, set points of current VMT to I_MAX where difference is non-zero:
-//        for(cv::SparseMatConstIterator dit = deltaIt->begin(); dit != deltaIt->end(); ++dit)
-//        {
-//            const cv::SparseMat::Node* n = dit.node();
-//            curVmt.ref<uchar>(n->idx) = I_MAX;
-//        }
-//        cout << "VMT constructed. nonzero: " << (int)curVmt.nzcount() << endl;
-//        vmtList.push_back(curVmt);
-//    }
-
-//    return vmtList;
-//}
 
 
 //unused methods------------------------------------------------------------------------------------------------
@@ -1071,6 +784,24 @@ void VmtFunctions::Save3DMatrix(const cv::Mat &mat, QString filePath)
     myfile.close();
 }
 
+void VmtFunctions::Save3DSparseMatrixAs2DCsv(const cv::SparseMat &sparse_mat, QString filePath)
+{
+    QFile myfile(filePath);
+    if (!myfile.open(QFile::ReadWrite))
+    {
+        cout << "ERROR!" << endl;
+        return;
+    }
+
+    QTextStream stream(&myfile);
+
+    for(cv::SparseMatConstIterator it = sparse_mat.begin(); it != sparse_mat.end(); ++it)
+    {
+        //TODO
+        int a = 0;
+    }
+}
+
 VmtFunctions::VmtInfo VmtFunctions::GetVmtInfo(const cv::SparseMat &vmt) const
 {
     VmtInfo info;
@@ -1114,7 +845,7 @@ VmtFunctions::VmtInfo VmtFunctions::GetVmtInfo(const cv::SparseMat &vmt) const
     return info;
 }
 
-cv::SparseMat VmtFunctions::TrimVmt(const cv::SparseMat &vmt)
+cv::SparseMat VmtFunctions::TrimSparseMat(const cv::SparseMat &vmt)
 {
     VmtInfo info = GetVmtInfo(vmt);
 
@@ -1145,7 +876,7 @@ cv::SparseMat VmtFunctions::TrimVmt(const cv::SparseMat &vmt)
     return trimmed;
 }
 
-cv::SparseMat VmtFunctions::SpatiallyNormalizeVMT(cv::SparseMat vmt)
+cv::SparseMat VmtFunctions::SpatiallyNormalizeSparseMat(cv::SparseMat vmt)
 {
     cv::SparseMat normalizedVmt(vmt.dims(), vmt.size(), vmt.type());
 
@@ -1157,7 +888,7 @@ cv::SparseMat VmtFunctions::SpatiallyNormalizeVMT(cv::SparseMat vmt)
         //FIXME: check if indices match
         int newX = n->idx[0];
         int newY = n->idx[1];
-        int newZ = ((double)(NORMALIZATION_INTERVAL)/(double)(this->permittedMaxZ - this->permittedMinZ))*n->idx[2];
+        int newZ = (int)(((double)(NORMALIZATION_INTERVAL)/(double)(this->permittedMaxZ - this->permittedMinZ))*(double)n->idx[2]);
 
         normalizedVmt.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n);
     }
@@ -1165,4 +896,309 @@ cv::SparseMat VmtFunctions::SpatiallyNormalizeVMT(cv::SparseMat vmt)
     return normalizedVmt;
 }
 
+//vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects, int depthTolerance)
+//{
+//    cv::SparseMat operand1, operand2;
+//    vector<cv::SparseMat> volumeObjectDifferences;
+//    short counter = 2;
 
+//    for (vector<cv::SparseMat>::const_iterator it = volumeObjects.begin() ; it != volumeObjects.end(); ++it)
+//    {
+//        if (it == volumeObjects.begin()) //skip the first one
+//        {
+//            it->assignTo(operand2);
+//            continue;
+//        }
+
+//        operand1.release();
+//        operand2.copyTo(operand1);
+//        operand2.release();
+//        it->assignTo(operand2);
+
+//        // now operand2 is current volume object, operand1 is previous volume object
+//        //diff(x, y, z) = |operand2(x,y,z) - operand1(x,y,z)|
+//        //				= 1 if |1 - 0| or |0 - 1|
+//        //				= 0 if |0 - 0| or |1 - 1|
+
+//        //init difference:
+//        cv::SparseMat difference = cv::SparseMat(this->dims, this->matrixSize, operand2.type());
+
+//        //go through nonzero values of operand2, and set diff to 1 if operand1(x,y,z)==0
+//        for (cv::SparseMatConstIterator op2It=operand2.begin(); op2It != operand2.end(); ++op2It)
+//        {
+//            const cv::SparseMat::Node* n = op2It.node();
+//            uchar val2 = op2It.value<uchar>();
+//            uchar val1 = 0;
+
+//            //search for the neighborhood of z (to handle noise from kinect)
+//            for (int offset = -depthTolerance; offset<depthTolerance; offset++)
+//            {
+//                //WARNING: do not replace following idx[0-1-2] with idx[X-Y-Z]
+//                uchar temp = operand1.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
+//                if (temp > 0)
+//                {
+//                    val1 = temp;
+//                    //cout << "Found one in the neighborhood! (1)" << endl;
+//                    break;
+//                }
+//            }
+
+//            if (val1 <= 0)
+//                difference.ref<uchar>(n->idx) = val2;
+//        }
+//        //go through nonzero values of operand1, and set diff to 1 if operand2(x,y,z)==0
+//        for (cv::SparseMatConstIterator op1It=operand1.begin(); op1It != operand1.end(); ++op1It)
+//        {
+//            const cv::SparseMat::Node* n = op1It.node();
+//            uchar val1 = op1It.value<uchar>();
+//            uchar val2 = 0;
+
+//            //search for the neighborhood of z (to handle noise from kinect)
+//            for (int offset = -depthTolerance; offset<depthTolerance; offset++)
+//            {
+//                //WARNING: do not replace following idx[0-1-2] with idx[X-Y-Z]
+//                uchar temp = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
+//                if (temp > 0)
+//                {
+//                    val2 = operand2.value<uchar>(n->idx[0], n->idx[1], n->idx[2]+offset);
+//                    //cout << "Found one in the neighborhood! (2)" << endl;
+//                    break;
+//                }
+//            }
+
+//            if (val2 <= 0)
+//                difference.ref<uchar>(n->idx) = val1;
+//        }
+
+//        //all of the remaining points of difference should be equal to 0.
+
+//        cout << "Difference calculated [" << counter << ", " << counter - 1 << "], nonzero: " << (int)difference.nzcount() << endl;
+//        volumeObjectDifferences.push_back(difference);
+//        counter++;
+//        difference.release();
+//    }
+//    operand1.release();
+//    operand2.release();
+
+//    return volumeObjectDifferences;
+//}
+
+//vector<cv::SparseMat> VmtFunctions::ConstructVMTs(const vector<cv::SparseMat>& volumeObjectDifferences)
+//{
+//    vector<cv::SparseMat> vmtList;
+//    cv::SparseMat curVmt;
+//    cv::SparseMat prevVmt;
+//    //Formulation:
+//    //VMT(x, y, z, t) = 255 if volumeObjectDifference(x, y, z, t) == 1
+//    //				  = max(0, VMT(x, y, z, t-1)-(attenuationConstant)*(magnitudeOfMotion(t)), otherwise
+
+//    //calculate attenuation constant for the set:
+//    double attConst = AttenuationConstantForAnAction(volumeObjectDifferences);
+//    int curMagnituteOfMotion = 0;
+
+//    //repeat for all volume differences:
+//    for(vector<cv::SparseMat>::const_iterator deltaIt=volumeObjectDifferences.begin(); deltaIt != volumeObjectDifferences.end(); ++deltaIt)
+//    {
+//        curVmt = cv::SparseMat(this->dims, deltaIt->size(), deltaIt->type()); //create a sparse matrix
+//        curMagnituteOfMotion = MagnitudeOfMotion(*deltaIt); //calculate magnitute of motion of current volume difference
+
+//        //for all delta, except the first one:
+//        if (deltaIt != volumeObjectDifferences.begin())
+//        {
+//            //take the previous VMT
+//            prevVmt = vmtList.back();
+//            double constant = attConst*curMagnituteOfMotion;
+//            //for all nonzero values of previous VMT
+//            for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
+//            {
+//                const cv::SparseMat::Node* n = pit.node();
+
+//                if (deltaIt->value<uchar>(n->idx) <= 0) //if difference is zero at that point
+//                {
+//                    //and if value is bigger than attenuation constant times magnitute of motion
+//                    uchar newValue = pit.value<uchar>() - (uchar)(constant);
+//                    if (newValue > 0)
+//                    {
+//                        curVmt.ref<uchar>(n->idx) = newValue;
+//                    }
+//                }
+//            }
+//        }
+
+//        //for all, set points of current VMT to I_MAX where difference is non-zero:
+//        for(cv::SparseMatConstIterator dit = deltaIt->begin(); dit != deltaIt->end(); ++dit)
+//        {
+//            const cv::SparseMat::Node* n = dit.node();
+//            curVmt.ref<uchar>(n->idx) = I_MAX;
+//        }
+//        cout << "VMT constructed. nonzero: " << (int)curVmt.nzcount() << endl;
+//        vmtList.push_back(curVmt);
+//    }
+
+//    return vmtList;
+//}
+
+//cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(QString imagePath, int downsamplingRate)
+//{
+//    cv::SparseMat emptySparseMat;
+//    cv::Mat image, temp;
+
+//    //Read the file
+//    image = cv::imread(imagePath.toStdString(), CV_LOAD_IMAGE_UNCHANGED);   //ATTENTION: LIRIS DATA HAS 16BIT DEPTH IMAGES
+//    //Check for invalid input
+//    if(! image.data )
+//    {
+//        cout <<  "Could not open or find the image: " << imagePath.toStdString() << endl ;
+//        return emptySparseMat;
+//    }
+
+//    image.convertTo(temp, CV_16UC1);
+//    image.release();
+//    temp.assignTo(image);
+//    temp.release();
+
+//    //THRESHOLD TO GET SILHOUETTE
+//    //cv::Mat image8bit;
+//    //image.convertTo(image8bit, CV_8UC1, 1.0/256.0);
+//    //cv::adaptiveThreshold(image8bit, binImage, I_MAX, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 3, 0);
+
+//    //Generate Volume Object:
+//    cv::SparseMat sparse_mat(this->dims, this->matrixSize, CV_8UC1);
+
+//    unsigned short pixelValue;
+//    unsigned short mostSig13Digits;
+//    unsigned short depth;
+//    unsigned int depthInMillimeters;
+
+//    //NOTE: because of memory restrictions, if downsamplingRate == 2, x and y are incremented by 2 (~downsampling by 1/4)
+//    for (int y = 0; y < image.rows-1; y+=downsamplingRate)
+//    {
+//        const unsigned short* ithRow = image.ptr<unsigned short>(y); //take a whole row
+
+//        for (int x = 0; x < image.cols-1; x+=downsamplingRate)
+//        {
+//            pixelValue = ithRow[x];
+//            mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
+//            depth = mostSig13Digits >> 5;
+
+//            depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
+
+//            if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
+//            {
+//                //FIXME: verify this translation!!
+//                depthInMillimeters -= this->permittedMinZ; //translate all points to fit between min-max permitted range
+//                sparse_mat.ref<uchar>(y, x, depthInMillimeters) = I_MAX;
+//            }
+//        }
+//    }
+
+//    image.release();
+
+//    return sparse_mat;
+//}
+
+//FIXME: this function is not tested
+//cv::Mat VmtFunctions::GenerateVolumeObject(cv::Mat image, int downsamplingRate)
+//{
+//    cv::Mat volumeObject(this->dims, this->matrixSize, CV_8UC1);
+//    cv::Mat temp;
+//    //format issues
+//    image.convertTo(temp, CV_16UC1);
+//    image.release();
+//    temp.assignTo(image);
+//    temp.release();
+
+//    unsigned short pixelValue;
+//    unsigned short mostSig13Digits;
+//    unsigned short depth;
+//    unsigned int depthInMillimeters;
+
+//    //NOTE: because of memory restrictions, if downsamplingRate == 2, x and y are incremented by 2 (~downsampling by 1/4)
+//    for (int y = 0; y < image.rows-1; y+=downsamplingRate)
+//    {
+//        const unsigned short* ithRow = image.ptr<unsigned short>(y); //take a whole row
+
+//        for (int x = 0; x < image.cols-1; x+=downsamplingRate)
+//        {
+//            pixelValue = ithRow[x];
+//            mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
+//            depth = mostSig13Digits >> 5;
+
+//            depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
+
+//            if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
+//            {
+//                //FIXME: verify this translation!!
+//                depthInMillimeters -= this->permittedMinZ; //translate all points to fit between min-max permitted range
+
+//                volumeObject.at<uchar>(y, x, depthInMillimeters) = I_MAX;
+
+
+//                //ref<uchar>(y, x, depthInMillimeters) = I_MAX;
+//            }
+//        }
+//    }
+
+//    image.release();
+
+//    return volumeObject;
+//}
+
+//vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects)
+//{
+//    cv::SparseMat operand1, operand2;
+//    vector<cv::SparseMat> volumeObjectDifferences;
+//    short counter = 2;
+
+//    for (vector<cv::SparseMat>::const_iterator it = volumeObjects.begin() ; it != volumeObjects.end(); ++it)
+//    {
+//        if (it == volumeObjects.begin()) //skip the first one
+//        {
+//            it->assignTo(operand2);
+//            continue;
+//        }
+
+//        operand1.release();
+//        operand2.copyTo(operand1);
+//        operand2.release();
+//        it->assignTo(operand2);
+
+//        // now operand2 is current volume object, operand1 is previous volume object
+//        //diff(x, y, z) = |operand2(x,y,z) - operand1(x,y,z)|
+//        //				= 1 if |1 - 0| or |0 - 1|
+//        //				= 0 if |0 - 0| or |1 - 1|
+
+//        //init difference:
+//        cv::SparseMat difference = cv::SparseMat(this->dims, this->matrixSize, operand2.type());
+
+//        //go through nonzero values of operand2, and set diff to 1 if operand1(x,y,z)==0
+//        for (cv::SparseMatConstIterator opIt=operand2.begin(); opIt != operand2.end(); ++opIt)
+//        {
+//            const cv::SparseMat::Node* n = opIt.node();
+//            uchar val2 = opIt.value<uchar>();
+//            uchar val1 = operand1.value<uchar>(n->idx);
+//            if (val1 <= 0)
+//                difference.ref<uchar>(n->idx) = val2;
+//        }
+//        //go through nonzero values of operand1, and set diff to 1 if operand2(x,y,z)==0
+//        for (cv::SparseMatConstIterator opIt=operand1.begin(); opIt != operand1.end(); ++opIt)
+//        {
+//            const cv::SparseMat::Node* n = opIt.node();
+//            uchar val1 = opIt.value<uchar>();
+//            uchar val2 = operand2.value<uchar>(n->idx);
+//            if (val2 <= 0)
+//                difference.ref<uchar>(n->idx) = val1;
+//        }
+
+//        //all of the remaining points of difference should be equal to 0.
+
+//        cout << "Difference calculated [" << counter << ", " << counter - 1 << "], nonzero: " << (int)difference.nzcount() << endl;
+//        volumeObjectDifferences.push_back(difference);
+//        counter++;
+//        difference.release();
+//    }
+//    operand1.release();
+//    operand2.release();
+
+//    return volumeObjectDifferences;
+//}

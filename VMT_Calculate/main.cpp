@@ -8,9 +8,9 @@
 int main(int argc, char *argv[])
 {
 
-    if (argc != 3 && argc != 4)
+    if (argc < 3 || argc > 5)
     {
-        std::cout << "\n\nUsage: ./VMT_Calculate <videoFolder> <trackFile> [downsamplingRate=0]\nYou entered " << argc << " values.\n\n";
+        std::cout << "\n\nUsage: ./VMT_Calculate <videoFolder> <trackFile> [downsamplingRate=0] [zTolerance=0] \nYou entered " << argc << " values.\n\n";
         return -1;
     }
 
@@ -19,17 +19,32 @@ int main(int argc, char *argv[])
     QString outputFolder = "/home/emredog/Documents/output/";
 
     int downsamplingRate = 1; // --> no downsampling
+    int zTolerance = 0; // --> no depth tolerance
 
-    if (argc == 4)
+    if (argc >= 4)
     {
         bool ok = false;
         downsamplingRate = QString(argv[3]).toInt(&ok);
         if (!ok || downsamplingRate <= 0)
+        {
             std::cout << "Downsampling rate should be a positive integer.\n\n";
+            return -1;
+        }
+    }
+
+    if (argc == 5)
+    {
+        bool ok = false;
+        zTolerance = QString(argv[4]).toInt(&ok);
+        if (!ok || zTolerance < 0)
+        {
+            std::cout << "Z-Tolerance should be a positive integer or zero.\n\n";
+            return -1;
+        }
     }
 
 
-    VmtFunctions* vmtCore = new VmtFunctions();
+    VmtFunctions* vmtCore = new VmtFunctions(640, 480, 0, 0, zTolerance);
 
     QTime myTimer;
     myTimer.start();
