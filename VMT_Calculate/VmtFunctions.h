@@ -53,7 +53,7 @@ private:
 		Z = 2
 	};
 
-	inline float raw_depth_to_meters(int raw_depth)
+    inline float raw_depth_to_meters(int raw_depth) const
 	{
         if (raw_depth <= 2047)
 			return 1.0 / (raw_depth * -0.0030711016 + 3.3309495161);
@@ -128,6 +128,10 @@ protected:
     cv::SparseMat TrimSparseMat(const cv::SparseMat &vmt);
 
     cv::SparseMat SpatiallyNormalizeSparseMat(cv::SparseMat vmt);
+
+    cv::Mat ExtractSilhouette(const cv::Mat& mat) const;
+
+
 
     //not used
     //    cv::Mat GenerateVolumeObject(cv::Mat image, int downsamplingRate = 2);

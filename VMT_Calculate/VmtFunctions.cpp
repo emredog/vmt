@@ -113,7 +113,11 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
 
         depthImg.release();
 
-        cv::SparseMat currentSparseVolumeObj = this->GenerateSparseVolumeObject(croppedDepthImg, downsamplingRate);
+        cv::Mat silhouette = this->ExtractSilhouette(croppedDepthImg);
+
+        croppedDepthImg.release();
+
+        cv::SparseMat currentSparseVolumeObj = this->GenerateSparseVolumeObject(silhouette, downsamplingRate);
 
         croppedDepthImg.release();
 
@@ -124,20 +128,29 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
             cv::SparseMat cleanedUpDelta = this->CleanUpVolumeObjectDifference(delta);
             delta.release();
 
-            //FIXME!!!
-            return cv::SparseMat();
-
-            //TODO: remove this after debug
-//            norDelta = this->SpatiallyNormalizeSparseMat(cleanedUpDelta);
-//            trimDelta = this->TrimSparseMat(norDelta);
-
-//            PointCloudFunctions::saveVmtAsCloud(trimDelta, QString("/home/emredog/Documents/output/70_110/%1_diffCleaned.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
-//            norDelta.release();
-//            trimDelta.release();
-            //-------------------------------
+//TODO: remove this after debug
+//            {
+//                cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(cleanedUpDelta);
+//                cv::SparseMat trm = this->TrimSparseMat(nor);
+//                PointCloudFunctions::saveVmtAsCloud(trm, QString("/home/emredog/Documents/output/70_110/%1_diff.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+//                nor.release();
+//                trm.release();
+//            }
+//-------------------------------
 
             volumeObjectDifferences.append(cleanedUpDelta);
         }
+
+//TODO: remove this after debug
+//        {
+//            cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(currentSparseVolumeObj);
+//            cv::SparseMat trm = this->TrimSparseMat(nor);
+//            PointCloudFunctions::saveVmtAsCloud(currentSparseVolumeObj, QString("/home/emredog/Documents/output/70_110/%1_vol.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+//            nor.release();
+//            trm.release();
+//        }
+//-------------------------------
+
         volumeObjects.append(currentSparseVolumeObj);
         counter++;
     }
@@ -176,17 +189,23 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
 
 
     //NOTE: because of memory restrictions, if downsamplingRate == 2, x and y are incremented by 2 (~downsampling by 1/4)
-    for (int y = 0; y < image.rows-1; y+=downsamplingRate)
+    for (int y = 0; y < image.rows; y+=downsamplingRate)
     {
         const unsigned short* ithRow = image.ptr<unsigned short>(y); //take a whole row
 
-        for (int x = 0; x < image.cols-1; x+=downsamplingRate)
+        for (int x = 0; x < image.cols; x+=downsamplingRate)
         {
             pixelValue = ithRow[x];
+
+            if (pixelValue <= 0) // it's set to zero when extracting silhouette. discard this point, this is background
+                continue;
+
+
             mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
             depth = mostSig13Digits >> 5;
 
             depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
+
 
             if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
             {                                
@@ -303,16 +322,16 @@ cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& v
                 processedPoints[curPoint] = currentZIndex; //set it to the current Z index
 //                cout << "Point updated (" << curPoint.x() << ", " << curPoint.y() << ") Z: " << existingZIndex << " --> " << currentZIndex << endl;
             }
-            else //, just discard it
+            //else //, just discard it
 //                cout << "Discarded point on clean-up (" << curPoint.x() << ", " << curPoint.y() << ", " << currentZIndex << ")\n";
-            }
+        }
         else //first time we process a point in this [X, Y]
         {
             processedPoints.insert(curPoint, n->idx[Z]);
         }
     }
 
-    cout << "\tAll points parsed. Fetched " << processedPoints.keys().length() << " out of " << (int)volObjDiff.nzcount() << " points.\n";
+//    cout << "\tAll points parsed. Fetched " << processedPoints.keys().length() << " out of " << (int)volObjDiff.nzcount() << " points.\n";
 
     //create the cleaned-up sparse mat:
     QHashIterator<QPoint, int> it(processedPoints);
@@ -324,7 +343,7 @@ cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& v
         cleanedUpVolObjDiff.ref<uchar>(p.x(), p.y(), z) = volObjDiff.value<uchar>(p.x(), p.y(), z);
     }
 
-    cout << "\tNew SparseMat is created with " << (int)cleanedUpVolObjDiff.nzcount() << " points.\n";
+    cout << "\tVolume object created & cleaned-up (" << (int)cleanedUpVolObjDiff.nzcount() << " points)\n";
 
 
     return cleanedUpVolObjDiff;
@@ -894,6 +913,75 @@ cv::SparseMat VmtFunctions::SpatiallyNormalizeSparseMat(cv::SparseMat vmt)
     }
 
     return normalizedVmt;
+}
+
+cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
+{
+    cv::Mat temp, matGrayscale = cv::Mat(mat.dims, mat.size, CV_8UC1), thresholded;
+    //format issues
+    mat.convertTo(temp, CV_16UC1);
+
+
+
+    std::vector<uchar> values;
+    unsigned short pixelValue;
+    unsigned short mostSig13Digits;
+    unsigned short depth;
+    unsigned int depthInMillimeters;
+
+    //Create a 8bit matrix from depth image
+    for (int y = 0; y < temp.rows; y++)
+    {
+        const unsigned short* ithRow = temp.ptr<unsigned short>(y); //take a whole row
+        for (int x = 0; x < temp.cols; x++)
+        {
+            pixelValue = ithRow[x];
+            mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
+            depth = mostSig13Digits >> 5;
+            depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
+            uchar newValue = (256.0 / (double)(this->permittedMaxZ-this->permittedMinZ)) * depthInMillimeters;
+            matGrayscale.at<uchar>(y, x) =newValue;
+            if (newValue > 0 && newValue < 255 && depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ)
+                values.push_back(newValue); //add accepted values to the list
+        }
+    }   
+
+    //calculate Otsu threshold value on the accepted values
+    double calculatedOtsu = cv::threshold(values, values, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+
+    //apply standart threshold with calculated otsu threshold value
+    cv::threshold(matGrayscale, thresholded, calculatedOtsu, 255, CV_THRESH_BINARY_INV);
+
+//    cv::namedWindow("debug");
+//    cv::imshow("debug", mat);
+
+    // mask the original depth image with thresholded binary image
+    cv::Mat silhouette = cv::Mat::zeros(mat.size[0], mat.size[1], mat.type());
+
+//    cv::imshow("debug", thresholded);
+//    cv::waitKey(0);
+
+    //bitwise_and didnt work as expected!!!
+
+    //do it by hand:
+    for (int x=0; x<mat.rows; x++)
+        for (int y=0; y<mat.cols; y++)
+        {
+            uchar val = thresholded.at<uchar>(x, y);
+            if (val == 255)
+                silhouette.at<unsigned short>(x, y) = mat.at<unsigned short>(x, y);
+        }
+
+//    cv::namedWindow("sil");
+//    cv::imshow("sil", silhouette);
+//    cv::waitKey(0);
+
+    //Cleanup
+    temp.release();
+    matGrayscale.release();
+    thresholded.release();
+
+    return silhouette;
 }
 
 //vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects, int depthTolerance)
