@@ -28,7 +28,13 @@ VmtFunctions::VmtFunctions(int xSize, int ySize, unsigned int tolX, unsigned int
     this->matrixSize[Y] = ySize;
     this->matrixSize[X] = xSize;
 
+    this->saveVolumeObject = false;
+    this->saveDelta = false;
+    this->saveVmt = false;
 
+    this->downsampleRate = 1;
+
+    this->isTrackPoint = false;
 
     this->matrixSize[Z] = this->permittedMaxZ - this->permittedMinZ;
 
@@ -43,7 +49,7 @@ VmtFunctions::~VmtFunctions(void)
 }
 
 
-cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString trackFilePath, int downsamplingRate)
+cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString trackFilePath)
 {
     //read track file
     QFile trackFile(trackFilePath);
@@ -77,17 +83,22 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
     QStringList depthImgFileNames = videoDir.entryList(filters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
 
 
-    QList<cv::SparseMat> volumeObjects;
+    cv::SparseMat prevSparseVolumeObj;
     QList<cv::SparseMat> volumeObjectDifferences;
 
-    int counter = 1; //FIXME: delete this
 
+    if (this->isTrackPoint)
+        cout << "Tracking point: (" << this->trackX << ", " << this->trackY << ")\n";
+
+
+    int counter = 1; //FIXME: delete this
     //calculate volume object for each depth frame
     foreach(BoundingBox bb, bboxSequence)
     {
+        cout << counter << " --------------------------------------------------------\n";
         QString fileName = depthImgFileNames[bb.frameNr-1];
         if (bb.frameNr >= depthImgFileNames.length() ||
-              !fileName.contains(QString::number(bb.frameNr)))
+                !fileName.contains(QString::number(bb.frameNr)))
             return cv::SparseMat();
 
         //Read the file
@@ -102,56 +113,53 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
 
 
         //cut the bounding box if it's outside of the frame // FIXME--> this shouldn't happen?!
-        if (bb.x + bb.width >= depthImg.cols) bb.width = depthImg.cols - bb.x;
-        if (bb.y + bb.height >= depthImg.rows) bb.height = depthImg.rows - bb.y;
+        //        if (bb.x + bb.width >= depthImg.cols) bb.width = depthImg.cols - bb.x;
+        //        if (bb.y + bb.height >= depthImg.rows) bb.height = depthImg.rows - bb.y;
 
 
-        cv::Rect roi(bb.x, bb.y, bb.width, bb.height);
+        //        cv::Rect roi(bb.x, bb.y, bb.width, bb.height);
 
         //Crop the depth image with the bounding box obtained from track file
-        cv::Mat croppedDepthImg = depthImg(roi);
+        //        cv::Mat croppedDepthImg = depthImg(roi);
 
-        depthImg.release();
+        //        depthImg.release();
 
-        cv::Mat silhouette = this->ExtractSilhouette(croppedDepthImg);
+        //        cv::Mat silhouette = this->ExtractSilhouette(croppedDepthImg);
 
-        croppedDepthImg.release();
+        //        croppedDepthImg.release();
 
-        cv::SparseMat currentSparseVolumeObj = this->GenerateSparseVolumeObject(silhouette, downsamplingRate);
-
-        croppedDepthImg.release();
-
-        if (volumeObjects.length() >= 1) //there are at least 2 volume objects
+        cv::SparseMat currentSparseVolumeObj = this->GenerateSparseVolumeObject(depthImg, this->downsampleRate);
+        if (this->saveVolumeObject)
         {
-            cv::SparseMat prevSparseVolumeObj = volumeObjects.last();
+            cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(currentSparseVolumeObj);
+            cv::SparseMat trm = this->TrimSparseMat(nor);
+            PointCloudFunctions::saveVmtAsCloud(currentSparseVolumeObj, QString("/home/emredog/Documents/output/volObj_%1.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+            nor.release();
+            trm.release();
+        }
+
+        //        croppedDepthImg.release();
+
+        if (prevSparseVolumeObj.nzcount() > 0) //there are at least 2 volume objects
+        {
             cv::SparseMat delta = this->SubtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);
             cv::SparseMat cleanedUpDelta = this->CleanUpVolumeObjectDifference(delta);
             delta.release();
 
-//TODO: remove this after debug
-//            {
-//                cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(cleanedUpDelta);
-//                cv::SparseMat trm = this->TrimSparseMat(nor);
-//                PointCloudFunctions::saveVmtAsCloud(trm, QString("/home/emredog/Documents/output/70_110/%1_diff.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
-//                nor.release();
-//                trm.release();
-//            }
-//-------------------------------
+            if (this->saveDelta)
+            {
+                cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(cleanedUpDelta);
+                cv::SparseMat trm = this->TrimSparseMat(nor);
+                PointCloudFunctions::saveVmtAsCloud(trm, QString("/home/emredog/Documents/output/diff_%1.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
+                nor.release();
+                trm.release();
+            }
 
             volumeObjectDifferences.append(cleanedUpDelta);
         }
 
-//TODO: remove this after debug
-//        {
-//            cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(currentSparseVolumeObj);
-//            cv::SparseMat trm = this->TrimSparseMat(nor);
-//            PointCloudFunctions::saveVmtAsCloud(currentSparseVolumeObj, QString("/home/emredog/Documents/output/70_110/%1_vol.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
-//            nor.release();
-//            trm.release();
-//        }
-//-------------------------------
-
-        volumeObjects.append(currentSparseVolumeObj);
+        currentSparseVolumeObj.copyTo(prevSparseVolumeObj);
+        currentSparseVolumeObj.release();
         counter++;
     }
 
@@ -169,6 +177,18 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
     return trimmed;
 }
 
+void VmtFunctions::setTrackPoint(int x, int y)
+{
+    if (x >= 0 && y >= 0)
+    {
+        this->isTrackPoint = true;
+        this->trackX = x;
+        this->trackY = y;
+    }
+    else
+        this->isTrackPoint = false;
+}
+
 cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsamplingRate)
 {
     cv::Mat temp;
@@ -178,6 +198,9 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
     image.release();
     temp.assignTo(image);
     temp.release();
+
+//    cv::Mat median(image.dims, image.size, image.type());
+//    cv::medianBlur(image, median, 5);
 
     //Generate Volume Object:
     cv::SparseMat sparse_mat(this->dims, this->matrixSize, CV_8UC1);
@@ -191,7 +214,9 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
     //NOTE: because of memory restrictions, if downsamplingRate == 2, x and y are incremented by 2 (~downsampling by 1/4)
     for (int y = 0; y < image.rows; y+=downsamplingRate)
     {
+        //FIXME!!!
         const unsigned short* ithRow = image.ptr<unsigned short>(y); //take a whole row
+//        const unsigned short* ithRow = median.ptr<unsigned short>(y); //take a whole row
 
         for (int x = 0; x < image.cols; x+=downsamplingRate)
         {
@@ -208,11 +233,18 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
 
 
             if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
-            {                                
-                sparse_mat.ref<uchar>(x, image.rows-y, depthInMillimeters) = I_MAX;
+            {
+                sparse_mat.ref<uchar>(x, y, depthInMillimeters) = I_MAX;
+
+                if (this->isTrackPoint)
+                {
+                    if (x == this->trackX && y == this->trackY)
+                        cout << "\tVolObj\t\tX: " << x << "\tY: " << y << "\tZ: " << depthInMillimeters << endl;
+                }
+
             }
-//          else
-//              cout << "Point dropped on Z: " << depthInMillimeters << endl;
+            //          else
+            //              cout << "Point dropped on Z: " << depthInMillimeters << endl;
         }
     }
 
@@ -225,7 +257,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
 
 
 
-cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, const cv::SparseMat& operand2)
+cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, const cv::SparseMat& operand2) /* current - previous */
 {	
     //diff(x, y, z) = |operand2(x,y,z) - operand1(x,y,z)|
     //				= 1 if |1 - 0| or |0 - 1|
@@ -239,12 +271,14 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     {
         const cv::SparseMat::Node* n = op2It.node();
         uchar val2 = op2It.value<uchar>();
-        uchar val1 = operand1.value<uchar>(n->idx[X], n->idx[Y], n->idx[Z]);
+        uchar val1 = operand1.value<uchar>(n->idx);
+
+        int dynamicTolerance = this->CalculateDynamicTolerance(n->idx[Z]);
 
         if (val1 <= 0) //if no value was found on that location:
         {
             //search for the neighborhood of z (to handle noise from kinect)
-            for (int offsetZ = -(this->toleranceZ); offsetZ <= (int)this->toleranceZ; offsetZ++)
+            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
             {
                 for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
                 {
@@ -262,24 +296,28 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
         }
 
         if (val1 <= 0) //if still no value (after the neighborhood search)
-            difference.ref<uchar>(n->idx) = val2;
+        {
+            difference.ref<uchar>(n->idx) = I_MAX;
+        }
     }
     //go through nonzero values of operand1, and set diff to 1 if operand2(x,y,z)==0
     for (cv::SparseMatConstIterator op1It=operand1.begin(); op1It != operand1.end(); ++op1It)
     {
         const cv::SparseMat::Node* n = op1It.node();
         uchar val1 = op1It.value<uchar>();
-        uchar val2 = operand2.value<uchar>(n->idx[X], n->idx[Y], n->idx[Z]);
+        uchar val2 = operand2.value<uchar>(n->idx);
+
+        int dynamicTolerance = this->CalculateDynamicTolerance(n->idx[Z]);
 
         if (val2 <= 0) //if no value was found on that location:
         {
             //search for the neighborhood of z (to handle noise from kinect)
-            for (int offsetZ = -(this->toleranceZ); offsetZ <= (int)this->toleranceZ; offsetZ++)
-            {                
+            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
+            {
                 for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
                 {
                     for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
-                    {                        
+                    {
                         uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
                         if (temp > 0)
                         {
@@ -292,17 +330,39 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
         }
 
         if (val2 <= 0) //if still no value (after the neighborhood search)
-            difference.ref<uchar>(n->idx) = val1;
+        {
+            difference.ref<uchar>(n->idx) = I_MAX;
+        }
     }
 
     //all of the remaining points of difference should be equal to 0.
+
+    if (this->isTrackPoint)
+    {
+        for (int z=this->permittedMinZ; z<this->permittedMaxZ; z++)
+        {
+            uchar valDel = difference.value<uchar>(this->trackX, this->trackY, z);
+            if (valDel > 0)
+            {
+                cout << "\tDelta\t\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
+
+                uchar valOp1 = operand1.value<uchar>(this->trackX, this->trackY, z);
+                if (valOp1 > 0)
+                    cout << "\t\tOper1\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
+
+                uchar valOp2 = operand2.value<uchar>(this->trackX, this->trackY, z);
+                if (valOp2 > 0)
+                    cout << "\t\tOper2\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
+            }
+        }
+    }
 
     return difference;
 }
 
 cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& volObjDiff) const
 {
-    cv::SparseMat cleanedUpVolObjDiff(volObjDiff.dims(), volObjDiff.size(), volObjDiff.type());    
+    cv::SparseMat cleanedUpVolObjDiff(volObjDiff.dims(), volObjDiff.size(), volObjDiff.type());
 
     QHash<QPoint, int> processedPoints; // <point in [X, Y], Zindex>
 
@@ -320,10 +380,10 @@ cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& v
             if (currentZIndex < existingZIndex) //if it's nearer to the camera:
             {
                 processedPoints[curPoint] = currentZIndex; //set it to the current Z index
-//                cout << "Point updated (" << curPoint.x() << ", " << curPoint.y() << ") Z: " << existingZIndex << " --> " << currentZIndex << endl;
+                //                cout << "Point updated (" << curPoint.x() << ", " << curPoint.y() << ") Z: " << existingZIndex << " --> " << currentZIndex << endl;
             }
             //else //, just discard it
-//                cout << "Discarded point on clean-up (" << curPoint.x() << ", " << curPoint.y() << ", " << currentZIndex << ")\n";
+            //                cout << "Discarded point on clean-up (" << curPoint.x() << ", " << curPoint.y() << ", " << currentZIndex << ")\n";
         }
         else //first time we process a point in this [X, Y]
         {
@@ -331,7 +391,7 @@ cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& v
         }
     }
 
-//    cout << "\tAll points parsed. Fetched " << processedPoints.keys().length() << " out of " << (int)volObjDiff.nzcount() << " points.\n";
+    //    cout << "\tAll points parsed. Fetched " << processedPoints.keys().length() << " out of " << (int)volObjDiff.nzcount() << " points.\n";
 
     //create the cleaned-up sparse mat:
     QHashIterator<QPoint, int> it(processedPoints);
@@ -341,9 +401,15 @@ cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& v
         QPoint p = it.key();
         int z = it.value();
         cleanedUpVolObjDiff.ref<uchar>(p.x(), p.y(), z) = volObjDiff.value<uchar>(p.x(), p.y(), z);
+        if (this->isTrackPoint)
+        {
+            if (p.x() == this->trackX && p.y() == this->trackY)
+                cout << "\tClean Delta\tX: " << p.x() << "\tY: " << p.y() << "\tZ: " << z << endl;
+        }
+
     }
 
-    cout << "\tVolume object created & cleaned-up (" << (int)cleanedUpVolObjDiff.nzcount() << " points)\n";
+    //    cout << "\tVolume object created & cleaned-up (" << (int)cleanedUpVolObjDiff.nzcount() << " points)\n";
 
 
     return cleanedUpVolObjDiff;
@@ -432,7 +498,7 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
         if (i > 0)
         {
             double disappearRate = attConst*curMagnituteOfMotion;
-            cout << "Disappearing rate at t= " << i << ": " << disappearRate << endl;
+            //            cout << "Disappearing rate at t= " << i << ": " << disappearRate << endl;
             //for all nonzero values of previous VMT
             for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
             {
@@ -448,17 +514,31 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
                     }
                 }
             }
+
+            if (this->isTrackPoint)
+            {
+                for (int z=this->permittedMinZ; z<this->permittedMaxZ; z++)
+                {
+                    uchar val = curVmt.value<uchar>(this->trackX, this->trackY, z);
+                    if (val > 0)
+                        cout << "\tVMT " << i << "\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << "\tIntensity: " << (int)val << endl;
+                }
+            }
         }
 
-
+        if (this->saveVmt)
+        {
+            cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(curVmt);
+            cv::SparseMat trm = this->TrimSparseMat(nor);
+            PointCloudFunctions::saveVmtAsCloud(trm, QString("/home/emredog/Documents/output/VMT_%1.pcd").arg(QString::number(i).rightJustified(2, '0')).toStdString());
+            nor.release();
+            trm.release();
+        }
 
         //clear prevVmt and copy curVmt --> prevVmt
         prevVmt.clear();
         prevVmt.release();
         curVmt.copyTo(prevVmt); //"The destination will be reallocated if needed."
-
-//        vmtList.append(curVmt); //add current VMT to end of the list
-//        if (vmtList.length() >= 2) vmtList.removeFirst(); //if there are more than 2 vmt's, remove the first one (the oldest one)
     }
 
     return curVmt;
@@ -835,7 +915,7 @@ VmtFunctions::VmtInfo VmtFunctions::GetVmtInfo(const cv::SparseMat &vmt) const
     info.numberOfPoints = (int)vmt.nzcount();
 
     int minX = INT_MAX, minY = INT_MAX, minZ = INT_MAX,
-        maxX = INT_MIN, maxY = INT_MIN, maxZ = INT_MIN;
+            maxX = INT_MIN, maxY = INT_MIN, maxZ = INT_MIN;
 
     //Get boundaries
     for (cv::SparseMatConstIterator it=vmt.begin(); it != vmt.end(); ++it)
@@ -944,7 +1024,7 @@ cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
             if (newValue > 0 && newValue < 255 && depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ)
                 values.push_back(newValue); //add accepted values to the list
         }
-    }   
+    }
 
     //calculate Otsu threshold value on the accepted values
     double calculatedOtsu = cv::threshold(values, values, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
@@ -952,14 +1032,14 @@ cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
     //apply standart threshold with calculated otsu threshold value
     cv::threshold(matGrayscale, thresholded, calculatedOtsu, 255, CV_THRESH_BINARY_INV);
 
-//    cv::namedWindow("debug");
-//    cv::imshow("debug", mat);
+    //    cv::namedWindow("debug");
+    //    cv::imshow("debug", mat);
 
     // mask the original depth image with thresholded binary image
     cv::Mat silhouette = cv::Mat::zeros(mat.size[0], mat.size[1], mat.type());
 
-//    cv::imshow("debug", thresholded);
-//    cv::waitKey(0);
+    //    cv::imshow("debug", thresholded);
+    //    cv::waitKey(0);
 
     //bitwise_and didnt work as expected!!!
 
@@ -972,9 +1052,9 @@ cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
                 silhouette.at<unsigned short>(x, y) = mat.at<unsigned short>(x, y);
         }
 
-//    cv::namedWindow("sil");
-//    cv::imshow("sil", silhouette);
-//    cv::waitKey(0);
+    //    cv::namedWindow("sil");
+    //    cv::imshow("sil", silhouette);
+    //    cv::waitKey(0);
 
     //Cleanup
     temp.release();
@@ -982,6 +1062,36 @@ cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
     thresholded.release();
 
     return silhouette;
+}
+
+inline int VmtFunctions::CalculateDynamicTolerance(int depthInMm) const
+{
+    //FIXME: find an appropriate non-linear function to calculate this properly
+    if (depthInMm < 2000)
+        return 20;
+    else if (depthInMm < 2500)
+        return 25;
+    else if (depthInMm < 2800)
+        return 50;
+    else if (depthInMm < 3500)
+        return 70;
+    else if (depthInMm < 4000)
+        return 100;
+    else if (depthInMm < 4100)
+        return 120;
+    else if (depthInMm < 4300)
+        return 140;
+    else if (depthInMm < 4500)
+        return 160;
+    else if (depthInMm < 5000)
+        return 220;
+    else if (depthInMm < 7000)
+        return 280;
+    else
+        return 450;
+
+//    return this->toleranceZ;
+
 }
 
 //vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects, int depthTolerance)
