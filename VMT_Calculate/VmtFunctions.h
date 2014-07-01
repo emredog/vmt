@@ -11,6 +11,10 @@
 #include <QPoint>
 #include <qhash.h>
 
+#include "depthtotolerance.h"
+
+
+
 #define I_MAX 255
 //#define PREDEFINED_THRESHOLD 150 //156
 #define X_SIZE 640
@@ -50,6 +54,8 @@ private:
     bool saveVolumeObject;
     bool saveDelta;
     bool saveVmt;
+
+    DepthToTolerance dynamicTolerance;
 
 	enum DimIndex
 	{
@@ -138,9 +144,7 @@ protected:
 
     cv::SparseMat SpatiallyNormalizeSparseMat(cv::SparseMat vmt);
 
-    cv::Mat ExtractSilhouette(const cv::Mat& mat) const;
-
-    int CalculateDynamicTolerance(int depthInMm) const;
+    cv::Mat ExtractSilhouette(const cv::Mat& mat) const;    
 
 
 

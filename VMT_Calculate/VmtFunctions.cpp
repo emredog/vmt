@@ -3,6 +3,7 @@
 #include "boundingbox.h"
 #include "PointCloudFunctions.h"
 
+
 #include <stdio.h>
 
 #include <QFile>
@@ -10,6 +11,7 @@
 #include <QStringList>
 #include <QDir>
 #include <QVector>
+#include <QtDebug>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -39,7 +41,7 @@ VmtFunctions::VmtFunctions(int xSize, int ySize, unsigned int tolX, unsigned int
     this->matrixSize[Z] = this->permittedMaxZ - this->permittedMinZ;
 
     cout << "VMT core constructed with X: [0, " << xSize << "]\tY: [0, " << ySize << "]\tZ: [" << this->permittedMinZ << ", " << this->permittedMaxZ << "]\n";
-    cout << "Normalization interval for depth range: [0, " << NORMALIZATION_INTERVAL << "]\n";
+    cout << "Normalization interval for depth range: [0, " << NORMALIZATION_INTERVAL << "]\n";        
 }
 
 
@@ -88,8 +90,7 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
 
 
     if (this->isTrackPoint)
-        cout << "Tracking point: (" << this->trackX << ", " << this->trackY << ")\n";
-
+        cout << "Tracking point: (" << this->trackX << ", " << this->trackY << ")\n";   
 
     int counter = 1; //FIXME: delete this
     //calculate volume object for each depth frame
@@ -111,23 +112,6 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
             return cv::SparseMat();
         }
 
-
-        //cut the bounding box if it's outside of the frame // FIXME--> this shouldn't happen?!
-        //        if (bb.x + bb.width >= depthImg.cols) bb.width = depthImg.cols - bb.x;
-        //        if (bb.y + bb.height >= depthImg.rows) bb.height = depthImg.rows - bb.y;
-
-
-        //        cv::Rect roi(bb.x, bb.y, bb.width, bb.height);
-
-        //Crop the depth image with the bounding box obtained from track file
-        //        cv::Mat croppedDepthImg = depthImg(roi);
-
-        //        depthImg.release();
-
-        //        cv::Mat silhouette = this->ExtractSilhouette(croppedDepthImg);
-
-        //        croppedDepthImg.release();
-
         cv::SparseMat currentSparseVolumeObj = this->GenerateSparseVolumeObject(depthImg, this->downsampleRate);
         if (this->saveVolumeObject)
         {
@@ -138,11 +122,11 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
             trm.release();
         }
 
-        //        croppedDepthImg.release();
-
+        //do the subtraction
         if (prevSparseVolumeObj.nzcount() > 0) //there are at least 2 volume objects
         {
             cv::SparseMat delta = this->SubtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);
+            //... and cleanup
             cv::SparseMat cleanedUpDelta = this->CleanUpVolumeObjectDifference(delta);
             delta.release();
 
@@ -157,6 +141,9 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
 
             volumeObjectDifferences.append(cleanedUpDelta);
         }
+
+
+
 
         currentSparseVolumeObj.copyTo(prevSparseVolumeObj);
         currentSparseVolumeObj.release();
@@ -231,7 +218,6 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
 
             depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
 
-
             if (depthInMillimeters >= this->permittedMinZ && depthInMillimeters <= this->permittedMaxZ) //to discard depth values not between the permitted range
             {
                 sparse_mat.ref<uchar>(x, y, depthInMillimeters) = I_MAX;
@@ -273,12 +259,12 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
         uchar val2 = op2It.value<uchar>();
         uchar val1 = operand1.value<uchar>(n->idx);
 
-        int dynamicTolerance = this->CalculateDynamicTolerance(n->idx[Z]);
+        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
 
         if (val1 <= 0) //if no value was found on that location:
         {
             //search for the neighborhood of z (to handle noise from kinect)
-            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
+            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++) //FIXME: instead of searching, we can just pinpoint the next-previous values for performance
             {
                 for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
                 {
@@ -307,7 +293,7 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
         uchar val1 = op1It.value<uchar>();
         uchar val2 = operand2.value<uchar>(n->idx);
 
-        int dynamicTolerance = this->CalculateDynamicTolerance(n->idx[Z]);
+        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
 
         if (val2 <= 0) //if no value was found on that location:
         {
@@ -1062,36 +1048,6 @@ cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
     thresholded.release();
 
     return silhouette;
-}
-
-inline int VmtFunctions::CalculateDynamicTolerance(int depthInMm) const
-{
-    //FIXME: find an appropriate non-linear function to calculate this properly
-    if (depthInMm < 2000)
-        return 20;
-    else if (depthInMm < 2500)
-        return 25;
-    else if (depthInMm < 2800)
-        return 50;
-    else if (depthInMm < 3500)
-        return 70;
-    else if (depthInMm < 4000)
-        return 100;
-    else if (depthInMm < 4100)
-        return 120;
-    else if (depthInMm < 4300)
-        return 140;
-    else if (depthInMm < 4500)
-        return 160;
-    else if (depthInMm < 5000)
-        return 220;
-    else if (depthInMm < 7000)
-        return 280;
-    else
-        return 450;
-
-//    return this->toleranceZ;
-
 }
 
 //vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects, int depthTolerance)

@@ -19,13 +19,15 @@ SOURCES += main.cpp \
     HelperFunctions.cpp \
     PointCloudFunctions.cpp \
     VmtFunctions.cpp \
-    ../AnalyzeAnnotations/boundingbox.cpp
+    ../AnalyzeAnnotations/boundingbox.cpp \
+    depthtotolerance.cpp
 
 HEADERS += \
     HelperFunctions.h \
     PointCloudFunctions.h \
     VmtFunctions.h \
-    ../AnalyzeAnnotations/boundingbox.h
+    ../AnalyzeAnnotations/boundingbox.h \
+    depthtotolerance.h
 
 INCLUDEPATH += /usr/include/pcl-1.7
 INCLUDEPATH += /usr/include/eigen3
