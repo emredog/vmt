@@ -17,8 +17,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 
-VmtFunctions::VmtFunctions(int xSize, int ySize, unsigned int tolX, unsigned int tolY, unsigned int tolZ)
-    : toleranceX(tolX), toleranceY(tolY), toleranceZ(tolZ)
+VmtFunctions::VmtFunctions(int xSize, int ySize)
+//    : toleranceX(tolX), toleranceY(tolY), toleranceZ(tolZ)
 {
     this->permittedMinZ = MIN_Z;
     this->permittedMaxZ = MAX_Z;
@@ -41,7 +41,7 @@ VmtFunctions::VmtFunctions(int xSize, int ySize, unsigned int tolX, unsigned int
     this->matrixSize[Z] = this->permittedMaxZ - this->permittedMinZ;
 
     cout << "VMT core constructed with X: [0, " << xSize << "]\tY: [0, " << ySize << "]\tZ: [" << this->permittedMinZ << ", " << this->permittedMaxZ << "]\n";
-    cout << "Normalization interval for depth range: [0, " << NORMALIZATION_INTERVAL << "]\n";        
+    cout << "Normalization interval for depth range: [0, " << NORMALIZATION_INTERVAL << "]\n";
 }
 
 
@@ -90,7 +90,7 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
 
 
     if (this->isTrackPoint)
-        cout << "Tracking point: (" << this->trackX << ", " << this->trackY << ")\n";   
+        cout << "Tracking point: (" << this->trackX << ", " << this->trackY << ")\n";
 
     int counter = 1; //FIXME: delete this
     //calculate volume object for each depth frame
@@ -186,8 +186,8 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
     temp.assignTo(image);
     temp.release();
 
-//    cv::Mat median(image.dims, image.size, image.type());
-//    cv::medianBlur(image, median, 5);
+    //    cv::Mat median(image.dims, image.size, image.type());
+    //    cv::medianBlur(image, median, 5);
 
     //Generate Volume Object:
     cv::SparseMat sparse_mat(this->dims, this->matrixSize, CV_8UC1);
@@ -203,7 +203,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
     {
         //FIXME!!!
         const unsigned short* ithRow = image.ptr<unsigned short>(y); //take a whole row
-//        const unsigned short* ithRow = median.ptr<unsigned short>(y); //take a whole row
+        //        const unsigned short* ithRow = median.ptr<unsigned short>(y); //take a whole row
 
         for (int x = 0; x < image.cols; x+=downsamplingRate)
         {
@@ -256,21 +256,21 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     for (cv::SparseMatConstIterator op2It=operand2.begin(); op2It != operand2.end(); ++op2It)
     {
         const cv::SparseMat::Node* n = op2It.node();
-        uchar val2 = op2It.value<uchar>();
+//        uchar val2 = op2It.value<uchar>();
         uchar val1 = operand1.value<uchar>(n->idx);
-
-        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
 
         if (val1 <= 0) //if no value was found on that location:
         {
-            //search for the neighborhood of z (to handle noise from kinect)
-            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++) //FIXME: instead of searching, we can just pinpoint the next-previous values for performance
+            int depthCorrectionCoef = this->DepthCorrectionCoefficient(n->idx[Z]);
+            int indexOfDepth = this->dynamicTolerance.allDepthValues.indexOf(n->idx[Z]);
+            for (int i = indexOfDepth-depthCorrectionCoef; i<= indexOfDepth+depthCorrectionCoef; i++)
             {
-                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
+                int potentialZ = this->dynamicTolerance.allDepthValues[i];
+                for (int offsetX = -(depthCorrectionCoef); offsetX <= depthCorrectionCoef; offsetX++) //search for the neighborhood of x
                 {
-                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
+                    for (int offsetY = -(depthCorrectionCoef); offsetY <= depthCorrectionCoef; offsetY++) //search for the neighborhood of y
                     {
-                        uchar temp = operand1.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+                        uchar temp = operand1.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, potentialZ); //if the element did not exist, value methods return 0.
                         if (temp > 0)
                         {
                             val1 = temp;
@@ -281,6 +281,28 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
             }
         }
 
+        //        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
+
+        //        if (val1 <= 0) //if no value was found on that location:
+        //        {
+        //            //search for the neighborhood of z (to handle noise from kinect)
+        //            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++) //FIXME: instead of searching, we can just pinpoint the next-previous values for performance
+        //            {
+        //                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
+        //                {
+        //                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
+        //                    {
+        //                        uchar temp = operand1.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+        //                        if (temp > 0)
+        //                        {
+        //                            val1 = temp;
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+
         if (val1 <= 0) //if still no value (after the neighborhood search)
         {
             difference.ref<uchar>(n->idx) = I_MAX;
@@ -290,21 +312,21 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     for (cv::SparseMatConstIterator op1It=operand1.begin(); op1It != operand1.end(); ++op1It)
     {
         const cv::SparseMat::Node* n = op1It.node();
-        uchar val1 = op1It.value<uchar>();
+//        uchar val1 = op1It.value<uchar>();
         uchar val2 = operand2.value<uchar>(n->idx);
-
-        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
 
         if (val2 <= 0) //if no value was found on that location:
         {
-            //search for the neighborhood of z (to handle noise from kinect)
-            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
+            int depthCorrectionCoef = this->DepthCorrectionCoefficient(n->idx[Z]);
+            int indexOfDepth = this->dynamicTolerance.allDepthValues.indexOf(n->idx[Z]);
+            for (int i = indexOfDepth-depthCorrectionCoef; i<= indexOfDepth+depthCorrectionCoef; i++)
             {
-                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
+                int potentialZ = this->dynamicTolerance.allDepthValues[i];
+                for (int offsetX = -(depthCorrectionCoef); offsetX <= depthCorrectionCoef; offsetX++) //search for the neighborhood of x
                 {
-                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
+                    for (int offsetY = -(depthCorrectionCoef); offsetY <= depthCorrectionCoef; offsetY++) //search for the neighborhood of y
                     {
-                        uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+                        uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, potentialZ); //if the element did not exist, the methods return 0.
                         if (temp > 0)
                         {
                             val2 = temp;
@@ -314,6 +336,28 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
                 }
             }
         }
+
+//        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
+
+//        if (val2 <= 0) //if no value was found on that location:
+//        {
+//            //search for the neighborhood of z (to handle noise from kinect)
+//            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
+//            {
+//                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
+//                {
+//                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
+//                    {
+//                        uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+//                        if (temp > 0)
+//                        {
+//                            val2 = temp;
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
         if (val2 <= 0) //if still no value (after the neighborhood search)
         {
@@ -1048,6 +1092,29 @@ cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
     thresholded.release();
 
     return silhouette;
+}
+
+int VmtFunctions::DepthCorrectionCoefficient(int depthInMm) const
+{
+    //FIXME: find a proper method to perform this
+    if (depthInMm < 1405)
+        return 0;
+    else if (depthInMm < 1735)
+        return 1;
+    else if (depthInMm < 2531)
+        return 1;
+    else if (depthInMm < 3083)
+        return 4;
+    else if (depthInMm < 4364)
+        return 4;
+    else if (depthInMm < 5652)
+        return 4;
+    else if (depthInMm < 8017)
+        return 9;
+    else if (depthInMm < 9984)
+        return 9;
+    else
+        return 9;
 }
 
 //vector<cv::SparseMat> VmtFunctions::CalculateVolumeObjectDifferencesSparse(const vector<cv::SparseMat>& volumeObjects, int depthTolerance)

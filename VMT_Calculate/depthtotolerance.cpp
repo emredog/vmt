@@ -770,6 +770,7 @@ DepthToTolerance::DepthToTolerance()
     this->depthToTolerance.insert(202163, 331061);
 
     this->allDepthValues = this->depthToTolerance.keys();
+    qSort(this->allDepthValues);
 }
 
 DepthToTolerance::~DepthToTolerance()

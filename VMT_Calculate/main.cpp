@@ -37,13 +37,13 @@ int main(int argc, char *argv[])
     QCommandLineOption optionSaveVMT(QStringList() << "sVMT" << "saveVMT", "Save intermediate VMTs to output folder.");
     parser.addOption(optionSaveVMT);
 
-    //Tolerance in XY
-    QCommandLineOption optionToleranceXY(QStringList() << "tolXY" << "toleranceXY", "Subtraction tolerance in X-Y axis", "toleranceXZ", "0");
-    parser.addOption(optionToleranceXY);
+//    //Tolerance in XY
+//    QCommandLineOption optionToleranceXY(QStringList() << "tolXY" << "toleranceXY", "Subtraction tolerance in X-Y axis", "toleranceXZ", "0");
+//    parser.addOption(optionToleranceXY);
 
-    //Tolerance in Z
-    QCommandLineOption optionToleranceZ(QStringList() << "tolZ" << "toleranceZ", "Subtraction tolerance in Z axis", "toleranceZ", "0");
-    parser.addOption(optionToleranceZ);
+//    //Tolerance in Z
+//    QCommandLineOption optionToleranceZ(QStringList() << "tolZ" << "toleranceZ", "Subtraction tolerance in Z axis", "toleranceZ", "0");
+//    parser.addOption(optionToleranceZ);
 
     //Track point X
     QCommandLineOption optionTrackX("trackX", "X coordinate of tracked point", "trackX", "-1");
@@ -78,15 +78,15 @@ int main(int argc, char *argv[])
     bool saveDelta = parser.isSet(optionSaveDelta);
     bool saveVmt = parser.isSet(optionSaveVMT);
 
-    // fetch XY tolerance
-    QString xyTolStr = parser.value(optionToleranceXY);
-    int xyTolerance = xyTolStr.toInt(&ok);
-    if (!ok) xyTolerance = 0;
+//    // fetch XY tolerance
+//    QString xyTolStr = parser.value(optionToleranceXY);
+//    int xyTolerance = xyTolStr.toInt(&ok);
+//    if (!ok) xyTolerance = 0;
 
-    // fetch Z tolerance
-    QString zTolStr = parser.value(optionToleranceZ);
-    int zTolerance = zTolStr.toInt(&ok);
-    if (!ok) zTolerance = 0;
+//    // fetch Z tolerance
+//    QString zTolStr = parser.value(optionToleranceZ);
+//    int zTolerance = zTolStr.toInt(&ok);
+//    if (!ok) zTolerance = 0;
 
     // fetch track point
     QString trackXStr = parser.value(optionTrackX);
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     // Real deal starts here...
     //----------------------------------------------------------------------------------------------
 
-    VmtFunctions* vmtCore = new VmtFunctions(640, 480, xyTolerance, xyTolerance, zTolerance);
+    VmtFunctions* vmtCore = new VmtFunctions(640, 480);
     vmtCore->setSavedObjects(saveVolObj, saveDelta, saveVmt);
     vmtCore->setDownsampleRate(downsamplingRate);
     if (trackX >= 0 && trackY >= 0)
@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
     QStringList nameParts = trackFile.split("/");
     QString fileName = nameParts.last();
     fileName.chop(6); //remove the extension
-    QString toleranceInfo = QString("X%1Y%2Z%3").arg(xyTolerance).arg(xyTolerance).arg(QString::number(zTolerance).rightJustified(2, '0'));
-    if (PointCloudFunctions::saveVmtAsCloud(vmt, outputFolder.append(fileName).append(toleranceInfo).append(".pcd").toStdString()))
+//    QString toleranceInfo = QString("X%1Y%2Z%3").arg(xyTolerance).arg(xyTolerance).arg(QString::number(zTolerance).rightJustified(2, '0'));
+    if (PointCloudFunctions::saveVmtAsCloud(vmt, outputFolder.append(fileName)/*.append(toleranceInfo)*/.append(".pcd").toStdString()))
         std::cout << "Successfully saved as a point cloud with " << vmt.nzcount() << " points.\n";
     else
         std::cout << "Saving as point cloud have failed.\n";
