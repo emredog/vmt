@@ -56,8 +56,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     //read track file
     QFile trackFile(trackFilePath);
     if (!trackFile.open(QFile::ReadOnly))
-        return cv::SparseMat();
-
+        return cv::SparseMat();    
 
     QList<BoundingBox> bboxSequence;
 
@@ -151,10 +150,12 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     }
 
     //construct the VMT based on volume object differences over the track file
-    cv::SparseMat vmt = this->constructVMT(volumeObjectDifferences);
+    cv::SparseMat vmt = this->calculateVMT(volumeObjectDifferences);
 
+    int depthSize = vmt.size()[Z];
     //normalize the depth dimension and scale it between [0, NORMALIZATION_INTERVAL]
     cv::SparseMat normalized = this->spatiallyNormalizeSparseMat(vmt);
+    depthSize = normalized.size()[Z];
 
     //trim the sparse matrix, by cutting out the parts that contain no points
     cv::SparseMat trimmed = this->trimSparseMat(normalized);
@@ -261,7 +262,7 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
 
         if (val1 <= 0) //if no value was found on that location:
         {
-            int depthCorrectionCoef = this->depthCorrectionCoefficient(n->idx[Z]);
+            int depthCorrectionCoef = 0; // FIXME!!!     this->depthCorrectionCoefficient(n->idx[Z]);
             int indexOfDepth = this->dynamicTolerance.allDepthValues.indexOf(n->idx[Z]);
             for (int i = indexOfDepth-depthCorrectionCoef; i<= indexOfDepth+depthCorrectionCoef; i++)
             {
@@ -495,7 +496,7 @@ double VmtFunctions::attenuationConstantForAnAction(const QList<cv::SparseMat>& 
 //    return attConst;
 //}
 
-cv::SparseMat VmtFunctions::constructVMT(const QList<cv::SparseMat> &volumeObjectDifferences)
+cv::SparseMat VmtFunctions::calculateVMT(const QList<cv::SparseMat> &volumeObjectDifferences)
 {
     cv::SparseMat curVmt;
     cv::SparseMat prevVmt;
@@ -956,6 +957,38 @@ VmtFunctions::VmtInfo VmtFunctions::getVmtInfo(const cv::SparseMat &vmt) const
     return info;
 }
 
+int VmtFunctions::saveVmtAsImageSequence(const cv::SparseMat &vmt, QString outputFolder) const
+{
+    //first check if the output folder exists:
+    if (!QDir(outputFolder).exists())
+        QDir().mkdir(outputFolder);
+
+    int totalDepth = vmt.size()[Z]; //FIXME: this should be a constant value (=NORMALIZATION_INTERVAL) for all created vmt
+    int counter = 0;
+
+    //FIXME: could this loop be optimized? using regular matrices maybe?
+    //foreach depth
+    for (int z = 0; z < totalDepth; z++)
+    {
+        cv::Mat frame = cv::Mat(vmt.size()[X], vmt.size()[Y], vmt.type(), cv::Scalar(0)); //Create a new frame
+        for (int x = 0; x < frame.cols; x++)
+            for (int y = 0; y < frame.rows; y++)
+            {
+                uchar val = vmt.value<uchar>(x, y, z); //check all values in this depth
+                if (val > 0)
+                    frame.at<uchar>(x, y) = val; //Set to the new frame if non-zero value is found
+            }
+
+        //Save this frame as
+        if (cv::imwrite(QString("%1_%2.jpg").arg(outputFolder).arg(QString::number(z).rightJustified(2, '0')).toStdString(), frame))
+            counter++;
+
+    }
+
+    return counter;
+
+}
+
 cv::SparseMat VmtFunctions::trimSparseMat(const cv::SparseMat &vmt) const
 {
     VmtInfo info = getVmtInfo(vmt);
@@ -979,7 +1012,7 @@ cv::SparseMat VmtFunctions::trimSparseMat(const cv::SparseMat &vmt) const
         int newY = n->idx[Y] - info.minY;
         int newZ = n->idx[Z] - info.minZ;
 
-        trimmed.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n);
+        trimmed.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n->idx);
     }
 
 
@@ -991,17 +1024,21 @@ cv::SparseMat VmtFunctions::spatiallyNormalizeSparseMat(cv::SparseMat vmt) const
 {
     cv::SparseMat normalizedVmt(vmt.dims(), vmt.size(), vmt.type());
 
+    double normCoef = (double)(NORMALIZATION_INTERVAL)/(double)(vmt.size()[Z]);
+//    qDebug() << "Normalization coef: " << normCoef;
+
     //parse & copy points to new locations
     for (cv::SparseMatConstIterator it=vmt.begin(); it != vmt.end(); ++it)
     {
         const cv::SparseMat::Node* n = it.node();
 
         //FIXME: check if indices match
-        int newX = n->idx[0];
-        int newY = n->idx[1];
-        int newZ = (int)(((double)(NORMALIZATION_INTERVAL)/(double)(this->permittedMaxZ - this->permittedMinZ))*(double)n->idx[2]);
+        int newX = n->idx[X];
+        int newY = n->idx[Y];
+        int newZ = (int)(normCoef * (double)n->idx[Z]);
 
-        normalizedVmt.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n);
+        normalizedVmt.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n->idx);
+//        qDebug() << n->idx[Z] << "\t" << newZ;
     }
 
     return normalizedVmt;

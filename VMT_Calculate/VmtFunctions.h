@@ -104,6 +104,9 @@ public:
     //Get basic info of a 3d sparse mat
     VmtInfo getVmtInfo(const cv::SparseMat &vmt) const;
 
+    //save a vmt as an image sequence to use it in klaser&schmid code later
+    int saveVmtAsImageSequence(const cv::SparseMat &vmt, QString outputFolder) const;
+
 
 protected:
 
@@ -120,7 +123,7 @@ protected:
     int magnitudeOfMotion(const cv::SparseMat& sparseMat);
 
     //A VMT is constructed over a sequence of volume object differences
-    cv::SparseMat constructVMT(const QList<cv::SparseMat>& volumeObjectDifferences);
+    cv::SparseMat calculateVMT(const QList<cv::SparseMat>& volumeObjectDifferences);
 
     cv::SparseMat calculateD_Old(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject);
     cv::SparseMat calculateD_New(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject);

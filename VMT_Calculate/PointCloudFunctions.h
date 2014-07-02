@@ -27,7 +27,9 @@ public:
 		float leafSize, bool save, string fileNameToSave);
 	static PointCloud<PointXYZI>::Ptr convertToPointCloud(const cv::SparseMat &vmt);
 
+    //TODO: this code IS NOT TESTED
     static bool statisticalOutlierRemovalAndSave(const cv::SparseMat &vmt, std::string fileName, int meanK = 50, double stdDevMulThreshold = 1.0);
+    //TODO: this code IS NOT TESTED
     static bool radiusOutlierRemovalAndSave(const cv::SparseMat &vmt, std::string fileName, double radius = 0.1, int minNeighbors = 5);
 };
 
