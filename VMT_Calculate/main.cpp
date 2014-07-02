@@ -132,9 +132,19 @@ int main(int argc, char *argv[])
     QStringList nameParts = trackFile.split("/");
     QString fileName = nameParts.last();
     fileName.chop(6); //remove the extension
-//    QString toleranceInfo = QString("X%1Y%2Z%3").arg(xyTolerance).arg(xyTolerance).arg(QString::number(zTolerance).rightJustified(2, '0'));
-    if (PointCloudFunctions::saveVmtAsCloud(vmt, outputFolder.append(fileName)/*.append(toleranceInfo)*/.append(".pcd").toStdString()))
+
+    if (PointCloudFunctions::saveVmtAsCloud(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg(".pcd").toStdString()))
         std::cout << "Successfully saved as a point cloud with " << vmt.nzcount() << " points.\n";
+    else
+        std::cout << "Saving as point cloud have failed.\n";
+
+    if (PointCloudFunctions::statisticalOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_StatisticalFilter.pcd").toStdString()))
+        std::cout << "Successfully filtered (Statistical outlier removal) & saved point cloud\n";
+    else
+        std::cout << "Saving as point cloud have failed.\n";
+
+    if (PointCloudFunctions::radiusOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_RadiusFilter.pcd").toStdString()))
+        std::cout << "Successfully filtered (Radius outlier removal) & saved point cloud\n";
     else
         std::cout << "Saving as point cloud have failed.\n";
 

@@ -69,6 +69,11 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::convertToPointCloud(const cv::Sp
 
 bool PointCloudFunctions::statisticalOutlierRemovalAndSave(const cv::SparseMat &vmt, string fileName, int meanK, double stdDevMulThreshold)
 {
+//    "Our sparse outlier removal is based on the computation of the distribution of point to neighbors distances in the input dataset.
+//    For each point, we compute the mean distance from it to all its neighbors. By assuming that the resulted distribution is
+//    Gaussian with a mean and a standard deviation, all points whose mean distances are outside an interval defined by the global
+//    distances mean and standard deviation can be considered as outliers and trimmed from the dataset."
+
     PointCloud<PointXYZI>::Ptr cloud = convertToPointCloud(vmt);
     PointCloud<PointXYZI>::Ptr cloud_filtered (new PointCloud<PointXYZI>);
 
@@ -92,11 +97,14 @@ bool PointCloudFunctions::statisticalOutlierRemovalAndSave(const cv::SparseMat &
 
 bool PointCloudFunctions::radiusOutlierRemovalAndSave(const cv::SparseMat &vmt, string fileName, double radius, int minNeighbors)
 {
+//    "The user specifies a number of neighbors which every indice must have within a specified radius to remain in the PointCloud."
+
     PointCloud<PointXYZI>::Ptr cloud = convertToPointCloud(vmt);
     PointCloud<PointXYZI>::Ptr cloud_filtered (new PointCloud<PointXYZI>);
 
     // Create the filtering object
     RadiusOutlierRemoval <PointXYZI> ror;
+    ror.setInputCloud(cloud);
     ror.setRadiusSearch (radius);
     ror.setMinNeighborsInRadius (minNeighbors);
     ror.setNegative (true);

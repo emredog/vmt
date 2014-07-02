@@ -56,7 +56,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     //read track file
     QFile trackFile(trackFilePath);
     if (!trackFile.open(QFile::ReadOnly))
-        return cv::SparseMat();    
+        return cv::SparseMat();
 
     QList<BoundingBox> bboxSequence;
 
@@ -111,7 +111,25 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
             return cv::SparseMat();
         }
 
-        cv::SparseMat currentSparseVolumeObj = this->generateSparseVolumeObject(depthImg, this->downsampleRate);
+        //cut the bounding box if it's outside of the frame // FIXME--> this shouldn't happen?!
+        if (bb.x + bb.width >= depthImg.cols) bb.width = depthImg.cols - bb.x;
+        if (bb.y + bb.height >= depthImg.rows) bb.height = depthImg.rows - bb.y;
+
+        //mask depth image with the bounding box
+        cv::Rect roi(bb.x, bb.y, bb.width, bb.height);
+        cv::Mat mask = cv::Mat(depthImg.rows, depthImg.cols, CV_8UC1, cv::Scalar(0));
+        mask(roi) = cv::Scalar(1);
+        cv::Mat maskedDepthImg = cv::Mat(depthImg.rows, depthImg.cols, depthImg.type(), cv::Scalar(0));
+        depthImg.copyTo(maskedDepthImg, mask);
+
+        mask.release();
+        depthImg.release();
+
+        //generate volume object
+        cv::SparseMat currentSparseVolumeObj = this->generateSparseVolumeObject(maskedDepthImg, this->downsampleRate);
+
+        maskedDepthImg.release();
+
         if (this->saveVolumeObject)
         {
             cv::SparseMat nor = this->spatiallyNormalizeSparseMat(currentSparseVolumeObj);
@@ -140,9 +158,6 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
 
             volumeObjectDifferences.append(cleanedUpDelta);
         }
-
-
-
 
         currentSparseVolumeObj.copyTo(prevSparseVolumeObj);
         currentSparseVolumeObj.release();
@@ -257,12 +272,12 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
     for (cv::SparseMatConstIterator op2It=operand2.begin(); op2It != operand2.end(); ++op2It)
     {
         const cv::SparseMat::Node* n = op2It.node();
-//        uchar val2 = op2It.value<uchar>();
+        //        uchar val2 = op2It.value<uchar>();
         uchar val1 = operand1.value<uchar>(n->idx);
 
         if (val1 <= 0) //if no value was found on that location:
         {
-            int depthCorrectionCoef = 0; // FIXME!!!     this->depthCorrectionCoefficient(n->idx[Z]);
+            int depthCorrectionCoef = this->depthCorrectionCoefficient(n->idx[Z]);
             int indexOfDepth = this->dynamicTolerance.allDepthValues.indexOf(n->idx[Z]);
             for (int i = indexOfDepth-depthCorrectionCoef; i<= indexOfDepth+depthCorrectionCoef; i++)
             {
@@ -313,7 +328,7 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
     for (cv::SparseMatConstIterator op1It=operand1.begin(); op1It != operand1.end(); ++op1It)
     {
         const cv::SparseMat::Node* n = op1It.node();
-//        uchar val1 = op1It.value<uchar>();
+        //        uchar val1 = op1It.value<uchar>();
         uchar val2 = operand2.value<uchar>(n->idx);
 
         if (val2 <= 0) //if no value was found on that location:
@@ -338,27 +353,27 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
             }
         }
 
-//        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
+        //        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
 
-//        if (val2 <= 0) //if no value was found on that location:
-//        {
-//            //search for the neighborhood of z (to handle noise from kinect)
-//            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
-//            {
-//                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
-//                {
-//                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
-//                    {
-//                        uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
-//                        if (temp > 0)
-//                        {
-//                            val2 = temp;
-//                            break;
-//                        }
-//                    }
-//                }
-//            }
-//        }
+        //        if (val2 <= 0) //if no value was found on that location:
+        //        {
+        //            //search for the neighborhood of z (to handle noise from kinect)
+        //            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
+        //            {
+        //                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
+        //                {
+        //                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
+        //                    {
+        //                        uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+        //                        if (temp > 0)
+        //                        {
+        //                            val2 = temp;
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
 
         if (val2 <= 0) //if still no value (after the neighborhood search)
         {
@@ -1025,7 +1040,7 @@ cv::SparseMat VmtFunctions::spatiallyNormalizeSparseMat(cv::SparseMat vmt) const
     cv::SparseMat normalizedVmt(vmt.dims(), vmt.size(), vmt.type());
 
     double normCoef = (double)(NORMALIZATION_INTERVAL)/(double)(vmt.size()[Z]);
-//    qDebug() << "Normalization coef: " << normCoef;
+    //    qDebug() << "Normalization coef: " << normCoef;
 
     //parse & copy points to new locations
     for (cv::SparseMatConstIterator it=vmt.begin(); it != vmt.end(); ++it)
@@ -1038,7 +1053,7 @@ cv::SparseMat VmtFunctions::spatiallyNormalizeSparseMat(cv::SparseMat vmt) const
         int newZ = (int)(normCoef * (double)n->idx[Z]);
 
         normalizedVmt.ref<uchar>(newX, newY, newZ) = vmt.value<uchar>(n->idx);
-//        qDebug() << n->idx[Z] << "\t" << newZ;
+        //        qDebug() << n->idx[Z] << "\t" << newZ;
     }
 
     return normalizedVmt;
