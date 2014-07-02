@@ -51,7 +51,7 @@ VmtFunctions::~VmtFunctions(void)
 }
 
 
-cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString trackFilePath)
+cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString trackFilePath)
 {
     //read track file
     QFile trackFile(trackFilePath);
@@ -112,11 +112,11 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
             return cv::SparseMat();
         }
 
-        cv::SparseMat currentSparseVolumeObj = this->GenerateSparseVolumeObject(depthImg, this->downsampleRate);
+        cv::SparseMat currentSparseVolumeObj = this->generateSparseVolumeObject(depthImg, this->downsampleRate);
         if (this->saveVolumeObject)
         {
-            cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(currentSparseVolumeObj);
-            cv::SparseMat trm = this->TrimSparseMat(nor);
+            cv::SparseMat nor = this->spatiallyNormalizeSparseMat(currentSparseVolumeObj);
+            cv::SparseMat trm = this->trimSparseMat(nor);
             PointCloudFunctions::saveVmtAsCloud(currentSparseVolumeObj, QString("/home/emredog/Documents/output/volObj_%1.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
             nor.release();
             trm.release();
@@ -125,15 +125,15 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
         //do the subtraction
         if (prevSparseVolumeObj.nzcount() > 0) //there are at least 2 volume objects
         {
-            cv::SparseMat delta = this->SubtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);
+            cv::SparseMat delta = this->subtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);
             //... and cleanup
-            cv::SparseMat cleanedUpDelta = this->CleanUpVolumeObjectDifference(delta);
+            cv::SparseMat cleanedUpDelta = this->cleanUpVolumeObjectDifference(delta);
             delta.release();
 
             if (this->saveDelta)
             {
-                cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(cleanedUpDelta);
-                cv::SparseMat trm = this->TrimSparseMat(nor);
+                cv::SparseMat nor = this->spatiallyNormalizeSparseMat(cleanedUpDelta);
+                cv::SparseMat trm = this->trimSparseMat(nor);
                 PointCloudFunctions::saveVmtAsCloud(trm, QString("/home/emredog/Documents/output/diff_%1.pcd").arg(QString::number(counter).rightJustified(2, '0')).toStdString());
                 nor.release();
                 trm.release();
@@ -151,13 +151,13 @@ cv::SparseMat VmtFunctions::ConstructSparseVMT(QString videoFolderPath, QString 
     }
 
     //construct the VMT based on volume object differences over the track file
-    cv::SparseMat vmt = this->ConstructVMT(volumeObjectDifferences);
+    cv::SparseMat vmt = this->constructVMT(volumeObjectDifferences);
 
     //normalize the depth dimension and scale it between [0, NORMALIZATION_INTERVAL]
-    cv::SparseMat normalized = this->SpatiallyNormalizeSparseMat(vmt);
+    cv::SparseMat normalized = this->spatiallyNormalizeSparseMat(vmt);
 
     //trim the sparse matrix, by cutting out the parts that contain no points
-    cv::SparseMat trimmed = this->TrimSparseMat(normalized);
+    cv::SparseMat trimmed = this->trimSparseMat(normalized);
     vmt.release();
     normalized.release();
 
@@ -176,7 +176,7 @@ void VmtFunctions::setTrackPoint(int x, int y)
         this->isTrackPoint = false;
 }
 
-cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsamplingRate)
+cv::SparseMat VmtFunctions::generateSparseVolumeObject(cv::Mat image, int downsamplingRate)
 {
     cv::Mat temp;
 
@@ -243,7 +243,7 @@ cv::SparseMat VmtFunctions::GenerateSparseVolumeObject(cv::Mat image, int downsa
 
 
 
-cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, const cv::SparseMat& operand2) /* current - previous */
+cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, const cv::SparseMat& operand2) /* current - previous */
 {	
     //diff(x, y, z) = |operand2(x,y,z) - operand1(x,y,z)|
     //				= 1 if |1 - 0| or |0 - 1|
@@ -261,7 +261,7 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
 
         if (val1 <= 0) //if no value was found on that location:
         {
-            int depthCorrectionCoef = this->DepthCorrectionCoefficient(n->idx[Z]);
+            int depthCorrectionCoef = this->depthCorrectionCoefficient(n->idx[Z]);
             int indexOfDepth = this->dynamicTolerance.allDepthValues.indexOf(n->idx[Z]);
             for (int i = indexOfDepth-depthCorrectionCoef; i<= indexOfDepth+depthCorrectionCoef; i++)
             {
@@ -317,7 +317,7 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
 
         if (val2 <= 0) //if no value was found on that location:
         {
-            int depthCorrectionCoef = this->DepthCorrectionCoefficient(n->idx[Z]);
+            int depthCorrectionCoef = this->depthCorrectionCoefficient(n->idx[Z]);
             int indexOfDepth = this->dynamicTolerance.allDepthValues.indexOf(n->idx[Z]);
             for (int i = indexOfDepth-depthCorrectionCoef; i<= indexOfDepth+depthCorrectionCoef; i++)
             {
@@ -390,7 +390,7 @@ cv::SparseMat VmtFunctions::SubtractSparseMat(const cv::SparseMat& operand1, con
     return difference;
 }
 
-cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& volObjDiff) const
+cv::SparseMat VmtFunctions::cleanUpVolumeObjectDifference(const cv::SparseMat& volObjDiff) const
 {
     cv::SparseMat cleanedUpVolObjDiff(volObjDiff.dims(), volObjDiff.size(), volObjDiff.type());
 
@@ -446,12 +446,12 @@ cv::SparseMat VmtFunctions::CleanUpVolumeObjectDifference(const cv::SparseMat& v
 }
 
 
-int VmtFunctions::MagnitudeOfMotion(const cv::SparseMat& sparseMat)
+int VmtFunctions::magnitudeOfMotion(const cv::SparseMat& sparseMat)
 {
     return (int)sparseMat.nzcount();
 }
 
-double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
+double VmtFunctions::attenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
 {
     double attConst = 0.0;
     int sumOfMagnitutedOfMotion = 0;
@@ -465,7 +465,7 @@ double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& 
     for(int i=0; i< numberOfDiffs; i++)
     {
         cv::SparseMat it = volumeObjectsDifferences.at(i); //i'th difference = difference between i-1'th and i'th volume objects
-        curMagnituteOfMotion = MagnitudeOfMotion((it)); // magnitude of motion for this volume obj difference
+        curMagnituteOfMotion = magnitudeOfMotion((it)); // magnitude of motion for this volume obj difference
         sumOfMagnitutedOfMotion += curMagnituteOfMotion; //sum, so far
 
         //for each difference object, attenuating constant is calculated over the sum of previous magnitudes of motion
@@ -495,7 +495,7 @@ double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& 
 //    return attConst;
 //}
 
-cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjectDifferences)
+cv::SparseMat VmtFunctions::constructVMT(const QList<cv::SparseMat> &volumeObjectDifferences)
 {
     cv::SparseMat curVmt;
     cv::SparseMat prevVmt;
@@ -504,7 +504,7 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
     //				  = max(0, VMT(x, y, z, t-1)-(attenuationConstant)*(magnitudeOfMotion(t)), otherwise (it's an old point, decrease its intensity, or set it to 0)
 
     //calculate attenuation constant for the set:
-    double attConst = AttenuationConstantForAnAction(volumeObjectDifferences);
+    double attConst = attenuationConstantForAnAction(volumeObjectDifferences);
     cout << "Attenuating constant: " << attConst << endl;
     int curMagnituteOfMotion = 0;
 
@@ -515,7 +515,7 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
         curVmt.clear();
         curVmt.release();
         curVmt = cv::SparseMat(this->dims, deltaT.size(), deltaT.type()); //create a sparse matrix
-        curMagnituteOfMotion = MagnitudeOfMotion(deltaT); //calculate magnitute of motion of current volume difference
+        curMagnituteOfMotion = magnitudeOfMotion(deltaT); //calculate magnitute of motion of current volume difference
 
         //for all, set points of current VMT to I_MAX where difference is non-zero:
         for(cv::SparseMatConstIterator dit = deltaT.begin(); dit != deltaT.end(); ++dit)
@@ -558,8 +558,8 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
 
         if (this->saveVmt)
         {
-            cv::SparseMat nor = this->SpatiallyNormalizeSparseMat(curVmt);
-            cv::SparseMat trm = this->TrimSparseMat(nor);
+            cv::SparseMat nor = this->spatiallyNormalizeSparseMat(curVmt);
+            cv::SparseMat trm = this->trimSparseMat(nor);
             PointCloudFunctions::saveVmtAsCloud(trm, QString("/home/emredog/Documents/output/VMT_%1.pcd").arg(QString::number(i).rightJustified(2, '0')).toStdString());
             nor.release();
             trm.release();
@@ -578,7 +578,7 @@ cv::SparseMat VmtFunctions::ConstructVMT(const QList<cv::SparseMat> &volumeObjec
 
 
 //unused methods------------------------------------------------------------------------------------------------
-cv::SparseMat VmtFunctions::CalculateD_Old(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject) //equation (8) from the paper
+cv::SparseMat VmtFunctions::calculateD_Old(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject) //equation (8) from the paper
 {
     cv::SparseMat d_Old(lastVolumeObject.dims(), lastVolumeObject.size(), lastVolumeObject.type());
 
@@ -624,7 +624,7 @@ cv::SparseMat VmtFunctions::CalculateD_Old(cv::SparseMat lastVolumeObject, cv::S
     return sparseMax;*/
 }
 
-cv::SparseMat VmtFunctions::CalculateD_New(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject) //equation (7) from the paper
+cv::SparseMat VmtFunctions::calculateD_New(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject) //equation (7) from the paper
 {
     cv::SparseMat d_New(lastVolumeObject.dims(), lastVolumeObject.size(), lastVolumeObject.type());
 
@@ -647,7 +647,7 @@ cv::SparseMat VmtFunctions::CalculateD_New(cv::SparseMat lastVolumeObject, cv::S
     //			1	 =			1				0
 }
 
-cv::Vec3i VmtFunctions::CalculateMomentVector(cv::SparseMat volumeObjectSparse) //equation (9) from the paper
+cv::Vec3i VmtFunctions::calculateMomentVector(cv::SparseMat volumeObjectSparse) //equation (9) from the paper
 {
     int numOfAllElements = (int)volumeObjectSparse.nzcount(); //number of all elements of a volumeObject is equal to number of nonzero (=1) elements
 
@@ -664,7 +664,7 @@ cv::Vec3i VmtFunctions::CalculateMomentVector(cv::SparseMat volumeObjectSparse) 
     return momentVector;
 }
 
-double VmtFunctions::CalculateAlpha(cv::Vec3i motionVector) //equation (14) from the paper
+double VmtFunctions::calculateAlpha(cv::Vec3i motionVector) //equation (14) from the paper
 {
     //Indices: y=0, x=1, z=2
     //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
@@ -673,7 +673,7 @@ double VmtFunctions::CalculateAlpha(cv::Vec3i motionVector) //equation (14) from
     return 1.0/cos(-(HelperFunctions::sgn(y))*(HelperFunctions::sgn(z))*((double)y / (double)(y - z)));
 }
 
-double VmtFunctions::CalculateBeta(cv::Vec3i motionVector) //equation (15) from the paper
+double VmtFunctions::calculateBeta(cv::Vec3i motionVector) //equation (15) from the paper
 {
     //Indices: y=0, x=1, z=2
     //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
@@ -682,7 +682,7 @@ double VmtFunctions::CalculateBeta(cv::Vec3i motionVector) //equation (15) from 
     return 2.0/CV_PI - 1.0/cos(-(HelperFunctions::sgn(z))*HelperFunctions::sgn(x)*((double)z / (double)(z-x)));
 }
 
-double VmtFunctions::CalculateTheta(cv::Vec3i motionVector) //equation (16) from the paper
+double VmtFunctions::calculateTheta(cv::Vec3i motionVector) //equation (16) from the paper
 {
     //Indices: y=0, x=1, z=2
     //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
@@ -692,7 +692,7 @@ double VmtFunctions::CalculateTheta(cv::Vec3i motionVector) //equation (16) from
     return 1.0/cos(-(HelperFunctions::sgn(x))*HelperFunctions::sgn(y)*((double)x / (double)(x-y)));
 }
 
-cv::Matx33d VmtFunctions::CalculateRotationX_alpha(double alpha) //equation (11) from the paper
+cv::Matx33d VmtFunctions::calculateRotationX_alpha(double alpha) //equation (11) from the paper
 {
     return
             cv::Matx33d(	1.0,		0.0,			0.0,
@@ -701,7 +701,7 @@ cv::Matx33d VmtFunctions::CalculateRotationX_alpha(double alpha) //equation (11)
 
 }
 
-cv::Matx33d VmtFunctions::CalculateRotationY_beta(double beta) //equation (12) from the paper
+cv::Matx33d VmtFunctions::calculateRotationY_beta(double beta) //equation (12) from the paper
 {
     return
             cv::Matx33d(	cos(beta),	0.0,		-sin(beta),
@@ -709,7 +709,7 @@ cv::Matx33d VmtFunctions::CalculateRotationY_beta(double beta) //equation (12) f
                             sin(beta),	0.0,		cos(beta)		);
 }
 
-cv::Matx33d VmtFunctions::CalculateRotationZ_theta(double theta) //equation (13) from the paper
+cv::Matx33d VmtFunctions::calculateRotationZ_theta(double theta) //equation (13) from the paper
 {
     return
             cv::Matx33d(	cos(theta),		sin(theta),		0.0,
@@ -717,7 +717,7 @@ cv::Matx33d VmtFunctions::CalculateRotationZ_theta(double theta) //equation (13)
                             0.0,			0.0,			1.0		);
 }
 
-cv::SparseMat VmtFunctions::RotateVMT(const cv::SparseMat& vmt, const cv::Matx33d& rotationMatrix)
+cv::SparseMat VmtFunctions::rotateVMT(const cv::SparseMat& vmt, const cv::Matx33d& rotationMatrix)
 {	
     //	int newSizes[] = {5000, 5000, 5000}; //FIXME
     cv::SparseMat rotatedVmt(3, vmt.size(), vmt.type());
@@ -775,7 +775,7 @@ cv::SparseMat VmtFunctions::RotateVMT(const cv::SparseMat& vmt, const cv::Matx33
     return shiftedRotatedVmt;
 }
 
-cv::Mat VmtFunctions::ProjectVMTOntoXY(const cv::SparseMat& vmt)
+cv::Mat VmtFunctions::projectVMTOntoXY(const cv::SparseMat& vmt)
 {
     //cv::Mat projectedMatrix(480, 640, vmt.type()); //create an empty matrix
     //FIXME:
@@ -799,7 +799,7 @@ cv::Mat VmtFunctions::ProjectVMTOntoXY(const cv::SparseMat& vmt)
 }
 
 //other methods------------------------------------------------------------------------------------------------
-void VmtFunctions::Print3x3Matrix(const cv::Matx33d& mat)
+void VmtFunctions::print3x3Matrix(const cv::Matx33d& mat)
 {
     cv::Mat M(mat);
     for(int i=0; i<3; ++i)
@@ -814,7 +814,7 @@ void VmtFunctions::Print3x3Matrix(const cv::Matx33d& mat)
 
 }
 
-void VmtFunctions::Print3DSparseMatrix(const cv::SparseMat &sparse_mat)
+void VmtFunctions::print3DSparseMatrix(const cv::SparseMat &sparse_mat)
 {		
     cv::Mat denseMat;
     sparse_mat.convertTo(denseMat, CV_8UC1);
@@ -838,7 +838,7 @@ void VmtFunctions::Print3DSparseMatrix(const cv::SparseMat &sparse_mat)
     }
 }
 
-void VmtFunctions::Save3DSparseMatrix(const cv::SparseMat &sparse_mat, QString filePath)
+void VmtFunctions::save3DSparseMatrix(const cv::SparseMat &sparse_mat, QString filePath)
 {
     QFile myfile(filePath);
     if (!myfile.open(QFile::ReadWrite))
@@ -878,7 +878,7 @@ void VmtFunctions::Save3DSparseMatrix(const cv::SparseMat &sparse_mat, QString f
     myfile.close();
 }
 
-void VmtFunctions::Save3DMatrix(const cv::Mat &mat, QString filePath)
+void VmtFunctions::save3DMatrix(const cv::Mat &mat, QString filePath)
 {
     QFile myfile(filePath);
     if (!myfile.open(QFile::ReadWrite))
@@ -913,25 +913,7 @@ void VmtFunctions::Save3DMatrix(const cv::Mat &mat, QString filePath)
     myfile.close();
 }
 
-void VmtFunctions::Save3DSparseMatrixAs2DCsv(const cv::SparseMat &sparse_mat, QString filePath)
-{
-    QFile myfile(filePath);
-    if (!myfile.open(QFile::ReadWrite))
-    {
-        cout << "ERROR!" << endl;
-        return;
-    }
-
-    QTextStream stream(&myfile);
-
-    for(cv::SparseMatConstIterator it = sparse_mat.begin(); it != sparse_mat.end(); ++it)
-    {
-        //TODO
-        int a = 0;
-    }
-}
-
-VmtFunctions::VmtInfo VmtFunctions::GetVmtInfo(const cv::SparseMat &vmt) const
+VmtFunctions::VmtInfo VmtFunctions::getVmtInfo(const cv::SparseMat &vmt) const
 {
     VmtInfo info;
     //Get size of vmt
@@ -974,9 +956,9 @@ VmtFunctions::VmtInfo VmtFunctions::GetVmtInfo(const cv::SparseMat &vmt) const
     return info;
 }
 
-cv::SparseMat VmtFunctions::TrimSparseMat(const cv::SparseMat &vmt)
+cv::SparseMat VmtFunctions::trimSparseMat(const cv::SparseMat &vmt) const
 {
-    VmtInfo info = GetVmtInfo(vmt);
+    VmtInfo info = getVmtInfo(vmt);
 
     cout << "\tSize before trimming: " << vmt.size()[X] << "x" << vmt.size()[Y] << "x" << vmt.size()[Z] << endl;
 
@@ -1005,7 +987,7 @@ cv::SparseMat VmtFunctions::TrimSparseMat(const cv::SparseMat &vmt)
     return trimmed;
 }
 
-cv::SparseMat VmtFunctions::SpatiallyNormalizeSparseMat(cv::SparseMat vmt)
+cv::SparseMat VmtFunctions::spatiallyNormalizeSparseMat(cv::SparseMat vmt) const
 {
     cv::SparseMat normalizedVmt(vmt.dims(), vmt.size(), vmt.type());
 
@@ -1025,7 +1007,7 @@ cv::SparseMat VmtFunctions::SpatiallyNormalizeSparseMat(cv::SparseMat vmt)
     return normalizedVmt;
 }
 
-cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
+cv::Mat VmtFunctions::extractSilhouette(const cv::Mat &mat) const
 {
     cv::Mat temp, matGrayscale = cv::Mat(mat.dims, mat.size, CV_8UC1), thresholded;
     //format issues
@@ -1094,7 +1076,7 @@ cv::Mat VmtFunctions::ExtractSilhouette(const cv::Mat &mat) const
     return silhouette;
 }
 
-int VmtFunctions::DepthCorrectionCoefficient(int depthInMm) const
+int VmtFunctions::depthCorrectionCoefficient(int depthInMm) const
 {
     //FIXME: find a proper method to perform this
     if (depthInMm < 1405)

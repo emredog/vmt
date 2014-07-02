@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 
     QTime myTimer;
     myTimer.start();
-    cv::SparseMat vmt = vmtCore->ConstructSparseVMT(videoPath, trackFile);
+    cv::SparseMat vmt = vmtCore->constructSparseVMT(videoPath, trackFile);
     int mSecs = myTimer.elapsed();
     std::cout << "VMT is generated in " << (double)mSecs / 1000.0 << "\n";
 
