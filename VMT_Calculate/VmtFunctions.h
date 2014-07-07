@@ -16,7 +16,6 @@
 
 
 #define I_MAX 255
-//#define PREDEFINED_THRESHOLD 150 //156
 #define X_SIZE 640
 #define Y_SIZE 480
 #define Z_SIZE 8000

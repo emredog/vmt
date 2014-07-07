@@ -138,15 +138,15 @@ int main(int argc, char *argv[])
     else
         std::cout << "Saving as point cloud have failed.\n";
 
-    if (PointCloudFunctions::statisticalOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_StatisticalFilter.pcd").toStdString()))
+    if (PointCloudFunctions::statisticalOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_STFiltered.pcd").toStdString()))
         std::cout << "Successfully filtered (Statistical outlier removal) & saved point cloud\n";
     else
         std::cout << "Saving as point cloud have failed.\n";
 
-    if (PointCloudFunctions::radiusOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_RadiusFilter.pcd").toStdString()))
-        std::cout << "Successfully filtered (Radius outlier removal) & saved point cloud\n";
-    else
-        std::cout << "Saving as point cloud have failed.\n";
+//    if (PointCloudFunctions::radiusOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_RadiusFilter.pcd").toStdString()))
+//        std::cout << "Successfully filtered (Radius outlier removal) & saved point cloud\n";
+//    else
+//        std::cout << "Saving as point cloud have failed.\n";
 
     //    vmtCore->Save3DSparseMatrix(vmt, outputFolder.append(fileName).append(".dat"));
     //        std::cout << "Successfully saved as a sparse matrix with " << vmt.size()[0]*vmt.size()[1]*vmt.size()[2] << " lines.\n";

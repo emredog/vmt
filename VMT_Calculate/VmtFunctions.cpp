@@ -13,7 +13,7 @@
 #include <QVector>
 #include <QtDebug>
 
-#include <opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp> //FIXME: is this necessary? we already have the includes on header file...
 #include <opencv2/highgui/highgui.hpp>
 
 
@@ -95,7 +95,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     //calculate volume object for each depth frame
     foreach(BoundingBox bb, bboxSequence)
     {
-        cout << counter << " --------------------------------------------------------\n";
+        cout << counter << " ---------------";
         QString fileName = depthImgFileNames[bb.frameNr-1];
         if (bb.frameNr >= depthImgFileNames.length() ||
                 !fileName.contains(QString::number(bb.frameNr)))
@@ -127,6 +127,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
 
         //generate volume object
         cv::SparseMat currentSparseVolumeObj = this->generateSparseVolumeObject(maskedDepthImg, this->downsampleRate);
+        cout << "--------------";
 
         maskedDepthImg.release();
 
@@ -143,8 +144,10 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
         if (prevSparseVolumeObj.nzcount() > 0) //there are at least 2 volume objects
         {
             cv::SparseMat delta = this->subtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);
+            cout << "-------------------";
             //... and cleanup
             cv::SparseMat cleanedUpDelta = this->cleanUpVolumeObjectDifference(delta);
+            cout << "--------\n";
             delta.release();
 
             if (this->saveDelta)
@@ -164,6 +167,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
         counter++;
     }
 
+    cout << "\nCalculating VMT from volume object differences...\n";
     //construct the VMT based on volume object differences over the track file
     cv::SparseMat vmt = this->calculateVMT(volumeObjectDifferences);
 
