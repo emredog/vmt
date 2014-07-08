@@ -21,7 +21,7 @@ public:
 	
 protected:
     //Video* _video;
-    ImageSequence* _imgSequence;
+    ImageSequence* _imgSequence; //ED: it works on an image sequence
 	std::size_t _nFramesBuffer;
 	const std::size_t ICENTER;
 	std::vector<std::vector<IplImageWrapper> > _intImgs;
@@ -57,6 +57,8 @@ public:
         isWorkingWithDepth = workingWithDepth;
 		init();
 	}
+
+    //ED: helper functions, mostly for getting/setting/jumping to/buffering frames
 
     void setWorkingWithDepth(bool isDepth) {this->isWorkingWithDepth = isDepth;} //ED
 	
