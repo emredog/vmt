@@ -10,6 +10,22 @@ PointCloudFunctions::~PointCloudFunctions(void)
 {
 }
 
+cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName)
+{
+    PointCloud<PointXYZI>::Ptr cloud (new PointCloud<PointXYZI>);
+
+    if (pcl::io::loadPCDFile<PointXYZI> (fileName, *cloud) == -1) //* load the file
+    {
+        PCL_ERROR ("Couldn't read file test_pcd.pcd \n");
+        return cv::SparseMat();
+    }
+
+    int dim = DIM;
+    int sizes[] = {SIZE_X, SIZE_Y, SIZE_Z}; //FIXME: too much or too less of Z
+
+    return convertToSparseMat(cloud, dim, sizes);
+}
+
 bool PointCloudFunctions::saveVmtAsCloud(const cv::SparseMat &vmt, std::string fileName)
 {
     //TRANSFORM VMT INTO Point Clout
@@ -19,13 +35,12 @@ bool PointCloudFunctions::saveVmtAsCloud(const cv::SparseMat &vmt, std::string f
     int i = 0;
 
     int rows = vmt.size()[1];
+    int maxZ = vmt.size()[2];
 
     for (cv::SparseMatConstIterator it = vmt.begin(); it != vmt.end(); ++it)
     {
         const cv::SparseMat::Node* n = it.node();
         uchar val = it.value<uchar>();
-
-        int maxZ = vmt.size()[2];
 
         cloud.points[i].x = n->idx[0];
         cloud.points[i].y = rows - n->idx[1];
@@ -48,16 +63,15 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::convertToPointCloud(const cv::Sp
     int i = 0;
 
     int rows = vmt.size()[1];
+    int maxZ = vmt.size()[2];
 
     for (cv::SparseMatConstIterator it=vmt.begin(); it != vmt.end(); ++it)
     {
         const cv::SparseMat::Node* n = it.node();
         uchar val = it.value<uchar>();
 
-        int maxZ = vmt.size()[2];
-
         cloud->points[i].x = n->idx[0];
-        cloud->points[i].y = rows - n->idx[1]; //FIXME 0? 1?
+        cloud->points[i].y = rows - n->idx[1];
         cloud->points[i].z = maxZ - n->idx[2];
         cloud->points[i].intensity = static_cast<float>(val);
 
@@ -67,12 +81,48 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::convertToPointCloud(const cv::Sp
     return cloud;
 }
 
+cv::SparseMat PointCloudFunctions::convertToSparseMat(PointCloud<PointXYZI>::Ptr ptCloud, int dim, const int sizes[])
+{
+    PointCloud<PointXYZI>::const_iterator it;
+    cv::SparseMat sparseMat(dim, sizes, CV_16UC1);
+
+    int rows = sizes[1];
+    int maxZ = sizes[2];
+
+    for (it = ptCloud->begin(); it < ptCloud->end(); it++)
+    {
+        uchar val = static_cast<uchar>(it->intensity);
+        if (val > 0)
+            sparseMat.ref<uchar>(it->x, rows - it->y, maxZ - it->z) = val;
+    }
+
+    return sparseMat;
+}
+
+cv::SparseMat PointCloudFunctions::statisticalOutlierRemoval(const cv::SparseMat &vmt, int meanK, double stdDevMulThreshold)
+{
+    PointCloud<PointXYZI>::Ptr cloud = convertToPointCloud(vmt);
+    PointCloud<PointXYZI>::Ptr cloud_filtered (new PointCloud<PointXYZI>);
+
+    // Create the filtering object
+    StatisticalOutlierRemoval<PointXYZI> sor;
+    sor.setInputCloud (cloud);
+    sor.setMeanK (meanK);
+    sor.setStddevMulThresh (stdDevMulThreshold);
+    sor.filter (*cloud_filtered);
+
+    cloud->clear();
+    cloud.reset();
+
+    return convertToSparseMat(cloud_filtered, vmt.dims(), vmt.size());
+}
+
 bool PointCloudFunctions::statisticalOutlierRemovalAndSave(const cv::SparseMat &vmt, string fileName, int meanK, double stdDevMulThreshold)
 {
-//    "Our sparse outlier removal is based on the computation of the distribution of point to neighbors distances in the input dataset.
-//    For each point, we compute the mean distance from it to all its neighbors. By assuming that the resulted distribution is
-//    Gaussian with a mean and a standard deviation, all points whose mean distances are outside an interval defined by the global
-//    distances mean and standard deviation can be considered as outliers and trimmed from the dataset."
+    //    "Our sparse outlier removal is based on the computation of the distribution of point to neighbors distances in the input dataset.
+    //    For each point, we compute the mean distance from it to all its neighbors. By assuming that the resulted distribution is
+    //    Gaussian with a mean and a standard deviation, all points whose mean distances are outside an interval defined by the global
+    //    distances mean and standard deviation can be considered as outliers and trimmed from the dataset."
 
     PointCloud<PointXYZI>::Ptr cloud = convertToPointCloud(vmt);
     PointCloud<PointXYZI>::Ptr cloud_filtered (new PointCloud<PointXYZI>);
@@ -97,7 +147,7 @@ bool PointCloudFunctions::statisticalOutlierRemovalAndSave(const cv::SparseMat &
 
 bool PointCloudFunctions::radiusOutlierRemovalAndSave(const cv::SparseMat &vmt, string fileName, double radius, int minNeighbors)
 {
-//    "The user specifies a number of neighbors which every indice must have within a specified radius to remain in the PointCloud."
+    //    "The user specifies a number of neighbors which every indice must have within a specified radius to remain in the PointCloud."
 
     PointCloud<PointXYZI>::Ptr cloud = convertToPointCloud(vmt);
     PointCloud<PointXYZI>::Ptr cloud_filtered (new PointCloud<PointXYZI>);

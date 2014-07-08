@@ -984,25 +984,33 @@ int VmtFunctions::saveVmtAsImageSequence(const cv::SparseMat &vmt, QString outpu
 
     int totalDepth = vmt.size()[Z]; //FIXME: this should be a constant value (=NORMALIZATION_INTERVAL) for all created vmt
     int counter = 0;
+    int ptCounter = 0;
+
+    qDebug() << "Points in VMT: " << vmt.nzcount();
 
     //FIXME: could this loop be optimized? using regular matrices maybe?
     //foreach depth
     for (int z = 0; z < totalDepth; z++)
     {
-        cv::Mat frame = cv::Mat(vmt.size()[X], vmt.size()[Y], vmt.type(), cv::Scalar(0)); //Create a new frame
+        cv::Mat frame = cv::Mat(vmt.size()[Y], vmt.size()[X], vmt.type(), cv::Scalar(0)); //Create a new frame
         for (int x = 0; x < frame.cols; x++)
             for (int y = 0; y < frame.rows; y++)
             {
                 uchar val = vmt.value<uchar>(x, y, z); //check all values in this depth
                 if (val > 0)
+                {
                     frame.at<uchar>(x, y) = val; //Set to the new frame if non-zero value is found
+                    ptCounter++;
+                }
             }
 
         //Save this frame as
-        if (cv::imwrite(QString("%1_%2.jpg").arg(outputFolder).arg(QString::number(z).rightJustified(2, '0')).toStdString(), frame))
+        if (cv::imwrite(QString("%1/VMT_%2.jpg").arg(outputFolder).arg(QString::number(z).rightJustified(2, '0')).toStdString(), frame))
             counter++;
 
     }
+
+    qDebug() << counter << " frames were saved with a total of " << ptCounter << " points.";
 
     return counter;
 

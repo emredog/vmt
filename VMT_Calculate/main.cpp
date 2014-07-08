@@ -37,13 +37,13 @@ int main(int argc, char *argv[])
     QCommandLineOption optionSaveVMT(QStringList() << "sVMT" << "saveVMT", "Save intermediate VMTs to output folder.");
     parser.addOption(optionSaveVMT);
 
-//    //Tolerance in XY
-//    QCommandLineOption optionToleranceXY(QStringList() << "tolXY" << "toleranceXY", "Subtraction tolerance in X-Y axis", "toleranceXZ", "0");
-//    parser.addOption(optionToleranceXY);
+    //    //Tolerance in XY
+    //    QCommandLineOption optionToleranceXY(QStringList() << "tolXY" << "toleranceXY", "Subtraction tolerance in X-Y axis", "toleranceXZ", "0");
+    //    parser.addOption(optionToleranceXY);
 
-//    //Tolerance in Z
-//    QCommandLineOption optionToleranceZ(QStringList() << "tolZ" << "toleranceZ", "Subtraction tolerance in Z axis", "toleranceZ", "0");
-//    parser.addOption(optionToleranceZ);
+    //    //Tolerance in Z
+    //    QCommandLineOption optionToleranceZ(QStringList() << "tolZ" << "toleranceZ", "Subtraction tolerance in Z axis", "toleranceZ", "0");
+    //    parser.addOption(optionToleranceZ);
 
     //Track point X
     QCommandLineOption optionTrackX("trackX", "X coordinate of tracked point", "trackX", "-1");
@@ -78,15 +78,15 @@ int main(int argc, char *argv[])
     bool saveDelta = parser.isSet(optionSaveDelta);
     bool saveVmt = parser.isSet(optionSaveVMT);
 
-//    // fetch XY tolerance
-//    QString xyTolStr = parser.value(optionToleranceXY);
-//    int xyTolerance = xyTolStr.toInt(&ok);
-//    if (!ok) xyTolerance = 0;
+    //    // fetch XY tolerance
+    //    QString xyTolStr = parser.value(optionToleranceXY);
+    //    int xyTolerance = xyTolStr.toInt(&ok);
+    //    if (!ok) xyTolerance = 0;
 
-//    // fetch Z tolerance
-//    QString zTolStr = parser.value(optionToleranceZ);
-//    int zTolerance = zTolStr.toInt(&ok);
-//    if (!ok) zTolerance = 0;
+    //    // fetch Z tolerance
+    //    QString zTolStr = parser.value(optionToleranceZ);
+    //    int zTolerance = zTolStr.toInt(&ok);
+    //    if (!ok) zTolerance = 0;
 
     // fetch track point
     QString trackXStr = parser.value(optionTrackX);
@@ -122,8 +122,7 @@ int main(int argc, char *argv[])
     int mSecs = myTimer.elapsed();
     std::cout << "VMT is generated in " << (double)mSecs / 1000.0 << "\n";
 
-    delete vmtCore;
-    vmtCore = 0;
+
 
     if (vmt.nzcount() <= 0)
         return 0;
@@ -133,22 +132,39 @@ int main(int argc, char *argv[])
     QString fileName = nameParts.last();
     fileName.chop(6); //remove the extension
 
-    if (PointCloudFunctions::saveVmtAsCloud(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg(".pcd").toStdString()))
-        std::cout << "Successfully saved as a point cloud with " << vmt.nzcount() << " points.\n";
-    else
-        std::cout << "Saving as point cloud have failed.\n";
+    //    if (PointCloudFunctions::saveVmtAsCloud(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg(".pcd").toStdString()))
+    //        std::cout << "Successfully saved as a point cloud with " << vmt.nzcount() << " points.\n";
+    //    else
+    //        std::cout << "Saving as point cloud have failed.\n";
 
-    if (PointCloudFunctions::statisticalOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_STFiltered.pcd").toStdString()))
-        std::cout << "Successfully filtered (Statistical outlier removal) & saved point cloud\n";
-    else
-        std::cout << "Saving as point cloud have failed.\n";
+    //    if (PointCloudFunctions::statisticalOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_STFiltered.pcd").toStdString()))
+    //        std::cout << "Successfully filtered (Statistical outlier removal) & saved point cloud\n";
+    //    else
+    //        std::cout << "Saving as point cloud have failed.\n";
 
-//    if (PointCloudFunctions::radiusOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_RadiusFilter.pcd").toStdString()))
-//        std::cout << "Successfully filtered (Radius outlier removal) & saved point cloud\n";
-//    else
-//        std::cout << "Saving as point cloud have failed.\n";
+    //    if (PointCloudFunctions::radiusOutlierRemovalAndSave(vmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_RadiusFilter.pcd").toStdString()))
+    //        std::cout << "Successfully filtered (Radius outlier removal) & saved point cloud\n";
+    //    else
+    //        std::cout << "Saving as point cloud have failed.\n";
 
     //    vmtCore->Save3DSparseMatrix(vmt, outputFolder.append(fileName).append(".dat"));
     //        std::cout << "Successfully saved as a sparse matrix with " << vmt.size()[0]*vmt.size()[1]*vmt.size()[2] << " lines.\n";
 
+
+    myTimer.restart();
+    cv::SparseMat filteredVmt = PointCloudFunctions::statisticalOutlierRemoval(vmt);
+    mSecs = myTimer.elapsed();
+    std::cout << "Filtered with Statistical Outlier Removal in " << (double)mSecs / 1000.0 << "\n";
+
+
+    PointCloudFunctions::saveVmtAsCloud(filteredVmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_STFiltered.pcd").toStdString());
+
+    myTimer.restart();
+    vmtCore->saveVmtAsImageSequence(filteredVmt, QString("%1%2/").arg(outputFolder).arg(fileName));
+    mSecs = myTimer.elapsed();
+    std::cout << "Saved as an image sequence in " << (double)mSecs / 1000.0 << "\n";
+
+
+    delete vmtCore;
+    vmtCore = 0;
 }
