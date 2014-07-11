@@ -46,8 +46,8 @@ protected:
     unsigned int downsampleRate;
 
     bool isTrackPoint;
-    unsigned int trackX;
-    unsigned int trackY;
+    int trackX;
+    int trackY;
 
     bool saveVolumeObject;
     bool saveDelta;

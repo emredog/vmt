@@ -77,6 +77,11 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
         bboxSequence.append(bbox);
     }
 
+    cout << "First bounding box (x, y, w, h) = (" << bboxSequence.first().x << ", "
+                                                  << bboxSequence.first().y << ", "
+                                                  << bboxSequence.first().width << ", "
+                                                  << bboxSequence.first().height << ")\n";
+
     //get Depth image paths in the folder
     QStringList filters;
     filters << "*.jp2";
@@ -95,7 +100,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     //calculate volume object for each depth frame
     foreach(BoundingBox bb, bboxSequence)
     {
-        cout << counter << " ---------------";
+        cout << counter << " -------------------------------------------------\n";
         QString fileName = depthImgFileNames[bb.frameNr-1];
         if (bb.frameNr >= depthImgFileNames.length() ||
                 !fileName.contains(QString::number(bb.frameNr)))
@@ -127,7 +132,6 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
 
         //generate volume object
         cv::SparseMat currentSparseVolumeObj = this->generateSparseVolumeObject(maskedDepthImg, this->downsampleRate);
-        cout << "--------------";
 
         maskedDepthImg.release();
 
@@ -144,10 +148,8 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
         if (prevSparseVolumeObj.nzcount() > 0) //there are at least 2 volume objects
         {
             cv::SparseMat delta = this->subtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);
-            cout << "-------------------";
             //... and cleanup
             cv::SparseMat cleanedUpDelta = this->cleanUpVolumeObjectDifference(delta);
-            cout << "--------\n";
             delta.release();
 
             if (this->saveDelta)
@@ -234,7 +236,7 @@ cv::SparseMat VmtFunctions::generateSparseVolumeObject(cv::Mat image, int downsa
 
                 if (this->isTrackPoint)
                 {
-                    if (x == (int)this->trackX && y == (int)this->trackY)
+                    if (x == this->trackX && y == this->trackY)
                         cout << "\tVolObj\t\tX: " << x << "\tY: " << y << "\tZ: " << depthInMillimeters << endl;
                 }
 
@@ -443,7 +445,7 @@ cv::SparseMat VmtFunctions::cleanUpVolumeObjectDifference(const cv::SparseMat& v
         cleanedUpVolObjDiff.ref<uchar>(p.x(), p.y(), z) = volObjDiff.value<uchar>(p.x(), p.y(), z);
         if (this->isTrackPoint)
         {
-            if (p.x() == (int)this->trackX && p.y() == (int)this->trackY)
+            if (p.x() == this->trackX && p.y() == this->trackY)
                 cout << "\tClean Delta\tX: " << p.x() << "\tY: " << p.y() << "\tZ: " << z << endl;
         }
 
@@ -466,8 +468,8 @@ double VmtFunctions::magnitudeOfMotion(const cv::SparseMat& sparseMat)
 
     double normalizedMagnitudeOfMotion = (double)sparseMat.nzcount() / (double)(sizes[X]*sizes[Y]*sizes[Z]);
 
-    qDebug() << "Number of nz elements: " << (int)sparseMat.nzcount();
-    qDebug() << "Normalized Magnitude of Motion: " << normalizedMagnitudeOfMotion;
+//    qDebug() << "Number of nz elements: " << (int)sparseMat.nzcount();
+//    qDebug() << "Normalized Magnitude of Motion: " << normalizedMagnitudeOfMotion;
 
 
     return normalizedMagnitudeOfMotion;
@@ -481,33 +483,16 @@ double VmtFunctions::magnitudeOfMotion(const cv::SparseMat& sparseMat)
 double VmtFunctions::attenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
 {
     double attConst = 0.0;
-    double attConst2 = 0.0;
     double sumOfMagnitutedOfMotion = 0;
-    double curMagnituteOfMotion = 0;
 
-    double curAttConst = 0.0;
-    double sumOfAttConst = 0.0;
-
-    int numberOfDiffs = volumeObjectsDifferences.length();
-
-    for(int i=0; i< numberOfDiffs; i++)
-    {
-        cv::SparseMat it = volumeObjectsDifferences.at(i); //i'th difference = difference between i-1'th and i'th volume objects
-        curMagnituteOfMotion = magnitudeOfMotion((it)); // magnitude of motion for this volume obj difference
-        sumOfMagnitutedOfMotion += curMagnituteOfMotion; //sum, so far
-
-        //for each difference object, attenuating constant is calculated over the sum of previous magnitudes of motion
-        curAttConst = (double)(I_MAX - 1) / (double)sumOfMagnitutedOfMotion;
-        sumOfAttConst += curAttConst;
+    foreach(cv::SparseMat sigma, volumeObjectsDifferences)
+    {        
+        sumOfMagnitutedOfMotion += magnitudeOfMotion((sigma));
     }
 
-    attConst = sumOfAttConst / (double)numberOfDiffs; //attenating constant for this interval is the average of attenuating constants over this interval
-    attConst2 = ((double)I_MAX - 1.0 ) / (double)sumOfMagnitutedOfMotion;
+    attConst = ((double)I_MAX - 1.0 ) / (double)sumOfMagnitutedOfMotion;
 
-    qDebug() << "Old attenuation constant: " << attConst;
-    qDebug() << "New attenuation constant: " << attConst2;
-
-    return attConst2; //FIXME!!!!!!!
+    return attConst;
 }
 
 //double VmtFunctions::attenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
@@ -1182,7 +1167,7 @@ int VmtFunctions::depthCorrectionCoefficient(int depthInMm) const
 {
     //FIXME: find a proper method to perform this
     if (depthInMm < 1405)
-        return 0;
+        return 1;
     else if (depthInMm < 1735)
         return 1;
     else if (depthInMm < 2531)
