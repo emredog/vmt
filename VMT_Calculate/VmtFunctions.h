@@ -106,6 +106,11 @@ public:
     //save a vmt as an image sequence to use it in klaser&schmid code later
     int saveVmtAsImageSequence(const cv::SparseMat &vmt, QString outputFolder) const;
 
+    //shrink & trim the 3d sparse mat to get rid of unnecessarily large size
+    cv::SparseMat trimSparseMat(const cv::SparseMat &vmt) const;
+
+    cv::SparseMat spatiallyNormalizeSparseMat(cv::SparseMat vmt) const;
+
 
 protected:
 
@@ -119,7 +124,7 @@ protected:
     double attenuationConstantForAnAction(const QList<cv::SparseMat> &volumeObjectsDifferences);
 
     //magnitude of motion is calculated over a volume object difference (delta) at a given time t
-    int magnitudeOfMotion(const cv::SparseMat& sparseMat);
+    double magnitudeOfMotion(const cv::SparseMat& sparseMat);
 
     //A VMT is constructed over a sequence of volume object differences
     cv::SparseMat calculateVMT(const QList<cv::SparseMat>& volumeObjectDifferences);
@@ -137,13 +142,7 @@ protected:
     cv::Matx33d calculateRotationZ_theta(double theta);
 
     cv::SparseMat rotateVMT(const cv::SparseMat& vmt, const cv::Matx33d& rotationMatrix);
-    cv::Mat projectVMTOntoXY(const cv::SparseMat& vmt);
-
-
-    //shrink & trim the 3d sparse mat to get rid of unnecessarily large size
-    cv::SparseMat trimSparseMat(const cv::SparseMat &vmt) const;
-
-    cv::SparseMat spatiallyNormalizeSparseMat(cv::SparseMat vmt) const;
+    cv::Mat projectVMTOntoXY(const cv::SparseMat& vmt);    
 
     cv::Mat extractSilhouette(const cv::Mat& mat) const;
 

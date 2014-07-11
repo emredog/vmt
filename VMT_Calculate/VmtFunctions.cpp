@@ -171,17 +171,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     //construct the VMT based on volume object differences over the track file
     cv::SparseMat vmt = this->calculateVMT(volumeObjectDifferences);
 
-    int depthSize = vmt.size()[Z];
-    //normalize the depth dimension and scale it between [0, NORMALIZATION_INTERVAL]
-    cv::SparseMat normalized = this->spatiallyNormalizeSparseMat(vmt);
-    depthSize = normalized.size()[Z];
-
-    //trim the sparse matrix, by cutting out the parts that contain no points
-    cv::SparseMat trimmed = this->trimSparseMat(normalized);
-    vmt.release();
-    normalized.release();
-
-    return trimmed;
+    return vmt;
 }
 
 void VmtFunctions::setTrackPoint(int x, int y)
@@ -244,7 +234,7 @@ cv::SparseMat VmtFunctions::generateSparseVolumeObject(cv::Mat image, int downsa
 
                 if (this->isTrackPoint)
                 {
-                    if (x == this->trackX && y == this->trackY)
+                    if (x == (int)this->trackX && y == (int)this->trackY)
                         cout << "\tVolObj\t\tX: " << x << "\tY: " << y << "\tZ: " << depthInMillimeters << endl;
                 }
 
@@ -389,7 +379,7 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
 
     if (this->isTrackPoint)
     {
-        for (int z=this->permittedMinZ; z<this->permittedMaxZ; z++)
+        for (unsigned int z=this->permittedMinZ; z<this->permittedMaxZ; z++)
         {
             uchar valDel = difference.value<uchar>(this->trackX, this->trackY, z);
             if (valDel > 0)
@@ -453,7 +443,7 @@ cv::SparseMat VmtFunctions::cleanUpVolumeObjectDifference(const cv::SparseMat& v
         cleanedUpVolObjDiff.ref<uchar>(p.x(), p.y(), z) = volObjDiff.value<uchar>(p.x(), p.y(), z);
         if (this->isTrackPoint)
         {
-            if (p.x() == this->trackX && p.y() == this->trackY)
+            if (p.x() == (int)this->trackX && p.y() == (int)this->trackY)
                 cout << "\tClean Delta\tX: " << p.x() << "\tY: " << p.y() << "\tZ: " << z << endl;
         }
 
@@ -465,17 +455,35 @@ cv::SparseMat VmtFunctions::cleanUpVolumeObjectDifference(const cv::SparseMat& v
     return cleanedUpVolObjDiff;
 }
 
-
-int VmtFunctions::magnitudeOfMotion(const cv::SparseMat& sparseMat)
+double VmtFunctions::magnitudeOfMotion(const cv::SparseMat& sparseMat)
 {
-    return (int)sparseMat.nzcount();
+    VmtInfo info = getVmtInfo(sparseMat);
+
+    int sizes[3];
+    sizes[X] = info.maxX - info.minX;
+    sizes[Y] = info.maxY - info.minY;
+    sizes[Z] = info.maxZ - info.minZ;
+
+    double normalizedMagnitudeOfMotion = (double)sparseMat.nzcount() / (double)(sizes[X]*sizes[Y]*sizes[Z]);
+
+    qDebug() << "Number of nz elements: " << (int)sparseMat.nzcount();
+    qDebug() << "Normalized Magnitude of Motion: " << normalizedMagnitudeOfMotion;
+
+
+    return normalizedMagnitudeOfMotion;
 }
+
+//int VmtFunctions::magnitudeOfMotion(const cv::SparseMat& sparseMat)
+//{
+//    return (int)sparseMat.nzcount();
+//}
 
 double VmtFunctions::attenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
 {
     double attConst = 0.0;
-    int sumOfMagnitutedOfMotion = 0;
-    int curMagnituteOfMotion = 0;
+    double attConst2 = 0.0;
+    double sumOfMagnitutedOfMotion = 0;
+    double curMagnituteOfMotion = 0;
 
     double curAttConst = 0.0;
     double sumOfAttConst = 0.0;
@@ -494,9 +502,40 @@ double VmtFunctions::attenuationConstantForAnAction(const QList<cv::SparseMat>& 
     }
 
     attConst = sumOfAttConst / (double)numberOfDiffs; //attenating constant for this interval is the average of attenuating constants over this interval
+    attConst2 = ((double)I_MAX - 1.0 ) / (double)sumOfMagnitutedOfMotion;
 
-    return attConst; //FIXME!!!!!!!
+    qDebug() << "Old attenuation constant: " << attConst;
+    qDebug() << "New attenuation constant: " << attConst2;
+
+    return attConst2; //FIXME!!!!!!!
 }
+
+//double VmtFunctions::attenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
+//{
+//    double attConst = 0.0;
+//    int sumOfMagnitutedOfMotion = 0;
+//    int curMagnituteOfMotion = 0;
+
+//    double curAttConst = 0.0;
+//    double sumOfAttConst = 0.0;
+
+//    int numberOfDiffs = volumeObjectsDifferences.length();
+
+//    for(int i=0; i< numberOfDiffs; i++)
+//    {
+//        cv::SparseMat it = volumeObjectsDifferences.at(i); //i'th difference = difference between i-1'th and i'th volume objects
+//        curMagnituteOfMotion = magnitudeOfMotion((it)); // magnitude of motion for this volume obj difference
+//        sumOfMagnitutedOfMotion += curMagnituteOfMotion; //sum, so far
+
+//        //for each difference object, attenuating constant is calculated over the sum of previous magnitudes of motion
+//        curAttConst = (double)(I_MAX - 1) / (double)sumOfMagnitutedOfMotion;
+//        sumOfAttConst += curAttConst;
+//    }
+
+//    attConst = sumOfAttConst / (double)numberOfDiffs; //attenating constant for this interval is the average of attenuating constants over this interval
+
+//    return attConst; //FIXME!!!!!!!
+//}
 
 //double VmtFunctions::AttenuationConstantForAnAction(const QList<cv::SparseMat>& volumeObjectsDifferences)
 //{
@@ -526,7 +565,7 @@ cv::SparseMat VmtFunctions::calculateVMT(const QList<cv::SparseMat> &volumeObjec
     //calculate attenuation constant for the set:
     double attConst = attenuationConstantForAnAction(volumeObjectDifferences);
     cout << "Attenuating constant: " << attConst << endl;
-    int curMagnituteOfMotion = 0;
+    double curMagnituteOfMotion = 0.0;
 
     //repeat for all volume differences:
     for(int i=0; i<volumeObjectDifferences.length(); i++)
@@ -548,7 +587,7 @@ cv::SparseMat VmtFunctions::calculateVMT(const QList<cv::SparseMat> &volumeObjec
         if (i > 0)
         {
             double disappearRate = attConst*curMagnituteOfMotion;
-            //            cout << "Disappearing rate at t= " << i << ": " << disappearRate << endl;
+                        cout << "Disappearing rate at t= " << i << ": " << disappearRate << endl;
             //for all nonzero values of previous VMT
             for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
             {
@@ -567,7 +606,7 @@ cv::SparseMat VmtFunctions::calculateVMT(const QList<cv::SparseMat> &volumeObjec
 
             if (this->isTrackPoint)
             {
-                for (int z=this->permittedMinZ; z<this->permittedMaxZ; z++)
+                for (unsigned int z=this->permittedMinZ; z<this->permittedMaxZ; z++)
                 {
                     uchar val = curVmt.value<uchar>(this->trackX, this->trackY, z);
                     if (val > 0)
@@ -1034,7 +1073,6 @@ cv::SparseMat VmtFunctions::trimSparseMat(const cv::SparseMat &vmt) const
     {
         const cv::SparseMat::Node* n = it.node();
 
-        //FIXME: check if indices match
         int newX = n->idx[X] - info.minX;
         int newY = n->idx[Y] - info.minY;
         int newZ = n->idx[Z] - info.minZ;

@@ -156,13 +156,21 @@ int main(int argc, char *argv[])
     mSecs = myTimer.elapsed();
     std::cout << "Filtered with Statistical Outlier Removal in " << (double)mSecs / 1000.0 << "\n";
 
+    //normalize the depth dimension and scale it between [0, NORMALIZATION_INTERVAL]
+    cv::SparseMat normalized = vmtCore->spatiallyNormalizeSparseMat(filteredVmt);
 
-    PointCloudFunctions::saveVmtAsCloud(filteredVmt, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_STFiltered.pcd").toStdString());
+    //trim the sparse matrix, by cutting out the parts that contain no points
+    cv::SparseMat trimmed = vmtCore->trimSparseMat(normalized);
+    vmt.release();
+    normalized.release();
 
-    myTimer.restart();
-    vmtCore->saveVmtAsImageSequence(filteredVmt, QString("%1%2/").arg(outputFolder).arg(fileName));
-    mSecs = myTimer.elapsed();
-    std::cout << "Saved as an image sequence in " << (double)mSecs / 1000.0 << "\n";
+
+    PointCloudFunctions::saveVmtAsCloud(trimmed, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_STFiltered.pcd").toStdString());
+
+//    myTimer.restart();
+//    vmtCore->saveVmtAsImageSequence(filteredVmt, QString("%1%2/").arg(outputFolder).arg(fileName));
+//    mSecs = myTimer.elapsed();
+//    std::cout << "Saved as an image sequence in " << (double)mSecs / 1000.0 << "\n";
 
 
     delete vmtCore;
