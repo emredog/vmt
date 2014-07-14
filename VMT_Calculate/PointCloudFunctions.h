@@ -34,8 +34,10 @@ public:
 	static PointCloud<PointXYZI>::Ptr downSampleCloud(pcl::PointCloud<PointXYZI>::Ptr inputCloud, 
 		float leafSize, bool save, string fileNameToSave);
 
+    static bool saveCloud(const PointCloud<PointXYZI>::Ptr cloud, std::string &fileName);
 
 	static PointCloud<PointXYZI>::Ptr convertToPointCloud(const cv::SparseMat &vmt);
+    static PointCloud<PointXYZI>::Ptr convertToOrganizedPointCloud(const cv::SparseMat &vmt);
     static cv::SparseMat convertToSparseMat(PointCloud<PointXYZI>::Ptr ptCloud, int dim, const int sizes[]);
 
     static cv::SparseMat statisticalOutlierRemoval(const cv::SparseMat &vmt, int meanK = 50, double stdDevMulThreshold = 1.0);

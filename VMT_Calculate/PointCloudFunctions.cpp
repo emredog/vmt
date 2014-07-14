@@ -81,6 +81,29 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::convertToPointCloud(const cv::Sp
     return cloud;
 }
 
+//PointCloud<PointXYZI>::Ptr PointCloudFunctions::convertToOrganizedPointCloud(const cv::SparseMat &vmt)
+//{
+//    int rows = vmt.size()[1];
+//    int cols = vmt.size()[0];
+//    int maxZ = vmt.size()[2];
+//    PointCloud<PointXYZI>::Ptr cloud(new PointCloud<PointXYZI> (cols, rows));
+
+//    for (cv::SparseMatConstIterator it=vmt.begin(); it != vmt.end(); ++it)
+//    {
+//        const cv::SparseMat::Node* n = it.node();
+//        uchar val = it.value<uchar>();
+
+//        cloud->at(n->idx[0], rows - n->idx[1], maxZ - n->idx[2])  ;
+//        cloud->points[i].y = ;
+//        cloud->points[i].z = ;
+//        cloud->points[i].intensity = static_cast<float>(val);
+
+//        i++;
+//    }
+
+//    return cloud;
+//}
+
 cv::SparseMat PointCloudFunctions::convertToSparseMat(PointCloud<PointXYZI>::Ptr ptCloud, int dim, const int sizes[])
 {
     PointCloud<PointXYZI>::const_iterator it;
@@ -186,4 +209,12 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::downSampleCloud(pcl::PointCloud<
     }
 
     return downsampled;
+}
+
+bool PointCloudFunctions::saveCloud(const PointCloud<PointXYZI>::Ptr cloud, string &fileName)
+{
+    if (pcl::io::savePCDFileASCII (fileName, cloud) >= 0) //FIXME: what is the return value? it's not mentioned in http://docs.pointclouds.org/1.6.0/group__io.html#ga5e406a5854fa8ad026cad85158fef266
+        return true;
+    else
+        return false;
 }
