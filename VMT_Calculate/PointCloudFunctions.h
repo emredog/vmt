@@ -34,7 +34,7 @@ public:
 	static PointCloud<PointXYZI>::Ptr downSampleCloud(pcl::PointCloud<PointXYZI>::Ptr inputCloud, 
 		float leafSize, bool save, string fileNameToSave);
 
-    static bool saveCloud(const PointCloud<PointXYZI>::Ptr cloud, std::string &fileName);
+    static bool saveCloud(const PointCloud<PointXYZI>::Ptr cloud, const string &fileName);
 
 	static PointCloud<PointXYZI>::Ptr convertToPointCloud(const cv::SparseMat &vmt);
     static PointCloud<PointXYZI>::Ptr convertToOrganizedPointCloud(const cv::SparseMat &vmt);

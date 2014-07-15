@@ -27,3 +27,5 @@ LIBS += -L/usr/lib64/vtk/ \
 
 LIBS += -lpcl_common -lpcl_visualization -lpcl_filters -lpcl_io -lpcl_search -lpcl_features \
 -lboost_system -lboost_thread
+
+HEADERS +=

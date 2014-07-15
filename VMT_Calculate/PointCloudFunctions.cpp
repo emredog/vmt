@@ -211,9 +211,9 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::downSampleCloud(pcl::PointCloud<
     return downsampled;
 }
 
-bool PointCloudFunctions::saveCloud(const PointCloud<PointXYZI>::Ptr cloud, string &fileName)
+bool PointCloudFunctions::saveCloud(const PointCloud<PointXYZI>::Ptr cloud, const string &fileName)
 {
-    if (pcl::io::savePCDFileASCII (fileName, cloud) >= 0) //FIXME: what is the return value? it's not mentioned in http://docs.pointclouds.org/1.6.0/group__io.html#ga5e406a5854fa8ad026cad85158fef266
+    if (savePCDFileASCII (fileName, *cloud) >= 0) //FIXME: what is the return value? it's not mentioned in http://docs.pointclouds.org/1.6.0/group__io.html#ga5e406a5854fa8ad026cad85158fef266
         return true;
     else
         return false;
