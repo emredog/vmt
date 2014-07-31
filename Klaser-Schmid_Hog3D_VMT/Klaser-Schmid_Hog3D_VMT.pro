@@ -41,7 +41,8 @@ SOURCES += main.cpp \
     opencv/IplImageWrapper.cpp \
     FastHog3DComputer.cpp \
     FastVideoGradientComputer.cpp \
-    opencv/vmt.cpp
+    opencv/vmt.cpp \
+    pclgradientcomputer.cpp
 
 HEADERS += \
 #    ffpp/Codec.h \
@@ -72,4 +73,5 @@ HEADERS += \
     Box3D.h \
     FastHog3DComputer.h \
     FastVideoGradientComputer.h \
-    opencv/vmt.h
+    opencv/vmt.h \
+    pclgradientcomputer.h
