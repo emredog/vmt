@@ -26,6 +26,7 @@
 //#include "FastVideoGradientComputer.h"
 #include "pclgradientcomputer.h" //ED 20140731
 #include "FastHog3DComputer.h"
+#include "vmtcalculator.h" //ED 20140731
 //#include <opencv/Video.h>
 #include <opencv/vmt.h>
 #include <numeric/functions.hpp>
@@ -220,6 +221,8 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
+        std::string videoFileName = vm["video-file"].as<string>();
+
         // check whether we need to extract a frame for testing purposes
         if (vm.count("dump-frame")) {
             // open the video file
@@ -272,7 +275,10 @@ int main(int argc, char *argv[])
         // init variables
         //boost::scoped_ptr<Video> video(new Video(vm["video-file"].as<string>()));
 //        boost::scoped_ptr<FastVideoGradientComputer> gradComputer(new FastVideoGradientComputer(video.get(), bufferLength, imgScaleFactor));
-        boost::scoped_ptr<Vmt> vmt(new Vmt(vm["video-file"].as<string>()));
+        boost::scoped_ptr<Vmt> vmt(new Vmt(videoFileName));
+
+        boost::scoped_ptr<VmtCalculator> vmtCalculator(new VmtCalculator()); //FIXME!
+
 //        boost::scoped_ptr<FastVideoGradientComputer> gradComputer(new FastVideoGradientComputer(vmt.get(), bufferLength, imgScaleFactor));
         boost::scoped_ptr<PclGradientComputer> gradComputer(new PclGradientComputer(vmt.get()));
 
@@ -326,6 +332,10 @@ int main(int argc, char *argv[])
 
         // init random seed
         srand(seed);
+
+        //----------------------------------------------------------------------------------------
+        // TRACK FILE IS READ HERE
+        //----------------------------------------------------------------------------------------
 
         // read in the track file if it is given
         std::multimap<int, Box<double> > track;
@@ -395,9 +405,15 @@ int main(int argc, char *argv[])
         }
         cerr << "# video size: " << width << "x" << height << "x" << length << endl;
 
+        //----------------------------------------------------------------------------------------
+        //  TODO: CALCULATE VMT HERE
+        //----------------------------------------------------------------------------------------
+        Vmt resultingVmt = vmtCalculator->calculateVmt(videoFileName, track);
+
         // do dense sampling
         bool isVerbose = vm.count("verbose");
-        if (!vm.count("position-file") && !vm.count("position-file2")) {
+        if (!vm.count("position-file") && !vm.count("position-file2"))
+        {
             // if we have no positions file, we do dense sampling with given strides
             double xyStride = vm.count("xy-nstride") ? double(width) / xyNStride : vm["xy-stride"].as<double>();
             double tStride = vm.count("t-nstride") ? double(length) / tNStride : vm["t-stride"].as<double>();
@@ -537,7 +553,8 @@ int main(int argc, char *argv[])
                 if (tScaleFactor == 1) break;
             }
         }
-        else {
+        else //no dense sampling
+        {
             // read in the positions file and sample at each position in different scales
             std::string positionFile;
             if (vm.count("position-file"))

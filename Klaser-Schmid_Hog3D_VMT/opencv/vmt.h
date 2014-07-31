@@ -30,6 +30,7 @@ protected:
 
 public:
     //constructor
+    Vmt(){} //FIXME
     Vmt(const std::string& folderPath) :
         directory(QString::fromStdString(folderPath)),
        /* _startPts(0),*/  _currentFrame(0) /*, _peekFrameIndex(0)*/
