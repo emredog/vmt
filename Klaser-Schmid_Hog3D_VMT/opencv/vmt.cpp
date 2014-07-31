@@ -25,10 +25,7 @@ void Vmt::init()
 {
     // prepare...
     QStringList filters;
-    if (this->isWorkingWithDepth)
-        filters << "*.jp2";
-    else
-        filters << "*.jpg" << "*.png" << "*.tiff";
+    filters << "*.jp2";
     // ...and get all "jp2" (depth) files, ordered by name
     this->imageFiles = this->directory.entryList(filters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
 

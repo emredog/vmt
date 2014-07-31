@@ -28,18 +28,13 @@ protected:
     void cleanup();
     bool advance(FrameIndex frameIndex);
 
-    bool isWorkingWithDepth; //ED
-    int nbrChannels; //ED
-
 public:
     //constructor
-    Vmt(const std::string& folderPath, bool workingWithDepth, int channels) :
+    Vmt(const std::string& folderPath) :
         directory(QString::fromStdString(folderPath)),
        /* _startPts(0),*/  _currentFrame(0) /*, _peekFrameIndex(0)*/
     {
         _currentFrameIndex = 0;
-        isWorkingWithDepth = workingWithDepth; //ED
-        nbrChannels = channels; //ED
         init();
     }
 

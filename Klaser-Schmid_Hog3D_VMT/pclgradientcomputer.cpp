@@ -1,6 +1,9 @@
 #include "pclgradientcomputer.h"
 
 #include <opencv/vmt.h>
+#include <opencv/cv.h>
+#include <opencv/functions.h>
+#include <cmath>
 
 
 PclGradientComputer::~PclGradientComputer()
@@ -37,7 +40,13 @@ int PclGradientComputer::getHeight() const
 std::size_t PclGradientComputer::getVideoLength() const
 {
     //TODO
-    return static_cast<std::size_t>(0);
+    return static_cast<std::size_t>(41); //FIXME: normalized depth? 2000?
+}
+
+std::size_t PclGradientComputer::getBufferLength() const
+{
+    //FIXME
+    return static_cast<std::size_t>(41); //magic number: number of frames to calculate each VMT
 }
 
 void PclGradientComputer::init()

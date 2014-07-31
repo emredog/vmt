@@ -23,7 +23,8 @@
 // my stuff
 //#include "functions.hpp"
 #include <opencv/functions.h>
-#include "FastVideoGradientComputer.h"
+//#include "FastVideoGradientComputer.h"
+#include "pclgradientcomputer.h" //ED 20140731
 #include "FastHog3DComputer.h"
 //#include <opencv/Video.h>
 #include <opencv/vmt.h>
@@ -42,9 +43,6 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 const string VERSION = "1.3.0";
-
-#define DEPTH 0
-#define CHANNELS 1
 
 // declerations
 struct Position3D {
@@ -228,7 +226,7 @@ int main(int argc, char *argv[])
             std::string filename = vm["video-file"].as<string>();
             cout << "sequence: " << filename << endl;
             //Video video(filename);
-            Vmt vmt(filename, DEPTH, CHANNELS); //ED
+            Vmt vmt(filename); //ED
 
             // get the frame number we need to extract
 //            Video::FrameIndex iFrame = vm["dump-frame"].as<std::size_t>();
@@ -274,8 +272,9 @@ int main(int argc, char *argv[])
         // init variables
         //boost::scoped_ptr<Video> video(new Video(vm["video-file"].as<string>()));
 //        boost::scoped_ptr<FastVideoGradientComputer> gradComputer(new FastVideoGradientComputer(video.get(), bufferLength, imgScaleFactor));
-        boost::scoped_ptr<Vmt> vmt(new Vmt(vm["video-file"].as<string>(), DEPTH, CHANNELS)); //FIXME
-        boost::scoped_ptr<FastVideoGradientComputer> gradComputer(new FastVideoGradientComputer(vmt.get(), DEPTH, bufferLength, imgScaleFactor));
+        boost::scoped_ptr<Vmt> vmt(new Vmt(vm["video-file"].as<string>()));
+//        boost::scoped_ptr<FastVideoGradientComputer> gradComputer(new FastVideoGradientComputer(vmt.get(), bufferLength, imgScaleFactor));
+        boost::scoped_ptr<PclGradientComputer> gradComputer(new PclGradientComputer(vmt.get()));
 
         FastHog3DComputer hogComputer(gradComputer.get(), quantizationType, polarBinsXY, polarBinsT,
                 xyNCells, tNCells, nPix, normThreshold, cutZero, fullOrientation,
@@ -437,7 +436,8 @@ int main(int argc, char *argv[])
                         continue;
 
                     // advance to the next frame position
-                    gradComputer->gotoFrame(frame);
+
+                    //gradComputer->gotoFrame(frame); FIXME ED 20140731
 
                     // get the last and next shot boundary
                     double lastShot = 0;
@@ -592,7 +592,7 @@ int main(int argc, char *argv[])
                     continue;
 
                 // advance to the specific frame position
-                gradComputer->gotoFrame(frame);
+                //gradComputer->gotoFrame(frame); FIXME ED 20140731
 
                 // get the last and next shot boundary
                 double lastShot = 0;

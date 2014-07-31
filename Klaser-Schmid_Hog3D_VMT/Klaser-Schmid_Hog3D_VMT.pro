@@ -42,7 +42,8 @@ SOURCES += main.cpp \
     FastHog3DComputer.cpp \
     FastVideoGradientComputer.cpp \
     opencv/vmt.cpp \
-    pclgradientcomputer.cpp
+    pclgradientcomputer.cpp \
+    vmtcalculator.cpp
 
 HEADERS += \
 #    ffpp/Codec.h \
@@ -74,4 +75,5 @@ HEADERS += \
     FastHog3DComputer.h \
     FastVideoGradientComputer.h \
     opencv/vmt.h \
-    pclgradientcomputer.h
+    pclgradientcomputer.h \
+    vmtcalculator.h

@@ -1,9 +1,15 @@
 #ifndef PCLGRADIENTCOMPUTER_H
 #define PCLGRADIENTCOMPUTER_H
 
+#include <vector>
+#include <cmath>
+#include <map>
+
 #include <boost/numeric/ublas/vector.hpp>
 #include "Box3D.h"
 #include <geometry/Box.hpp>
+
+#include <opencv/IplImageWrapper.h>
 
 class Vmt;
 
@@ -42,6 +48,8 @@ public:
     int getHeight() const;
     //FIXME: rename this function, it's not length anymore; it's "depth"
     std::size_t getVideoLength() const;
+    //FIXME
+    std::size_t getBufferLength() const;
 
 protected:
     Vmt* _vmt;
