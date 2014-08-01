@@ -3,11 +3,11 @@
 
 struct Box3D
 {
-	double x, y, t;
-	double width, height, length;
+    double x, y, z;
+    double width, height, depth;
 	
-	Box3D(double x_ = 0, double y_ = 0, double t_ = 0, double width_ = 0, double height_ = 0, double length_ = 0)
-		: x(x_), y(y_), t(t_), width(width_), height(height_), length(length_)
+    Box3D(double x_ = 0, double y_ = 0, double z_ = 0, double width_ = 0, double height_ = 0, double depth_ = 0)
+        : x(x_), y(y_), z(z_), width(width_), height(height_), depth(depth_)
 	{ }
 	
 	virtual ~Box3D()

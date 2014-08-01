@@ -112,7 +112,7 @@ void FastHog3DComputer::initWeights()
 	// compute weights; distance is measured in 'super pixels'
 	// in this way it is invariant to the actual descriptor size
 	double meanXY = 0.5 * (_nCellsXY * _nPixelsPerDim - 1);
-	double meanT = 0.5 * (_nCellsT * _nPixelsPerDim - 1);
+    double meanT = 0.5 * (_nCellsZ * _nPixelsPerDim - 1);
 	double inv2SigmaSqXY = 0.5 / (meanXY * meanXY); // meanXY is half of the desc width/height = stdDevXY
 	double inv2SigmaSqT = 0.5 / (meanT * meanT); // meanT is half of the desc length = stdDevT
 	//cout << "# nCellsXY: " << _nCellsXY << " nCellsT: " << _nCellsT << " nPixelsPerDim: " << _nPixelsPerDim << endl;
@@ -124,7 +124,7 @@ void FastHog3DComputer::initWeights()
 	std::size_t iPix = 0;
 	for (std::size_t iX = 0; iX < _nCellsXY; ++iX)
 		for (std::size_t iY = 0; iY < _nCellsXY; ++iY)
-			for (std::size_t iT = 0; iT < _nCellsT; ++iT)
+            for (std::size_t iT = 0; iT < _nCellsZ; ++iT)
 				for (std::size_t iXPix = 0; iXPix < _nPixelsPerDim; ++iXPix)
 					for (std::size_t iYPix = 0; iYPix < _nPixelsPerDim; ++iYPix)
 						for (std::size_t iTPix = 0; iTPix < _nPixelsPerDim; ++iTPix, ++iPix) {
@@ -176,7 +176,7 @@ FastHog3DComputer::VectorType
 FastHog3DComputer::getPolarHog3D(const VectorType& gradient) const
 {
 	// get the correct histogram size
-	std::size_t histSize = _nPolarBinsXY * _nPolarBinsT;
+    std::size_t histSize = _nPolarBinsXY * _nPolarBinsZ;
 	VectorType histogram(histSize);
 	histogram.clear();
 
@@ -187,7 +187,7 @@ FastHog3DComputer::getPolarHog3D(const VectorType& gradient) const
 
 	// some general variables
 	double binWidthDegXY = (_fullOrientation ? 360.0 : 180.0) / _nPolarBinsXY;
-	double binWidthDegT = 180.0 / _nPolarBinsT;
+    double binWidthDegT = 180.0 / _nPolarBinsZ;
 
 	// get the orientations, note we shift the orientations since we do not want
 	// the center of a bin to align with 0 degree for an orientation limited to 180 degree
@@ -208,15 +208,15 @@ FastHog3DComputer::getPolarHog3D(const VectorType& gradient) const
 	// find the correct bin (for T orientation) 
 	// (we need a small offset such that the bin center will not be at degree 0)
 	double fBinT = (orientationT - 0.5 * binWidthDegT) / binWidthDegT;
-	int iBinT = static_cast<int>(roundf(fBinT)) % _nPolarBinsT;
+    int iBinT = static_cast<int>(roundf(fBinT)) % _nPolarBinsZ;
 	int iBin2T(0); // the second closest bin for interpolation
 	if (fBinT < 0)
 		iBin2T = 0;
-	else if (fBinT > _nPolarBinsT - 1)
-		iBin2T = _nPolarBinsT - 1;
+    else if (fBinT > _nPolarBinsZ - 1)
+        iBin2T = _nPolarBinsZ - 1;
 	else 
 		iBin2T = (fBinT - iBinT) > 0 ? (iBinT + 1) : (iBinT - 1);
-	assert(iBinT >= 0 && iBinT < _nPolarBinsT);
+    assert(iBinT >= 0 && iBinT < _nPolarBinsZ);
 
 //cout << "orientation XY: " << orientationXY << endl;
 //cout << "orientation T: " << orientationT << endl;
@@ -227,14 +227,14 @@ FastHog3DComputer::getPolarHog3D(const VectorType& gradient) const
 	// (use linear interpolation)
 	double weightXY = 1 - std::min<double>(fabs(fBinXY - iBinXY), _nPolarBinsXY - fBinXY);
 	double weight2XY = 1 - weightXY;
-	double weightT = 1 - std::min<double>(fabs(fBinT - iBinT), _nPolarBinsT - fBinT);
+    double weightT = 1 - std::min<double>(fabs(fBinT - iBinT), _nPolarBinsZ - fBinT);
 	double weight2T = 1 - weightT;
 	
 	// distribute gradient magnitude/norm into histogram
-	histogram[iBinXY * _nPolarBinsT + iBinT] = weightXY * weightT * normGradientVec;
-	histogram[iBin2XY * _nPolarBinsT + iBinT] = weight2XY * weightT * normGradientVec;
-	histogram[iBinXY * _nPolarBinsT + iBin2T] = weightXY * weight2T * normGradientVec;
-	histogram[iBin2XY * _nPolarBinsT + iBin2T] = weight2XY * weight2T * normGradientVec;
+    histogram[iBinXY * _nPolarBinsZ + iBinT] = weightXY * weightT * normGradientVec;
+    histogram[iBin2XY * _nPolarBinsZ + iBinT] = weight2XY * weightT * normGradientVec;
+    histogram[iBinXY * _nPolarBinsZ + iBin2T] = weightXY * weight2T * normGradientVec;
+    histogram[iBin2XY * _nPolarBinsZ + iBin2T] = weight2XY * weight2T * normGradientVec;
 
 	return histogram;
 }
@@ -245,35 +245,35 @@ FastHog3DComputer::getHog3D(const Box3D& orgBox) const
 	// init some variables
 	double xStart = orgBox.x;
 	double yStart = orgBox.y;
-	double tStart = orgBox.t;
+    double tStart = orgBox.z;
 	double cellWidth = orgBox.width / _nCellsXY;
 	double cellHeight = orgBox.height / _nCellsXY;
-	double cellLength = orgBox.length / _nCellsT;
+    double cellDepth = orgBox.depth / _nCellsZ;
 	double strideFactor = 1;
 	if (_overlappingCells) {
 		cellWidth = 2 * orgBox.width / (_nCellsXY + 1);
 		cellHeight = 2 * orgBox.height / (_nCellsXY + 1);
-		cellLength = 2 * orgBox.length / (_nCellsT + 1);
+        cellDepth = 2 * orgBox.depth / (_nCellsZ + 1);
 		strideFactor = 0.5;
 	}
 	double hyperPixWidth = cellWidth / _nPixelsPerDim;
 	double hyperPixHeight = cellHeight / _nPixelsPerDim;
-	double hyperPixLength = cellLength / _nPixelsPerDim;
+    double hyperPixDepth = cellDepth / _nPixelsPerDim;
 	double epsilon = 0.02 * _nPixelsPerDim * _nPixelsPerDim * _nPixelsPerDim;
 	
 	// computation
 //	cout << "# " << orgBox.x << " " << orgBox.y << " " << orgBox.t << " " << orgBox.width << " " << orgBox.height << " " << orgBox.length << endl;
-	Box3D box(0, 0, 0, hyperPixWidth, hyperPixHeight, hyperPixLength);
-	std::size_t histSize = _quantization == PolarBinning ? _nPolarBinsXY * _nPolarBinsT : _projectionMatrix.size1();
+    Box3D box(0, 0, 0, hyperPixWidth, hyperPixHeight, hyperPixDepth);
+    std::size_t histSize = _quantization == PolarBinning ? _nPolarBinsXY * _nPolarBinsZ : _projectionMatrix.size1();
 	if (_fullOrientation && _quantization != PolarBinning)
 		histSize *= 2;
-    PclGradientComputer::VectorType vec(_nCellsXY * _nCellsXY * _nCellsT * histSize);
+    PclGradientComputer::VectorType vec(_nCellsXY * _nCellsXY * _nCellsZ * histSize);
 	std::size_t iCellStart(0);
 	std::size_t iPix = 0;
 	double normSum(0);
 	for (std::size_t iX = 0; iX < _nCellsXY; ++iX)
 		for (std::size_t iY = 0; iY < _nCellsXY; ++iY)
-			for (std::size_t iT = 0; iT < _nCellsT; ++iT) {
+            for (std::size_t iZ = 0; iZ < _nCellsZ; ++iZ) {
 				// compute the histogram based on the hyper pixels
 				VectorType cellHist(histSize);
 				cellHist.clear();
@@ -281,11 +281,11 @@ FastHog3DComputer::getHog3D(const Box3D& orgBox) const
 				
 				for (std::size_t iXPix = 0; iXPix < _nPixelsPerDim; ++iXPix)
 					for (std::size_t iYPix = 0; iYPix < _nPixelsPerDim; ++iYPix)
-						for (std::size_t iTPix = 0; iTPix < _nPixelsPerDim; ++iTPix, ++iPix) {
+                        for (std::size_t iZPix = 0; iZPix < _nPixelsPerDim; ++iZPix, ++iPix) {
 							// prepare the exact position of the cell
 							box.x = xStart + iX * strideFactor * cellWidth + iXPix * hyperPixWidth;
 							box.y = yStart + iY * strideFactor * cellHeight + iYPix * hyperPixHeight;
-							box.t = tStart + iT * strideFactor * cellLength + iTPix * hyperPixLength;
+                            box.z = tStart + iZ * strideFactor * cellDepth + iZPix * hyperPixDepth;
 //							cout << "#   " << iXPix << "-" << iYPix << "-" << iTPix << endl;
 //							cout << "#     w: " << _weights[iPix] << endl;
 //							cout << "#     " << box.x << " " << box.y << " " << box.t << " " << box.width << " " << box.height << " " << box.length << endl; 

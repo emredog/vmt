@@ -26,27 +26,20 @@ bool PclGradientComputer::isInBuffer(const Box3D &box) const
 }
 
 int PclGradientComputer::getWidth() const
-{
-    //TODO
-    return 0;
+{    
+    return _vmt->getWidth();
 }
 
 int PclGradientComputer::getHeight() const
 {
     //TODO
-    return 0;
+    return _vmt->getHeight();
 }
 
-std::size_t PclGradientComputer::getVideoLength() const
+int PclGradientComputer::getDepth() const
 {
     //TODO
-    return static_cast<std::size_t>(41); //FIXME: normalized depth? 2000?
-}
-
-std::size_t PclGradientComputer::getBufferLength() const
-{
-    //FIXME
-    return static_cast<std::size_t>(41); //magic number: number of frames to calculate each VMT
+    return _vmt->getDepth();
 }
 
 void PclGradientComputer::init()

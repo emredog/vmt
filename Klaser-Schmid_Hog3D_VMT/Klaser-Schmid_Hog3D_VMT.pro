@@ -36,7 +36,6 @@ SOURCES += main.cpp \
     opencv/functions.cpp \
     opencv/IplImageWrapper.cpp \
     FastHog3DComputer.cpp \
-    FastVideoGradientComputer.cpp \
     opencv/vmt.cpp \
     pclgradientcomputer.cpp \
     vmtcalculator.cpp \
@@ -60,7 +59,6 @@ HEADERS += \
     opencv/IplImageWrapper.hpp \
     Box3D.h \
     FastHog3DComputer.h \
-    FastVideoGradientComputer.h \
     opencv/vmt.h \
     pclgradientcomputer.h \
     vmtcalculator.h \

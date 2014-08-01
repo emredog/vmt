@@ -18,7 +18,20 @@ VmtCalculator::~VmtCalculator()
 
 Vmt VmtCalculator::calculateVmt(std::string imgDir, std::string trackFile)
 {
-    cv::SparseMat vmtSparseMat = this->vmtCore->constructSparseVMT(QString::fromStdString(imgDir), QString::fromStdString(trackFile));
-    //TODO
-    return Vmt();
+    //calculate VMT
+    cv::SparseMat vmt = this->vmtCore->constructSparseVMT(QString::fromStdString(imgDir), QString::fromStdString(trackFile));
+
+    //apply statistical outlier filter from PCL
+    cv::SparseMat filtered = PointCloudFunctions::statisticalOutlierRemoval(vmt);
+    vmt.release();
+
+    //spatially normalize: Z is scaled between 0 and 2000
+    cv::SparseMat normalized = vmtCore->spatiallyNormalizeSparseMat(filtered);
+    filtered.release();
+
+    //trim the sparsemat
+    cv::SparseMat trimmed = vmtCore->trimSparseMat(normalized);
+    normalized.release();
+
+    return Vmt(trimmed);
 }

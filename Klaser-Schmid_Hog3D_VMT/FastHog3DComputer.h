@@ -30,9 +30,9 @@ protected:
     PclGradientComputer* _gradientComputer; //ED 20140731
 	QuantizationType _quantization;
 	std::size_t _nPolarBinsXY;
-	std::size_t _nPolarBinsT;
+    std::size_t _nPolarBinsZ;
 	std::size_t _nCellsXY;
-	std::size_t _nCellsT;
+    std::size_t _nCellsZ;
 	std::size_t _nPixelsPerDim;
 	double _normThreshold;
 	double _cutZero;
@@ -62,8 +62,8 @@ public:
 			double normThreshold = 0.1, double cutZero = 0.25, bool fullOrientation = true, 
 			bool gaussWeighting = false, bool overlappingCells = false, bool normCells = false, bool l1Norm = false)
 		: _gradientComputer(gradientComputer), _quantization(quantization), 
-		_nPolarBinsXY(nPolarBinsXY), _nPolarBinsT(nPolarBinsT), 
-		_nCellsXY(nCellsXY), _nCellsT(nCellsT), _nPixelsPerDim(nPixelsPerDim),
+        _nPolarBinsXY(nPolarBinsXY), _nPolarBinsZ(nPolarBinsT),
+        _nCellsXY(nCellsXY), _nCellsZ(nCellsT), _nPixelsPerDim(nPixelsPerDim),
 		_normThreshold(normThreshold), _cutZero(cutZero), _fullOrientation(fullOrientation),
 		_gaussWeighting(gaussWeighting), _overlappingCells(overlappingCells), 
 		_normCells(normCells), _l1Norm(l1Norm)
@@ -109,12 +109,12 @@ public:
 	
     std::size_t getNPolarBinsT() const
     {
-        return _nPolarBinsT;
+        return _nPolarBinsZ;
     }
 
     void setNPolarBinsT(std::size_t nBins)
     {
-        _nPolarBinsT = nBins;
+        _nPolarBinsZ = nBins;
     }
 	
 	std::size_t getNCellsXY() const
@@ -129,12 +129,12 @@ public:
 	
 	std::size_t getNCellsT() const
 	{
-		return _nCellsT;
+        return _nCellsZ;
 	}
 	
 	void setNCellsT(std::size_t n)
 	{
-		_nCellsT = n;
+        _nCellsZ = n;
 	}
 	
 	std::size_t getNPixelsPerDim() const
@@ -218,13 +218,13 @@ public:
 	{
 		std::size_t histSize = _projectionMatrix.size1() * (hasFullOrientation() ? 2 : 1);
 		if (PolarBinning == _quantization)
-			histSize = _nPolarBinsT * _nPolarBinsXY;
+            histSize = _nPolarBinsZ * _nPolarBinsXY;
 		return getNCellsXY() * getNCellsXY() * getNCellsT() * histSize;
 	}
 	
 	double getMinLength() const
 	{
-		return _nPixelsPerDim * _nCellsT;
+        return _nPixelsPerDim * _nCellsZ;
 	}
 	
 	double getMinWidth() const

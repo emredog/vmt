@@ -36,7 +36,7 @@ public:
 
     bool isInVideo(const Box3D& box) const
     {
-        if (box.t < 0 || (box.t + box.length) >= getVideoLength())
+        if (box.z < 0 || (box.z + box.depth) >= getDepth())
             return false;
         Box<double> box2DVideo(0, 0, getWidth(), getHeight());
         Box<double> box2D(box.x, box.y, box.width, box.height);
@@ -44,12 +44,8 @@ public:
     }
 
     int getWidth() const;
-
     int getHeight() const;
-    //FIXME: rename this function, it's not length anymore; it's "depth"
-    std::size_t getVideoLength() const;
-    //FIXME
-    std::size_t getBufferLength() const;
+    int getDepth() const;
 
 protected:
     Vmt* _vmt;
