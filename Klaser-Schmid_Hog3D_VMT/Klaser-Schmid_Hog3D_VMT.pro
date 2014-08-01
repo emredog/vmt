@@ -14,7 +14,14 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
-#INCLUDEPATH += /usr/include/ffmpeg
+#paths for PCL
+INCLUDEPATH += /usr/include/pcl-1.7
+INCLUDEPATH += /usr/include/eigen3
+
+#Libs for PCL
+LIBS += -lpcl_common -lpcl_visualization -lpcl_filters -lpcl_io
+
+
 LIBS += -lboost_regex -lboost_system -lboost_filesystem -lboost_program_options \
 -lavformat -lavutil -lavcodec -lswscale \
 -lopencv_calib3d -lopencv_contrib -lopencv_core -lopencv_features2d \
@@ -22,43 +29,23 @@ LIBS += -lboost_regex -lboost_system -lboost_filesystem -lboost_program_options 
 -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_stitching \
 -lopencv_superres -lopencv_ts -lopencv_video -lopencv_videostab
 
+#path for boundingbox.h
+INCLUDEPATH += ../AnalyzeAnnotations/
 
 SOURCES += main.cpp \
-#    ffpp/Codec.cpp \
-#    ffpp/CodecContext.cpp \
-#    ffpp/FlipContext.cpp \
-#    ffpp/FormatContext.cpp \
-#    ffpp/Frame.cpp \
-#    ffpp/InputFormat.cpp \
-#    ffpp/InputFormatContext.cpp \
-#    ffpp/OutputFormat.cpp \
-#    ffpp/OutputFormatContext.cpp \
-#    ffpp/Packet.cpp \
-#    ffpp/ScalerContext.cpp \
-#    ffpp/Stream.cpp \
-#    ffpp/PixelFormat.c \
     opencv/functions.cpp \
     opencv/IplImageWrapper.cpp \
     FastHog3DComputer.cpp \
     FastVideoGradientComputer.cpp \
     opencv/vmt.cpp \
     pclgradientcomputer.cpp \
-    vmtcalculator.cpp
+    vmtcalculator.cpp \
+    vmt_calculation/depthtotolerance.cpp \
+    vmt_calculation/PointCloudFunctions.cpp \
+    vmt_calculation/VmtFunctions.cpp \
+    ../AnalyzeAnnotations/boundingbox.cpp
 
 HEADERS += \
-#    ffpp/Codec.h \
-#    ffpp/CodecContext.h \
-#    ffpp/FlipContext.h \
-#    ffpp/FormatContext.h \
-#    ffpp/Frame.h \
-#    ffpp/InputFormat.h \
-#    ffpp/InputFormatContext.h \
-#    ffpp/OutputFormat.h \
-#    ffpp/OutputFormatContext.h \
-#    ffpp/Packet.h \
-#    ffpp/PixelFormat.h \
-#    ffpp/ScalerContext.h \
-#    ffpp/Stream.h \
     geometry/Box.h \
     geometry/Box.hpp \
     geometry/Point.h \
@@ -76,4 +63,8 @@ HEADERS += \
     FastVideoGradientComputer.h \
     opencv/vmt.h \
     pclgradientcomputer.h \
-    vmtcalculator.h
+    vmtcalculator.h \
+    vmt_calculation/depthtotolerance.h \
+    vmt_calculation/PointCloudFunctions.h \
+    vmt_calculation/VmtFunctions.h \
+    ../AnalyzeAnnotations/boundingbox.h

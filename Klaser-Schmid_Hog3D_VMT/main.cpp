@@ -336,12 +336,13 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------------
         // TRACK FILE IS READ HERE
         //----------------------------------------------------------------------------------------
+        std::string trackFile = "";
 
         // read in the track file if it is given
         std::multimap<int, Box<double> > track;
         if (vm.count("track-file")) {
             // try to open the track file
-            std::string trackFile = vm["track-file"].as<string>();
+            trackFile = vm["track-file"].as<string>();
             if (!fs::exists(trackFile))
                 throw std::runtime_error("Track file does not exist: " + trackFile);
             std::ifstream file(trackFile.c_str());
@@ -408,7 +409,7 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------------
         //  TODO: CALCULATE VMT HERE
         //----------------------------------------------------------------------------------------
-        Vmt resultingVmt = vmtCalculator->calculateVmt(videoFileName, track);
+        Vmt resultingVmt = vmtCalculator->calculateVmt(videoFileName, trackFile);
 
         // do dense sampling
         bool isVerbose = vm.count("verbose");
