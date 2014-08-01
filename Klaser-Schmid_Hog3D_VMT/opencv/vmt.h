@@ -2,6 +2,8 @@
 #define VMT_H
 
 #include <opencv2/core/core.hpp>
+#include <pcl/point_types.h>
+#include <pcl/common/common.h>
 
 class Vmt
 {
@@ -14,6 +16,8 @@ protected:
     int _depth;
 
     cv::SparseMat _sparseMat;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr _pointCloud;
+
 
 public:
     //constructor
@@ -25,6 +29,8 @@ public:
     int getWidth() const { return this->_width; }
     int getHeight() const { return this->_height; }
     int getDepth() const { return this->_depth; }
+
+    pcl::PointCloud<pcl::PointXYZI>::ConstPtr getPointCloud() const;
 };
 
 #endif // VMT_H

@@ -362,17 +362,14 @@ int main(int argc, char *argv[])
                         continue;
 
                     // compute feature vector
-                    if (true/*isVerbose*/)
+                    if (isVerbose)
                         cerr << "# desc: " << box.x << ", " << box.y << ", " << box.z << ", "
                              << box.width << "x" << box.height << "x" << box.depth << endl;
-
-                    continue; //FIXME remove me ED 20140801
 
                     //----------------------------------------------------------------------------------------
                     //  HOG3D DESCRIPTOR CALCULATED HERE
                     //----------------------------------------------------------------------------------------
-                    //TODO:
-                    //vec = hogComputer.getHog3D(box); UNCOMMENT ME!!! ED 20140801
+                    vec = hogComputer.getHog3D(box);
 
                     // print out positions (original and normalized) and vector
                     if (vec.size() > 0)

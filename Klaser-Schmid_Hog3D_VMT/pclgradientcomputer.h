@@ -20,7 +20,6 @@ public:
     PclGradientComputer(Vmt* vmt)
     : _vmt(vmt)
     {
-        init();
     }
 
     typedef boost::numeric::ublas::vector<double> VectorType;
@@ -49,7 +48,6 @@ public:
 
 protected:
     Vmt* _vmt;
-    void init();
 };
 
 #endif // PCLGRADIENTCOMPUTER_H
