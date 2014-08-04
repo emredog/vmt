@@ -297,9 +297,9 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------------
         //  TODO: CALCULATE VMT HERE
         //----------------------------------------------------------------------------------------
-        cout << "Calculating VMT...";
+        cout << "# Calculating VMT...";
         Vmt resultingVmt = vmtCalculator->calculateVmt(videoFileName, trackFile);
-        cout << "..Done.\n";
+        cout << "# ..Done.\n";
 
         //----------------------------------------------------------------------------------------
         //  TODO: CALCULATE GRADIENT VECTOR HERE

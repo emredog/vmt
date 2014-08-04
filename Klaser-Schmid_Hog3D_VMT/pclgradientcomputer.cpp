@@ -18,15 +18,16 @@ PclGradientComputer::~PclGradientComputer()
 
 PclGradientComputer::VectorType PclGradientComputer::getGradientVector(const Box3D &box) const
 {
-    VectorType vec(3);
+    //initialize a zero vector
+    VectorType vec(3); vec[0] = 0.0; vec[1] = 0.0; vec[2] = 0.0;
 
-    double radiusToSearch = std::max(std::max(box.width, box.height), box.depth);
+    double radiusToSearch = 10*std::max(std::max(box.width, box.height), box.depth); //FIXME: radius to search?
 
     //crop the VMT in a new point cloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr croppedCloud(new pcl::PointCloud<pcl::PointXYZI>);
     {
         pcl::PointXYZ minPt(box.x, box.y, box.z);
-        pcl::PointXYZ maxPt(box.x + box.width, box.y + box.height, box.x + box.depth);
+        pcl::PointXYZ maxPt(box.x + box.width, box.y + box.height, box.z + box.depth);
 
         pcl::CropBox<pcl::PointXYZI> cropBoxFilter;
         cropBoxFilter.setInputCloud(_vmt->getPointCloud());
@@ -34,6 +35,12 @@ PclGradientComputer::VectorType PclGradientComputer::getGradientVector(const Box
         cropBoxFilter.setMax(maxPt.getArray4fMap());
 
         cropBoxFilter.filter(*croppedCloud);
+    }
+
+    //case of 1 or less points (we need at least 2 points to form a intensity gradient vector)
+    if (croppedCloud->points.size() < 2)
+    {
+        return vec;
     }
 
     //estimate surface normals
@@ -59,14 +66,29 @@ PclGradientComputer::VectorType PclGradientComputer::getGradientVector(const Box
     croppedCloud.reset();
     normals.reset();
 
-    //TODO: calculate mean gradients of the cropped box
-//    double sumDx = 0.0, sumDy = 0.0, sumDz = 0.0;
-//    for (int i=0; i<gradients->points.size(); i++)
-//    {
-//        sumDx += gradients->points[i].gradient_x;
-//        sumDy += gradients->points[i].gradient_y;
-//        sumDz += gradients->points[i].gradient_z;
-//    }
+    //calculate mean gradients of the cropped box
+    double sumDx = 0.0, sumDy = 0.0, sumDz = 0.0;
+
+    for (size_t i=0; i<gradients->points.size(); i++)
+    {
+        double dx = gradients->points[i].gradient_x;
+        double dy = gradients->points[i].gradient_y;
+        double dz = gradients->points[i].gradient_z;
+
+        if (isnan(dx) || isnan(dy) || isnan(dz))
+            continue;
+
+        sumDx += dx;
+        sumDy += dy;
+        sumDz += dz;
+
+    }
+
+    vec[0] = sumDx / (double)gradients->points.size();
+    vec[1] = sumDy / (double)gradients->points.size();
+    vec[2] = sumDz / (double)gradients->points.size();
+
+    //FIXME: do I need to check for the origin point of the gradient? (i guess not..)
 
     return vec;
 }
