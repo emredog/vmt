@@ -3,6 +3,8 @@
 
 #include "opencv2/imgproc/imgproc.hpp"
 
+#include <iostream>
+
 cv::Vec3f IntensityGradientComputation::computeMeanIntensityGradient(const cv::SparseMat &sparseCube)
 {
     //Transform sparsemat into a regular mat:
@@ -18,90 +20,58 @@ cv::Vec3f IntensityGradientComputation::computeMeanIntensityGradient(const cv::M
         return cv::Vec3f(-1.0, -1.0, -1.0);
 
     //Size of cube
-    int sizeX = cube.size[0];
-    int sizeY = cube.size[1];
+    int sizeX = cube.size[0]; //cols
+    int sizeY = cube.size[1]; //rows
     int sizeZ = cube.size[2];
 
+    cv::MatConstIterator_<uchar> _it = cube.begin<uchar>();
+    for(;_it!=cube.end<uchar>(); _it++)
+    {
+        uchar val = *_it;
+        unsigned int vall = static_cast<unsigned int>(val);
+        //std::cout << _it-> << std::endl;
+    }
+
     //gradients: cube/dx , cube/dy , cube/dz
-    cv::Mat gradX(cube.dims, cube.size, CV_16SC1);
-    cv::Mat gradY(cube.dims, cube.size, CV_16SC1);
-    cv::Mat gradZ(cube.dims, cube.size, CV_16SC1);
+    cv::Mat gradXY(cube.dims, cube.size, CV_16SC1);
+    cv::Mat gradXYZ(cube.dims, cube.size, CV_16SC1);
 
     //some common variables:
     cv::Range ranges[3];
 //    cv::Mat prevSlice;
 
 
-    //calculate gradX: ----------------------------------------------------------------------------
-    ranges[1] = cv::Range::all();
-    ranges[2] = cv::Range::all();
-    for (int x = 0; x < sizeX; x++)
-    {
-
-        cv::Mat currentSlice(sizeY, sizeZ, CV_8UC1);
-        ranges[0] = cv::Range(x, x+1);
-
-        currentSlice = cube(ranges).clone();
-        // create a temporarily 2d image and copy its size
-        // to make our image a real 2d image
-        cv::Mat out;
-        const int sizes[2] = {sizeY, sizeZ};
-        out.create(2, sizes, CV_8UC1);
-        currentSlice.copySize(out);
-
-        cv::Sobel(currentSlice, out, CV_8UC1, 1, 0); //sobel operator on X: dx = 1, dy = 0
-        gradX(ranges) = out;
-
-//        if (x != 0) //skip these for the first slice
-//        {
-//            cv::Mat diff = currentSlice - prevSlice;
-//            gradX(ranges) = diff;
-//        }
-
-        out.release();
-//        prevSlice = currentSlice;
-        currentSlice.release();
-    }
-
-    //FIXME: delete these:
-    cv::SparseMat gradXSparse(gradX);
-    PointCloudFunctions::saveVmtAsCloud(gradXSparse, "/home/emredog/Documents/output/gradX_sobel.pcd");
-
-    //calculate gradY: ----------------------------------------------------------------------------
+    //calculate gradX and gradY: ----------------------------------------------------------------------------
     ranges[0] = cv::Range::all();
-    ranges[2] = cv::Range::all();
-    for (int y = 0; y < sizeY; y++)
+    ranges[1] = cv::Range::all();
+    for (int z = 0; z < sizeZ; z++)
     {
 
-        cv::Mat currentSlice(sizeX, sizeZ, CV_8UC1);
-        ranges[1] = cv::Range(y, y+1);
+        cv::Mat currentSlice(sizeY, sizeX, CV_8UC1);
+        ranges[2] = cv::Range(z, z+1); //take a slice orthogonal to Z axis
 
         currentSlice = cube(ranges).clone();
         // create a temporarily 2d image and copy its size
         // to make our image a real 2d image
         cv::Mat out;
-        const int sizes[2] = {sizeX, sizeZ};
+        const int sizes[2] = {sizeY, sizeX};
         out.create(2, sizes, CV_8UC1);
         currentSlice.copySize(out);
+        std::cout << currentSlice << std::endl;
 
-        cv::Sobel(currentSlice, out, CV_8UC1, 0, 1); //sobel operator on X: dx = 1, dy = 0
-        gradY(ranges) = out;
+        cv::Sobel(currentSlice, out, CV_8UC1, 1, 1); //sobel operator on X and Y: dx = 1, dy = 1
+        gradXY(ranges) = out;
 
         out.release();
-
-//        if (y != 0) //skip these for the first slice
-//        {
-//            cv::Mat diff = currentSlice - prevSlice;
-//            gradY(ranges) = diff;
-//        }
-
 //        prevSlice = currentSlice;
         currentSlice.release();
     }
 
     //FIXME: delete these:
-    cv::SparseMat gradYSparse(gradY);
-    PointCloudFunctions::saveVmtAsCloud(gradYSparse, "/home/emredog/Documents/output/gradY_sobel.pcd");
+    cv::SparseMat gradXYSparse(gradXY);
+    PointCloudFunctions::saveVmtAsCloud(gradXYSparse, "/home/emredog/Documents/output/gradXY_sobel.pcd");
+
+
 
 }
 
