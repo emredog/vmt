@@ -29,7 +29,7 @@ private:
 	PointCloudFunctions(void);
 	~PointCloudFunctions(void);
 public:
-    static cv::SparseMat loadVmtFromPCD(std::string fileName);
+    static cv::SparseMat loadVmtFromPCD(std::string fileName, int sizeX = SIZE_X, int sizeY = SIZE_Y, int sizeZ = SIZE_Z);
 	static bool saveVmtAsCloud(const cv::SparseMat &vmt, std::string fileName);
 	static PointCloud<PointXYZI>::Ptr downSampleCloud(pcl::PointCloud<PointXYZI>::Ptr inputCloud, 
 		float leafSize, bool save, string fileNameToSave);

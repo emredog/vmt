@@ -171,22 +171,22 @@ int main(int argc, char *argv[])
 
 
     //test cropping: -------------------------------------------------------------------------
-    cv::Mat trimMat; // = cv::Mat(trimmed.dims(), sizes2, typee);
-    trimmed.convertTo(trimMat, CV_8UC1);
-    std::cout << "Size of trimNormal: (" << trimMat.size[0] << ", " << trimMat.size[1] << ", " << trimMat.size[2] << ")\n";
-    cv::Range ranges[3];
-    ranges[0] = cv::Range(180, 330);
-    ranges[1] = cv::Range(0, 100);
-    ranges[2] = cv::Range(180, 260);
+//    cv::Mat trimMat; // = cv::Mat(trimmed.dims(), sizes2, typee);
+//    trimmed.convertTo(trimMat, CV_8UC1);
+//    std::cout << "Size of trimNormal: (" << trimMat.size[0] << ", " << trimMat.size[1] << ", " << trimMat.size[2] << ")\n";
+//    cv::Range ranges[3];
+//    ranges[0] = cv::Range(180, 330);
+//    ranges[1] = cv::Range(0, 100);
+//    ranges[2] = cv::Range(180, 260);
 
-    cv::Mat cropped = IntensityGradientComputation::crop3dMat(trimMat, ranges);
-    std::cout << "Size of cropped: (" << cropped.size[0] << ", " << cropped.size[1] << ", " << cropped.size[2] << ")\n";
-    cv::SparseMat croppedSparse(cropped);
+//    cv::Mat cropped = IntensityGradientComputation::crop3dMat(trimMat, ranges);
+//    std::cout << "Size of cropped: (" << cropped.size[0] << ", " << cropped.size[1] << ", " << cropped.size[2] << ")\n";
+//    cv::SparseMat croppedSparse(cropped);
 //    cropped.copyTo(croppedSparse);
 
-    PointCloudFunctions::saveVmtAsCloud(croppedSparse, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_cropped.pcd").toStdString());
+//    PointCloudFunctions::saveVmtAsCloud(croppedSparse, QString("%1%2%3").arg(outputFolder).arg(fileName).arg("_cropped.pcd").toStdString());
 
-    IntensityGradientComputation::computeMeanIntensityGradient(cropped);
+   // IntensityGradientComputation::computeMeanIntensityGradient(cropped);
 
 
 //    myTimer.restart();

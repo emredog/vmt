@@ -10,7 +10,7 @@ PointCloudFunctions::~PointCloudFunctions(void)
 {
 }
 
-cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName)
+cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName, int sizeX, int sizeY, int sizeZ)
 {
     PointCloud<PointXYZI>::Ptr cloud (new PointCloud<PointXYZI>);
 
@@ -21,7 +21,7 @@ cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName)
     }
 
     int dim = DIM;
-    int sizes[] = {SIZE_X, SIZE_Y, SIZE_Z}; //FIXME: too much or too less of Z
+    int sizes[] = {sizeX, sizeY, sizeZ}; //FIXME: too much or too less of Z
 
     return convertToSparseMat(cloud, dim, sizes);
 }
