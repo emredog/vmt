@@ -34,6 +34,10 @@ int main()
         spCube.release();
     }
 
-    IntensityGradientComputation::computeMeanIntensityGradient(cube);
+    //IntensityGradientComputation::computeMeanIntensityGradientSobel3D(cube);
+    cv::Vec3f vec = IntensityGradientComputation::computeMeanIntensityGradientDifferentiation(cube, IntensityGradientComputation::Central_Difference);
+
+    std::cout << vec << std::endl;
+
 
 }
