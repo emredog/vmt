@@ -179,15 +179,13 @@ cv::Vec3f IntensityGradientComputation::computeMeanIntensityGradientDifferentiat
 
     int sizes[] = {sizeRows, sizeCols, sizeDepth};
 
+    //calculate dX, dY and dZ for the whole cube-------------------------------------------------------------
     cv::Mat cubeDx(3, sizes, CV_16UC1);
     cv::Mat cubeDy(3, sizes, CV_16UC1);
     cv::Mat cubeDz(3, sizes, CV_16UC1);
-
-    //calculate dX, dY and dZ for the whole cube-------------------------------------------------------------
-    //    cubeDx = cv::Scalar(0);
-    //    cubeDy = cv::Scalar(0);
-    //    cubeDz = cv::Scalar(0);
-
+    cubeDx = cv::Scalar(0);
+    cubeDy = cv::Scalar(0);
+    cubeDz = cv::Scalar(0);
 
     //sums of gradient magnituded in separate directions
     int sumX = 0, sumY = 0, sumZ = 0;
@@ -202,6 +200,10 @@ cv::Vec3f IntensityGradientComputation::computeMeanIntensityGradientDifferentiat
     }
 
 
+
+    int x1;
+    int x2;
+
     for (int z = 1; z<sizeDepth; z++)
         for (int y = 1; y<sizeRows; y++)
             for (int x = 1; x < sizeCols; x++) //FIXME: border conditions!!
@@ -209,16 +211,21 @@ cv::Vec3f IntensityGradientComputation::computeMeanIntensityGradientDifferentiat
                 if (diffType == Central_Difference)
                 {
                     //calculate values in any direction with [-1 0 1] kernel --> NO SMOOTHING
+
                     valX = -static_cast<int>(cube.at<uchar>(x-1, y, z)) + static_cast<int>(cube.at<uchar>(x+1, y, z));
-                    valY = -static_cast<int>(cubeDx.at<uchar>(x, y-1, z)) + static_cast<int>(cubeDx.at<uchar>(x, y+1, z));
-                    valZ = -static_cast<int>(cubeDy.at<uchar>(x, y, z-1)) + static_cast<int>(cubeDy.at<uchar>(x, y, z+1));
+                    valY = -static_cast<int>(cube.at<uchar>(x, y-1, z)) + static_cast<int>(cube.at<uchar>(x, y+1, z));
+                    valZ = -static_cast<int>(cube.at<uchar>(x, y, z-1)) + static_cast<int>(cube.at<uchar>(x, y, z+1));
+
+                    cubeDx.at<int>(x, y, z) = valX;
+                    cubeDy.at<int>(x, y, z) = valY;
+                    cubeDz.at<int>(x, y, z) = valZ;
                 }
                 else //Intermediate difference:
                 {
                     //calculate values in any direction with [-1 1] kernel --> NO SMOOTHING
                     valX = -static_cast<int>(cube.at<uchar>(x-1, y, z)) + static_cast<int>(cube.at<uchar>(x, y, z));
-                    valY = -static_cast<int>(cubeDx.at<uchar>(x, y-1, z)) + static_cast<int>(cubeDx.at<uchar>(x, y, z));
-                    valZ = -static_cast<int>(cubeDy.at<uchar>(x, y, z-1)) + static_cast<int>(cubeDy.at<uchar>(x, y, z));
+                    valY = -static_cast<int>(cube.at<uchar>(x, y-1, z)) + static_cast<int>(cube.at<uchar>(x, y, z));
+                    valZ = -static_cast<int>(cube.at<uchar>(x, y, z-1)) + static_cast<int>(cube.at<uchar>(x, y, z));
                 }
 
                 //cubeDx.at<int>(x, y, z) = valX;
@@ -232,17 +239,17 @@ cv::Vec3f IntensityGradientComputation::computeMeanIntensityGradientDifferentiat
 
     cv::Vec3f vec;
 
-    vec[0] = (float)sumX / (float)counterX;
-    vec[1] = (float)sumY / (float)counterY;
-    vec[2] = (float)sumZ / (float)counterZ;
+    vec[0] = counterX == 0 ? 0 : (float)sumX / (float)counterX;
+    vec[1] = counterY == 0 ? 0 : (float)sumY / (float)counterY;
+    vec[2] = counterZ == 0 ? 0 : (float)sumZ / (float)counterZ;
 
     // write gradient cubes
-    //    cv::SparseMat cubeDxSparse(cubeDx);
-    //    PointCloudFunctions::saveVmtAsCloud(cubeDxSparse, "/home/emredog/Documents/output/cube_gradX_CentralDiff.pcd");
-    //    cv::SparseMat cubeDySparse(cubeDy);
-    //    PointCloudFunctions::saveVmtAsCloud(cubeDySparse, "/home/emredog/Documents/output/cube_gradY_CentralDiff.pcd");
-    //    cv::SparseMat cubeDzSparse(cubeDz);
-    //    PointCloudFunctions::saveVmtAsCloud(cubeDzSparse, "/home/emredog/Documents/output/cube_gradZ_CentralDiff.pcd");
+        cv::SparseMat cubeDxSparse(cubeDx);
+        PointCloudFunctions::saveVmtAsCloud(cubeDxSparse, "/home/emredog/Documents/output/cube_gradX_CentralDiff.pcd");
+        cv::SparseMat cubeDySparse(cubeDy);
+        PointCloudFunctions::saveVmtAsCloud(cubeDySparse, "/home/emredog/Documents/output/cube_gradY_CentralDiff.pcd");
+        cv::SparseMat cubeDzSparse(cubeDz);
+        PointCloudFunctions::saveVmtAsCloud(cubeDzSparse, "/home/emredog/Documents/output/cube_gradZ_CentralDiff.pcd");
 
     return vec;
 }

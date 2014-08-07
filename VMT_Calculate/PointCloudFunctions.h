@@ -1,11 +1,12 @@
 #pragma once
 
 #include <pcl/io/pcd_io.h>
+#include <pcl/common/common.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/radius_outlier_removal.h>
-#include <pcl/common/common.h>
+
 
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 

@@ -28,6 +28,11 @@ cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName, int sizeX, in
 
 bool PointCloudFunctions::saveVmtAsCloud(const cv::SparseMat &vmt, std::string fileName)
 {
+    if (vmt.nzcount() <= 0)
+    {
+        std::cout << "NO POINTS FOR " << fileName << ", save aborted." << std::endl;
+        return false;
+    }
     //TRANSFORM VMT INTO Point Clout
     PointCloud<PointXYZI> cloud;
 

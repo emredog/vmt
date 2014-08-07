@@ -27,11 +27,21 @@ HEADERS += \
 INCLUDEPATH += "../VMT_Calculate"
 INCLUDEPATH += /usr/include/pcl-1.7
 INCLUDEPATH += /usr/include/eigen3
+INCLUDEPATH += /usr/include/vtk
 
 LIBS += -lpcl_common -lpcl_visualization -lpcl_filters -lpcl_io -lboost_system
 
 LIBS += -lopencv_core \
 -lopencv_imgproc \
 -lopencv_highgui
+
+LIBS += -L/usr/lib64/vtk \
+-lvtkCommonCore \
+-lvtkRenderingCore \
+-lvtkRenderingAnnotation \
+-lvtkRenderingLOD \
+-lvtkCommonDataModel \
+-lvtkCommonMath \
+-lboost_thread
 
 
