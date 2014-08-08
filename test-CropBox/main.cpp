@@ -12,9 +12,9 @@
 using namespace pcl;
 using namespace pcl::visualization;
 
-#define GRAD_SCALE 50.0
-#define NORMAL_SEARCH_RADIUS 10.0
-#define INT_GRAD_SEARCH_RADIUS 10.0
+#define GRAD_SCALE 1.0
+#define NORMAL_SEARCH_RADIUS 8.0
+#define INT_GRAD_SEARCH_RADIUS 8.0
 #define GRAD_THRESHOLD 0.0
 #define NORM_THRESHOLD 0.7
 
@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
     l = maxInPt.getVector4fMap()[2];
 
 
-    PointXYZ minPt(200.0, 200.0, 200.0);
-    PointXYZ maxPt(336.0, 311.0, 517.0);
+    PointXYZ minPt(269.0, 269.0, 269.0);
+    PointXYZ maxPt(273.0, 273.0, 273.0);
 
     //    cloud->
 

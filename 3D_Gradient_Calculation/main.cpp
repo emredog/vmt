@@ -24,7 +24,6 @@ int main()
 
 
     SparseMat spVmt = PointCloudFunctions::loadVmtFromPCD("/home/emredog/Documents/output/test_cubes/testCube_X_5.pcd", 40, 40, 40);
-    size_t nzCount = spVmt.nzcount();
 
     Mat vmt;
     spVmt.convertTo(vmt, CV_8UC1);
@@ -47,46 +46,47 @@ int main()
     //    }
 
     //create test cube
-    //    int sizes[] = {40, 40, 40};
-    //    Mat testCube(3, sizes, CV_8UC1);
-    //    testCube = Scalar(0);
+//    int sizes[] = {40, 40, 40};
+//    Mat testCube(3, sizes, CV_8UC1);
+//    testCube = Scalar(0);
 
 
-    //    int step = 5;
+//    int step = 2;
 
 
 
-    //    unsigned int val = 0;
+//    unsigned int val = 0;
+//    for (int x=0; x<sizes[0]; x+=step)
+//    {
+//        val += 255 / 40;
+//        for (int y=0; y<sizes[1]; y += step)
+//            for (int z=0; z<sizes[2]; z+=step)
 
-    //    for (int y=0; y<sizes[1]; y += step)
-    //        for (int x=0; x<sizes[0]; x+=step)
-    //            for (int z=0; z<sizes[2]; z+=step)
-    //            {
-    //                if ( x + z + y == 0)
-    //                    val = 0;
-    //                else
-    //                    val = 255 * (x + z + y);
-    //                testCube.at<uchar>(x, y, z) = static_cast<uchar>(val);
-    //            }
+//                if ( x + z + y == 0)
+//                    val = 0;
+//                else
+//                    val = 255 * (x + z + y);
+//        testCube.at<uchar>(x, y, z) = static_cast<uchar>(val);
 
-    //    SparseMat testCubeSparse(testCube);
-    //    PointCloudFunctions::saveVmtAsCloud(testCubeSparse, "/home/emredog/Documents/output/testCube_XYZ_5.pcd");
+//    }
+//    SparseMat testCubeSparse(testCube);
+//    PointCloudFunctions::saveVmtAsCloud(testCubeSparse, "/home/emredog/Documents/output/testCube_X_2.pcd");
 
 
-    //    IntensityGradientComputation::computeMeanIntensityGradientSobel3D(vmt);
-    cv::Vec3f vec = IntensityGradientComputation::computeMeanIntensityGradientDifferentiation(vmt, IntensityGradientComputation::Central_Difference);
+        IntensityGradientComputation::computeMeanIntensityGradientSobel3D(vmt);
+        cv::Vec3f vec = IntensityGradientComputation::computeMeanIntensityGradientDifferentiation(vmt, IntensityGradientComputation::Central_Difference);
 
-    std::cout << vec << std::endl;
+        std::cout << vec << std::endl;
 
-    //display the test cube and the calculated vector:
+        //display the test cube and the calculated vector:
 
-    PointCloud<PointXYZI>::Ptr cloud = PointCloudFunctions::convertToPointCloud(spVmt);
-    boost::shared_ptr<PCLVisualizer> viewer = viewMeanGradient(cloud, vec);
-    while (!viewer->wasStopped ())
-    {
-        viewer->spinOnce (100);
-        boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-    }
+        PointCloud<PointXYZI>::Ptr cloud = PointCloudFunctions::convertToPointCloud(spVmt);
+        boost::shared_ptr<PCLVisualizer> viewer = viewMeanGradient(cloud, vec);
+        while (!viewer->wasStopped ())
+        {
+            viewer->spinOnce (100);
+            boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+        }
 
 }
 
@@ -105,5 +105,5 @@ boost::shared_ptr<PCLVisualizer> viewMeanGradient (PointCloud<PointXYZI>::ConstP
     viewer->addArrow(endPt, stPt, 1.0, 1.0, 1.0, false, "mean gradient");
 
     viewer->initCameraParameters ();
-        return (viewer);
+    return (viewer);
 }
