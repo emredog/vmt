@@ -105,14 +105,12 @@ int PclGradientComputer::getWidth() const
 }
 
 int PclGradientComputer::getHeight() const
-{
-    //TODO
+{    
     return _vmt->getHeight();
 }
 
 int PclGradientComputer::getDepth() const
-{
-    //TODO
+{    
     return _vmt->getDepth();
 }
 

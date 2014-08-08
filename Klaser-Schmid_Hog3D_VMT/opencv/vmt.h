@@ -22,6 +22,7 @@ protected:
 public:
     //constructor
     Vmt(cv::SparseMat sparseMat);
+    Vmt(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int width, int height, int depth);
 
     //desctructor
     ~Vmt();
@@ -31,6 +32,7 @@ public:
     int getDepth() const { return this->_depth; }
 
     pcl::PointCloud<pcl::PointXYZI>::ConstPtr getPointCloud() const;
+    cv::SparseMat getSparseMat() const {return _sparseMat;}
 };
 
 #endif // VMT_H

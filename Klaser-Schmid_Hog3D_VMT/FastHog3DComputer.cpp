@@ -8,7 +8,8 @@
 #include <numeric/functions.h>
 
 //#include "FastVideoGradientComputer.h"
-#include "pclgradientcomputer.h"
+//#include "pclgradientcomputer.h"
+#include "ocvgradientcomputer.h" //ED 20140808
 
 using std::cout;
 using std::cerr;
@@ -267,7 +268,7 @@ FastHog3DComputer::getHog3D(const Box3D& orgBox) const
     std::size_t histSize = _quantization == PolarBinning ? _nPolarBinsXY * _nPolarBinsZ : _projectionMatrix.size1();
 	if (_fullOrientation && _quantization != PolarBinning)
 		histSize *= 2;
-    PclGradientComputer::VectorType vec(_nCellsXY * _nCellsXY * _nCellsZ * histSize);
+    OcvGradientComputer::VectorType vec(_nCellsXY * _nCellsXY * _nCellsZ * histSize);
 	std::size_t iCellStart(0);
 	std::size_t iPix = 0;
 	double normSum(0);
@@ -292,7 +293,11 @@ FastHog3DComputer::getHog3D(const Box3D& orgBox) const
 
                             //------ DESCRIPTOR IS CALCULATED HERE---------------------------------------------------------------
                             //---------------------------------------------------------------------------------------------------
-                            PclGradientComputer::VectorType gradientVec = _gradientComputer->getGradientVector(box);
+//                            PclGradientComputer::VectorType gradientVec = _gradientComputer->getGradientVector(box);
+                            OcvGradientComputer::VectorType gradientVec = _gradientComputer->getGradientVector(box);
+
+
+
                             //---------------------------------------------------------------------------------------------------
 
 //                            if (gradientVec[0] != 0.0 && gradientVec[1] != 0.0 && gradientVec[2] != 0.0)

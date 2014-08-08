@@ -31,6 +31,8 @@ LIBS += -lboost_regex -lboost_system -lboost_filesystem -lboost_program_options 
 
 #path for boundingbox.h
 INCLUDEPATH += ../AnalyzeAnnotations/
+INCLUDEPATH += ../3D_Gradient_Calculation/
+INCLUDEPATH += vmt_calculation/
 
 SOURCES += main.cpp \
     opencv/functions.cpp \
@@ -42,8 +44,9 @@ SOURCES += main.cpp \
     vmt_calculation/depthtotolerance.cpp \
     vmt_calculation/PointCloudFunctions.cpp \
     vmt_calculation/VmtFunctions.cpp \
-    ../AnalyzeAnnotations/boundingbox.cpp \
-    ../VMT_Calculate/intensitygradientcomputation.cpp
+    ../AnalyzeAnnotations/boundingbox.cpp \    
+    ../3D_Gradient_Calculation/intensitygradientcomputation.cpp \
+    ocvgradientcomputer.cpp
 
 HEADERS += \
     geometry/Box.h \
@@ -66,5 +69,6 @@ HEADERS += \
     vmt_calculation/depthtotolerance.h \
     vmt_calculation/PointCloudFunctions.h \
     vmt_calculation/VmtFunctions.h \
-    ../AnalyzeAnnotations/boundingbox.h \
-    ../VMT_Calculate/intensitygradientcomputation.h
+    ../AnalyzeAnnotations/boundingbox.h \    
+    ../3D_Gradient_Calculation/intensitygradientcomputation.h \
+    ocvgradientcomputer.h

@@ -30,6 +30,21 @@ Vmt::Vmt(cv::SparseMat sparseMat)
     }
 }
 
+Vmt::Vmt(PointCloud<pcl::PointXYZI>::Ptr cloud, int width, int height, int depth)
+{
+    _width = width;
+    _height = height;
+    _depth = depth;
+
+    _pointCloud = cloud;
+
+    if (!cloud->empty())
+    {
+        int sizes[] = {width, height, depth};
+        _sparseMat = PointCloudFunctions::convertToSparseMat(cloud, 3, sizes);
+    }
+}
+
 Vmt::~Vmt()
 {
     //clean up

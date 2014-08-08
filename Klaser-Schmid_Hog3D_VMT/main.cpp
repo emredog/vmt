@@ -25,7 +25,8 @@
 //#include "functions.hpp"
 #include <opencv/functions.h>
 //#include "FastVideoGradientComputer.h"
-#include "pclgradientcomputer.h" //ED 20140731
+//#include "pclgradientcomputer.h" //ED 20140731
+#include "ocvgradientcomputer.h" //ED 20140808
 #include "FastHog3DComputer.h"
 #include "vmtcalculator.h" //ED 20140731
 //#include <opencv/Video.h>
@@ -305,7 +306,8 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------------
         //  TODO: CALCULATE GRADIENT VECTOR HERE
         //----------------------------------------------------------------------------------------
-        boost::scoped_ptr<PclGradientComputer> gradComputer(new PclGradientComputer(&resultingVmt));
+//        boost::scoped_ptr<PclGradientComputer> gradComputer(new PclGradientComputer(&resultingVmt));
+        boost::scoped_ptr<OcvGradientComputer> gradComputer(new OcvGradientComputer(&resultingVmt));
 
 
         //init for HoG3D computer:

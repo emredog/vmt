@@ -8,7 +8,8 @@
 
 // forward declarations
 //class FastVideoGradientComputer;
-class PclGradientComputer; //ED 20140731
+//class PclGradientComputer; //ED 20140731
+class OcvGradientComputer; //ED 20140808
 
 
 class FastHog3DComputer
@@ -27,7 +28,8 @@ protected:
 	static const double projectionThresholdDodecahedron;
 	
     //FastVideoGradientComputer* _gradientComputer;
-    PclGradientComputer* _gradientComputer; //ED 20140731
+//    PclGradientComputer* _gradientComputer; //ED 20140731
+    OcvGradientComputer* _gradientComputer; //20140808
 	QuantizationType _quantization;
 	std::size_t _nPolarBinsXY;
     std::size_t _nPolarBinsZ;
@@ -56,7 +58,7 @@ protected:
 	VectorType getPolarHog3D(const VectorType& gradient) const;
 	
 public:
-    FastHog3DComputer(PclGradientComputer* gradientComputer = 0, QuantizationType quantization = Icosahedron,
+    FastHog3DComputer(OcvGradientComputer* gradientComputer = 0, QuantizationType quantization = Icosahedron,
 			std::size_t nPolarBinsXY = 6, std::size_t nPolarBinsT = 3,
 			std::size_t nCellsXY = 4, std::size_t nCellsT = 3, std::size_t nPixelsPerDim = 3, 
 			double normThreshold = 0.1, double cutZero = 0.25, bool fullOrientation = true, 
@@ -237,17 +239,17 @@ public:
 		return _nPixelsPerDim * _nCellsXY;
 	}
 
-    const PclGradientComputer* getGradientComputer() const
+    const OcvGradientComputer* getGradientComputer() const
 	{
 		return _gradientComputer;
 	}
 
-    PclGradientComputer* getGradientComputer()
+    OcvGradientComputer* getGradientComputer()
 	{
 		return _gradientComputer;
 	}
 
-    void setGradientComputer(PclGradientComputer* gradientComputer)
+    void setGradientComputer(OcvGradientComputer* gradientComputer)
 	{
 		_gradientComputer = gradientComputer;
 	}
