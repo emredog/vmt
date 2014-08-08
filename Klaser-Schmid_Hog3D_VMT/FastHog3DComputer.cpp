@@ -290,13 +290,16 @@ FastHog3DComputer::getHog3D(const Box3D& orgBox) const
 //							cout << "#     w: " << _weights[iPix] << endl;
 //							cout << "#     " << box.x << " " << box.y << " " << box.t << " " << box.width << " " << box.height << " " << box.length << endl; 
 
-							// compute the descriptor for the cell
+                            //------ DESCRIPTOR IS CALCULATED HERE---------------------------------------------------------------
+                            //---------------------------------------------------------------------------------------------------
                             PclGradientComputer::VectorType gradientVec = _gradientComputer->getGradientVector(box);
-                            if (gradientVec[0] != 0.0 && gradientVec[1] != 0.0 && gradientVec[2] != 0.0)
-                            {
-                                cout << "# Box: (" << box.x << ", " << box.y << ", " << box.z << "): " << gradientVec << endl;
-//                                cout << "#   " << gradientVec << endl;
-                            }
+                            //---------------------------------------------------------------------------------------------------
+
+//                            if (gradientVec[0] != 0.0 && gradientVec[1] != 0.0 && gradientVec[2] != 0.0)
+//                            {
+//                                cout << "# Box: (" << box.x << ", " << box.y << ", " << box.z << "): " << gradientVec << endl;
+////                                cout << "#   " << gradientVec << endl;
+//                            }
 
 							// compute HOG histogram
 							VectorType pixHist = _quantization == PolarBinning ? getPolarHog3D(gradientVec) : getPlatonicHog3D(gradientVec);

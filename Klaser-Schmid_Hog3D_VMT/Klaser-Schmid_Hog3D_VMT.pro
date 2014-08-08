@@ -42,7 +42,8 @@ SOURCES += main.cpp \
     vmt_calculation/depthtotolerance.cpp \
     vmt_calculation/PointCloudFunctions.cpp \
     vmt_calculation/VmtFunctions.cpp \
-    ../AnalyzeAnnotations/boundingbox.cpp
+    ../AnalyzeAnnotations/boundingbox.cpp \
+    ../VMT_Calculate/intensitygradientcomputation.cpp
 
 HEADERS += \
     geometry/Box.h \
@@ -65,4 +66,5 @@ HEADERS += \
     vmt_calculation/depthtotolerance.h \
     vmt_calculation/PointCloudFunctions.h \
     vmt_calculation/VmtFunctions.h \
-    ../AnalyzeAnnotations/boundingbox.h
+    ../AnalyzeAnnotations/boundingbox.h \
+    ../VMT_Calculate/intensitygradientcomputation.h
