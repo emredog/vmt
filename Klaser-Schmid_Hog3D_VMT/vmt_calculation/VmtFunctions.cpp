@@ -39,8 +39,8 @@ VmtFunctions::VmtFunctions(int xSize, int ySize)
 
     this->matrixSize[Z] = this->permittedMaxZ - this->permittedMinZ;
 
-    cout << "# VMT core constructed with X: [0, " << xSize << "]\tY: [0, " << ySize << "]\tZ: [" << this->permittedMinZ << ", " << this->permittedMaxZ << "]\n";
-    cout << "# Normalization interval for depth range: [0, " << NORMALIZATION_INTERVAL << "]\n";
+    cerr << "# VMT core constructed with X: [0, " << xSize << "]\tY: [0, " << ySize << "]\tZ: [" << this->permittedMinZ << ", " << this->permittedMaxZ << "]\n";
+    cerr << "# Normalization interval for depth range: [0, " << NORMALIZATION_INTERVAL << "]\n";
 }
 
 
@@ -76,7 +76,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
         bboxSequence.append(bbox);
     }
 
-    cout << "# First bounding box (x, y, w, h) = (" << bboxSequence.first().x << ", "
+    cerr << "\n\t# First bounding box (x, y, w, h) = (" << bboxSequence.first().x << ", "
                                                     << bboxSequence.first().y << ", "
                                                     << bboxSequence.first().width << ", "
                                                     << bboxSequence.first().height << ")\n";
@@ -93,13 +93,13 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
 
 
     if (this->isTrackPoint)
-        cout << "# Tracking point: (" << this->trackX << ", " << this->trackY << ")\n";
+        cerr << "# Tracking point: (" << this->trackX << ", " << this->trackY << ")\n";
 
     int counter = 1; //FIXME: delete this
     //calculate volume object for each depth frame
     foreach(BoundingBox bb, bboxSequence)
     {
-        cout << "# " << counter << " -------------------------------------------------\n";
+        cerr << "# " << counter << " -------------------------------------------------\n";
         QString fileName = depthImgFileNames[bb.frameNr-1];
         if (bb.frameNr >= depthImgFileNames.length() ||
                 !fileName.contains(QString::number(bb.frameNr)))
@@ -111,7 +111,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
         //Check for invalid input
         if(! depthImg.data )
         {
-            cout <<  "# Could not open or find the image: " << videoDir.absoluteFilePath(fileName).toStdString() << endl ;
+            cerr <<  "# Could not open or find the image: " << videoDir.absoluteFilePath(fileName).toStdString() << endl ;
             return cv::SparseMat();
         }
 
@@ -168,7 +168,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
         counter++;
     }
 
-    cout << "\n# Calculating VMT from volume object differences...\n";
+    cerr << "\n# Calculating VMT from volume object differences...\n";
     //construct the VMT based on volume object differences over the track file
     cv::SparseMat vmt = this->calculateVMT(volumeObjectDifferences);
 
@@ -236,7 +236,7 @@ cv::SparseMat VmtFunctions::generateSparseVolumeObject(cv::Mat image, int downsa
                 if (this->isTrackPoint)
                 {
                     if (x == this->trackX && y == this->trackY)
-                        cout << "# \tVolObj\t\tX: " << x << "\tY: " << y << "\tZ: " << depthInMillimeters << endl;
+                        cerr << "# \tVolObj\t\tX: " << x << "\tY: " << y << "\tZ: " << depthInMillimeters << endl;
                 }
 
             }
@@ -385,15 +385,15 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
             uchar valDel = difference.value<uchar>(this->trackX, this->trackY, z);
             if (valDel > 0)
             {
-                cout << "# \tDelta\t\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
+                cerr << "# \tDelta\t\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
 
                 uchar valOp1 = operand1.value<uchar>(this->trackX, this->trackY, z);
                 if (valOp1 > 0)
-                    cout << "# \t\tOper1\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
+                    cerr << "# \t\tOper1\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
 
                 uchar valOp2 = operand2.value<uchar>(this->trackX, this->trackY, z);
                 if (valOp2 > 0)
-                    cout << "# \t\tOper2\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
+                    cerr << "# \t\tOper2\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << endl;
             }
         }
     }
@@ -445,7 +445,7 @@ cv::SparseMat VmtFunctions::cleanUpVolumeObjectDifference(const cv::SparseMat& v
         if (this->isTrackPoint)
         {
             if (p.x() == this->trackX && p.y() == this->trackY)
-                cout << "# \tClean Delta\tX: " << p.x() << "\tY: " << p.y() << "\tZ: " << z << endl;
+                cerr << "# \tClean Delta\tX: " << p.x() << "\tY: " << p.y() << "\tZ: " << z << endl;
         }
 
     }
@@ -548,7 +548,7 @@ cv::SparseMat VmtFunctions::calculateVMT(const QList<cv::SparseMat> &volumeObjec
 
     //calculate attenuation constant for the set:
     double attConst = attenuationConstantForAnAction(volumeObjectDifferences);
-    cout << "# Attenuating constant: " << attConst << endl;
+    cerr << "# Attenuating constant: " << attConst << endl;
     double curMagnituteOfMotion = 0.0;
 
     //repeat for all volume differences:
@@ -571,7 +571,7 @@ cv::SparseMat VmtFunctions::calculateVMT(const QList<cv::SparseMat> &volumeObjec
         if (i > 0)
         {
             double disappearRate = attConst*curMagnituteOfMotion;
-                        cout << "# Disappearing rate at t= " << i << ": " << disappearRate << endl;
+                        cerr << "# Disappearing rate at t= " << i << ": " << disappearRate << endl;
             //for all nonzero values of previous VMT
             for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
             {
@@ -594,7 +594,7 @@ cv::SparseMat VmtFunctions::calculateVMT(const QList<cv::SparseMat> &volumeObjec
                 {
                     uchar val = curVmt.value<uchar>(this->trackX, this->trackY, z);
                     if (val > 0)
-                        cout << "# \tVMT " << i << "\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << "\tIntensity: " << (int)val << endl;
+                        cerr << "# \tVMT " << i << "\tX: " << this->trackX << "\tY: " << this->trackY << "\tZ: " << z << "\tIntensity: " << (int)val << endl;
                 }
             }
         }
@@ -799,7 +799,7 @@ cv::SparseMat VmtFunctions::rotateVMT(const cv::SparseMat& vmt, const cv::Matx33
     //we try to shift the minimum point to 0
     translationX = -minX;
     translationY = -minY;
-    cout << "# translation x: " << translationX << ", translation y: " << translationY << endl;
+    cerr << "# translation x: " << translationX << ", translation y: " << translationY << endl;
 
     //shift the rotated VMT into the image frame:
     for(cv::SparseMatConstIterator rit = rotatedVmt.begin(); rit != rotatedVmt.end(); ++rit)
@@ -849,9 +849,9 @@ void VmtFunctions::print3x3Matrix(const cv::Matx33d& mat)
     {
         for (int j=0; j<3; ++j)
         {
-            cout << M.at<double>(i, j) << "\t";
+            cerr << M.at<double>(i, j) << "\t";
         }
-        cout << endl;
+        cerr << endl;
     }
 
 
@@ -874,7 +874,7 @@ void VmtFunctions::print3DSparseMatrix(const cv::SparseMat &sparse_mat)
                 uchar value = denseMat.at<uchar>(idx);
                 if (value > 0)
                 {
-                    cout << "(" << i << ",\t" << j << ",\t" << k << "):\t" << value << endl;
+                    cerr << "(" << i << ",\t" << j << ",\t" << k << "):\t" << value << endl;
                 }
             }
         }
@@ -886,7 +886,7 @@ void VmtFunctions::save3DSparseMatrix(const cv::SparseMat &sparse_mat, QString f
     QFile myfile(filePath);
     if (!myfile.open(QFile::ReadWrite))
     {
-        cout << "ERROR!" << endl;
+        cerr << "ERROR!" << endl;
         return;
     }
 
@@ -926,7 +926,7 @@ void VmtFunctions::save3DMatrix(const cv::Mat &mat, QString filePath)
     QFile myfile(filePath);
     if (!myfile.open(QFile::ReadWrite))
     {
-        cout << "ERROR!" << endl;
+        cerr << "ERROR!" << endl;
         return;
     }
 
@@ -1043,7 +1043,7 @@ cv::SparseMat VmtFunctions::trimSparseMat(const cv::SparseMat &vmt) const
 {
     VmtInfo info = getVmtInfo(vmt);
 
-    cout << "#\tSize before trimming: " << vmt.size()[X] << "x" << vmt.size()[Y] << "x" << vmt.size()[Z] << endl;
+    cerr << "#\tSize before trimming: " << vmt.size()[X] << "x" << vmt.size()[Y] << "x" << vmt.size()[Z] << endl;
 
     int sizes[3];
     sizes[X] = info.maxX - info.minX;
@@ -1065,7 +1065,7 @@ cv::SparseMat VmtFunctions::trimSparseMat(const cv::SparseMat &vmt) const
     }
 
 
-    cout << "#\tSize after trimming: " << trimmed.size()[X] << "x" << trimmed.size()[Y] << "x" << trimmed.size()[Z] << endl;
+    cerr << "#\tSize after trimming: " << trimmed.size()[X] << "x" << trimmed.size()[Y] << "x" << trimmed.size()[Z] << endl;
     return trimmed;
 }
 

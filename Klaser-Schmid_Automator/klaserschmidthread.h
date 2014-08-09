@@ -12,7 +12,7 @@ class KlaserSchmidThread : public QThread
     Q_OBJECT
 public:
     explicit KlaserSchmidThread(QList<VideoTrackPair> pairs, QStringList algoArgs,
-                                QDir dataDir, QDir trackFileDir, QDir targetDir, QObject *parent = 0);
+                                QDir dataDir, QDir trackFileDir, QDir targetDir, int threadId, QObject *parent = 0);
 
 signals:
 
@@ -27,6 +27,8 @@ protected:
     QList<VideoTrackPair> pairs;
     QString program;
     QStringList algoArgs;
+
+    int threadID;
 
 };
 

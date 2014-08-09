@@ -6,15 +6,16 @@
 using namespace std;
 
 KlaserSchmidThread::KlaserSchmidThread(QList<VideoTrackPair> pairs, QStringList algoArgs,
-                                       QDir dataDir, QDir trackFileDir, QDir targetDir, QObject *parent) :
+                                       QDir dataDir, QDir trackFileDir, QDir targetDir, int threadId, QObject *parent) :
     QThread(parent)
 {
-    this->program = "./Klaser-Schmid_Hog3D_qt";
+    this->program = "./Klaser-Schmid_Hog3D_VMT";
     this->dataDir = dataDir;
     this->trackFileDir = trackFileDir;
     this->targetDir = targetDir;
     this->pairs = pairs;
     this->algoArgs = algoArgs;
+    this->threadID = threadId;
 }
 
 void KlaserSchmidThread::run()
@@ -56,7 +57,7 @@ void KlaserSchmidThread::run()
             continue;
         }
 
-        QString txt = QString("[%1] Process %2 started...\n\tExpected output file: %3").arg(this->thread()->currentThreadId())
+        QString txt = QString("[%1] Process %2 started...\n\tExpected output file: %3").arg(this->threadID)
                                                                              .arg(counter)
                                                                              .arg(targetDir.absoluteFilePath(trackFileInfo->baseName() + ".out"));
         cout << txt.toStdString() << endl << endl;
@@ -72,7 +73,7 @@ void KlaserSchmidThread::run()
             continue;
         }
 
-        txt = QString("[%1] Process %2 completed. Remaining: %3").arg(this->thread()->currentThreadId()).arg(counter).arg(total-counter);
+        txt = QString("[%1] Process %2 completed. Remaining: %3").arg(this->threadID).arg(counter).arg(total-counter);
         cout << txt.toStdString() <<  endl << endl;
         counter++;
 

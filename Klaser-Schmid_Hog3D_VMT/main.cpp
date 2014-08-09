@@ -390,7 +390,7 @@ int main(int argc, char *argv[])
         }
 
         quint64 elapsedMs = timer.elapsed();
-        cout << "# Elapsed time: " << (double)elapsedMs/1000.0 << " seconds. (after VMT calculation)" << endl;
+        cerr << "# Elapsed time: " << (double)elapsedMs/1000.0 << " seconds. (after VMT calculation)" << endl;
         //cerr << "# " << width << " " << height << " " << length << endl;
         //cerr << "# " << startFrame << " " << endFrame << endl;
         //cerr << "# " << xyStride << " " << xyStride << " " << tStride << " " << maxXyScale << " " << maxTScale << endl;

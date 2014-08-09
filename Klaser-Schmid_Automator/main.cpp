@@ -20,22 +20,24 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------------------------------------------------------------
     QDir dataDir("/home/emredog/LIRIS-data/training-validation/");
-    QDir trackFileDir("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/balanced_2");
-    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/3rdRun_wNoAction_SlidingWindows_features_params01_non-biased");
-    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_qt-Desktop-Release/");    
+    QDir trackFileDir("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/union_of_bbox");
+    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/20140808_test");
+    if (!targetDir.exists())
+        QDir().mkdir(targetDir.absolutePath());
+    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop_Qt_5_2_1_GCC_64bit-Release");
 
     const int threadCount = 4;
 
     QStringList algoArgs;
     algoArgs << "-P" << "icosahedron" //"dodecahedron" icosahedron
-             << "--loose-track"
+             //<< "--loose-track"
              << "--xy-stride" <<  "16"  //"16" "32"
              << "--t-stride" << "16"    //"16" "32"
              << "--xy-ncells" << "2"
              << "--t-ncells" << "2"
-             << "--xy-scale" << "1"
-             << "--t-scale" << "1"
-             << "--scale-overlap" << "1"
+             //<< "--xy-scale" << "1"
+             //<< "--t-scale" << "1"
+             //<< "--scale-overlap" << "1"
              << "--npix" << "2";
     //-----------------------------------------------------------------------------------------------------------------
 
@@ -83,6 +85,9 @@ int main(int argc, char *argv[])
 
     int length = pairs.length()/threadCount;
 
+    struct timespec ts = { 5000 / 1000, (5000 % 1000) * 1000 * 1000 };
+    nanosleep(&ts, NULL);
+
     for (int i=0; i<threadCount; i++)
     {
         int startPos = i * length;
@@ -90,7 +95,7 @@ int main(int argc, char *argv[])
         if (i == threadCount - 1) //if it's the last thread
             length = -1; //just take all of the remaining files
 
-        KlaserSchmidThread* proc = new KlaserSchmidThread(pairs.mid(startPos, length), algoArgs, dataDir, trackFileDir, targetDir);
+        KlaserSchmidThread* proc = new KlaserSchmidThread(pairs.mid(startPos, length), algoArgs, dataDir, trackFileDir, targetDir, i+1);
         proc->start();
     }
 
