@@ -24,9 +24,9 @@ int main(int argc, char *argv[])
     QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/20140808_test");
     if (!targetDir.exists())
         QDir().mkdir(targetDir.absolutePath());
-    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop_Qt_5_2_1_GCC_64bit-Release");
+    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop-Release");
 
-    const int threadCount = 4;
+    const int threadCount = 3;
 
     QStringList algoArgs;
     algoArgs << "-P" << "icosahedron" //"dodecahedron" icosahedron
