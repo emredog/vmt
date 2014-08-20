@@ -57,6 +57,24 @@ Vmt::~Vmt()
     _pointCloud.reset();
 }
 
+Vmt::Vmt(const Vmt &other) : _width(other._width), _height(other._height), _depth(other._height)
+{
+    _sparseMat = other._sparseMat;
+    //take a deep copy of the point cloud:
+    _pointCloud = other._pointCloud->makeShared();
+}
+
+Vmt &Vmt::operator=(const Vmt &other)
+{
+    _width  = other._width;
+    _height = other._height;
+    _depth  = other._depth;
+
+    _sparseMat = other._sparseMat;
+    //take a deep copy of the point cloud:
+    _pointCloud = other._pointCloud->makeShared();
+}
+
 pcl::PointCloud<pcl::PointXYZI>::ConstPtr Vmt::getPointCloud() const
 {
     return _pointCloud;

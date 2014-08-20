@@ -1,5 +1,7 @@
 #include <QCoreApplication>
 #include <QElapsedTimer>
+#include <QString>
+#include <QStringList>
 
 // std libs
 #include <cassert>
@@ -30,6 +32,7 @@
 #include "FastHog3DComputer.h"
 #include "vmtcalculator.h" //ED 20140731
 //#include <opencv/Video.h>
+#include "PointCloudFunctions.h" //ED 20140820
 #include <opencv/vmt.h>
 #include <numeric/functions.hpp>
 
@@ -99,7 +102,9 @@ int main(int argc, char *argv[])
 
         po::options_description argOpt("command line arguments");
         argOpt.add_options()
-                ("video-file", po::value<string>(), "video file to process"); //FIXME
+                ("video-file", po::value<string>(), "video file to process")
+                ("vmt-only", "calculates & saves VMTs only and exits (can't be used with 'vmt-file')")
+                ("vmt-file", po::value<string>(), "vmt file to process (can't be used with 'vmt-only'"); //ED 20140820
 
         po::options_description generalOpt("general options");
         generalOpt.add_options()
@@ -176,6 +181,12 @@ int main(int argc, char *argv[])
         if (vm.count("license")) {
             printLicense();
             return EXIT_SUCCESS;
+        }
+
+        if (vm.count("vmt-file") && vm.count("vmt-only")) //ED 20140820
+        {
+            cerr << "'vmt-file' and 'vmt-only' can't be used together!\n\n";
+            return EXIT_FAILURE;
         }
 
         if (vm.count("help")) {
@@ -299,14 +310,77 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------------------------------------
         //  TODO: CALCULATE VMT HERE
         //----------------------------------------------------------------------------------------
-        cout << "# Calculating VMT...";
-        Vmt resultingVmt = vmtCalculator->calculateVmt(videoFileName, trackFile);
-        cout << "# ..Done.\n";
+        Vmt resultingVmt;
+
+        if (vm.count("vmt-file"))
+        {
+            QString vmtFile = QString::fromStdString(vm["vmt-file"].as<string>());
+
+            //get the part with width-height-depth info
+            QString lastPart = vmtFile.split("\\").last().split("_").last();
+            lastPart.chop(4); //remove the extension
+            QStringList valueList = lastPart.split("-");
+            bool ok;
+            int width = valueList[0].toInt(&ok);
+            if (!ok)
+            {
+                cerr << "\n#\n# Can't get width value out of filename: " << vmtFile.toStdString() << endl;
+            }
+            int height = valueList[1].toInt(&ok);
+            if (!ok)
+            {
+                cerr << "\n#\n# Can't get height value out of filename: " << vmtFile.toStdString() << endl;
+            }
+            int depth = valueList[2].toInt(&ok);
+            if (!ok)
+            {
+                cerr << "\n#\n# Can't get depth value out of filename: " << vmtFile.toStdString() << endl;
+            }
+
+            cv::SparseMat vmtSparseMat = PointCloudFunctions::loadVmtFromPCD(vmtFile.toStdString(), width, height, depth);
+
+            resultingVmt = Vmt(vmtSparseMat);
+
+
+            cerr << "# VMT is read from file.\n";
+        }
+        else
+        {
+            cerr << "# Calculating VMT...";
+            resultingVmt = vmtCalculator->calculateVmt(videoFileName, trackFile);
+            cerr << "# ..Done.\n";
+        }
+
+        if (vm.count("vmt-only")) //calculate & save the vmt and exit
+        {
+            string fileName;
+
+            QStringList nameParts = QString::fromStdString(trackFile).split("/");
+            QString trackFileName = nameParts.last();
+            trackFileName.chop(6); //remove the extension
+
+            //filename contains W-H-D values, so that it can be read back from PCD files
+            fileName = QString("VMT_%1_%2-%3-%4.pcd").arg(trackFileName)
+                                                     .arg(resultingVmt.getWidth())
+                                                     .arg(resultingVmt.getHeight())
+                                                     .arg(resultingVmt.getDepth()).toStdString();
+
+            if (PointCloudFunctions::saveCloud(resultingVmt.getPointCloud(), fileName))
+            {
+                cerr << "#\n#\n# VMT saved as " << fileName << endl;
+                return EXIT_SUCCESS;
+            }
+            else
+            {
+                cerr << "#\n#\n# VMT was not saved.\n";
+                return EXIT_FAILURE;
+            }
+        }
 
         //----------------------------------------------------------------------------------------
         //  TODO: CALCULATE GRADIENT VECTOR HERE
         //----------------------------------------------------------------------------------------
-//        boost::scoped_ptr<PclGradientComputer> gradComputer(new PclGradientComputer(&resultingVmt));
+        //        boost::scoped_ptr<PclGradientComputer> gradComputer(new PclGradientComputer(&resultingVmt));
         boost::scoped_ptr<OcvGradientComputer> gradComputer(new OcvGradientComputer(&resultingVmt));
 
 
@@ -356,8 +430,8 @@ int main(int argc, char *argv[])
                     box.y = y/* - box.height * 0.5*/;
                     box.z = z/* - box.depth * 0.5*/;
 
-//                    double xNormalized = std::min(0.999, (x - iBox->getLeft()) / iBox->getWidth());
-//                    double yNormalized = std::min(0.999, (y - iBox->getTop()) / iBox->getHeight());
+                    //                    double xNormalized = std::min(0.999, (x - iBox->getLeft()) / iBox->getWidth());
+                    //                    double yNormalized = std::min(0.999, (y - iBox->getTop()) / iBox->getHeight());
 
                     // check whether box is inside video
                     if (!gradComputer->isInBuffer(box) && !vm.count("force"))

@@ -33,5 +33,7 @@ Vmt VmtCalculator::calculateVmt(std::string imgDir, std::string trackFile)
     cv::SparseMat trimmed = vmtCore->trimSparseMat(normalized);
     normalized.release();
 
+
+
     return Vmt(trimmed);
 }

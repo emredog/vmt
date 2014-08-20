@@ -10,7 +10,7 @@ PointCloudFunctions::~PointCloudFunctions(void)
 {
 }
 
-cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName)
+cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName, int sizeX, int sizeY, int sizeZ)
 {
     PointCloud<PointXYZI>::Ptr cloud (new PointCloud<PointXYZI>);
 
@@ -21,13 +21,19 @@ cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName)
     }
 
     int dim = DIM;
-    int sizes[] = {SIZE_X, SIZE_Y, SIZE_Z}; //FIXME: too much or too less of Z
+    int sizes[] = {sizeX, sizeY, sizeZ};
 
     return convertToSparseMat(cloud, dim, sizes);
 }
 
 bool PointCloudFunctions::saveVmtAsCloud(const cv::SparseMat &vmt, std::string fileName)
 {
+    if (vmt.nzcount() <= 0)
+    {
+        std::cout << "NO POINTS FOR " << fileName << ", save aborted." << std::endl;
+        return false;
+    }
+
     //TRANSFORM VMT INTO Point Clout
     PointCloud<PointXYZI> cloud;
 
@@ -211,8 +217,11 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::downSampleCloud(pcl::PointCloud<
     return downsampled;
 }
 
-bool PointCloudFunctions::saveCloud(const PointCloud<PointXYZI>::Ptr cloud, const string &fileName)
+bool PointCloudFunctions::saveCloud(const PointCloud<PointXYZI>::ConstPtr cloud, const string &fileName)
 {
+    if (cloud->empty())
+        return false;
+
     if (savePCDFileASCII (fileName, *cloud) >= 0) //FIXME: what is the return value? it's not mentioned in http://docs.pointclouds.org/1.6.0/group__io.html#ga5e406a5854fa8ad026cad85158fef266
         return true;
     else

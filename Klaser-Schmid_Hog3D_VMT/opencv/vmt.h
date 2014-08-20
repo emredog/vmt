@@ -21,11 +21,18 @@ protected:
 
 public:
     //constructor
+    Vmt(){_width = -1; _height = -1; _depth = -1;}
     Vmt(cv::SparseMat sparseMat);
     Vmt(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int width, int height, int depth);
 
     //desctructor
     ~Vmt();
+
+    //copy constructor
+    Vmt(const Vmt& other);
+
+    //assignment operator
+    Vmt& operator=(const Vmt& other);
 
     int getWidth() const { return this->_width; }
     int getHeight() const { return this->_height; }

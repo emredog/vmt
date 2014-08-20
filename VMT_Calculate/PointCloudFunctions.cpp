@@ -21,7 +21,7 @@ cv::SparseMat PointCloudFunctions::loadVmtFromPCD(string fileName, int sizeX, in
     }
 
     int dim = DIM;
-    int sizes[] = {sizeX, sizeY, sizeZ}; //FIXME: too much or too less of Z
+    int sizes[] = {sizeX, sizeY, sizeZ};
 
     return convertToSparseMat(cloud, dim, sizes);
 }
