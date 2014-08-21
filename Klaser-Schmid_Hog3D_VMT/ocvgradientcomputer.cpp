@@ -7,11 +7,9 @@ OcvGradientComputer::OcvGradientComputer(Vmt *vmt)
     : _vmt(vmt)
 {
 
-    cv::SparseMat spMat = this->_vmt->getSparseMat();
-    _vmtMat = cv::Mat(spMat.dims(), spMat.size(), spMat.type());
-
-    //FIXME TODO ---- SEGFAULT ERROR HERE
+    cv::SparseMat spMat = this->_vmt->getSparseMat().clone();
     spMat.convertTo(_vmtMat, CV_8UC1);
+    spMat.release();
 }
 
 OcvGradientComputer::~OcvGradientComputer()
