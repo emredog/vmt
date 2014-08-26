@@ -33,6 +33,12 @@ LIBS += -lpcl_common -lpcl_visualization -lpcl_filters -lpcl_io -lpcl_sample_con
 -lopencv_imgproc \
 -lopencv_highgui \
 
+INCLUDEPATH += /usr/include/vtk
+
+LIBS += -L/usr/lib64/vtk/ \
+-lvtkCommonCore -lvtkRenderingCore -lvtkRenderingAnnotation \
+-lvtkRenderingLOD -lvtkCommonDataModel -lvtkCommonMath -lboost_system -lboost_thread
+
 HEADERS += \
     ../VMT_Calculate/PointCloudFunctions.h \
     ../VMT_Calculate/VmtFunctions.h \
