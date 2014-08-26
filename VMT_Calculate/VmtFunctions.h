@@ -111,11 +111,13 @@ public:
 
     cv::SparseMat spatiallyNormalizeSparseMat(cv::SparseMat vmt) const;
 
+    //to be used with cropped images (with track files)
+    cv::SparseMat generateSparseVolumeObject(cv::Mat image, int downsamplingRate = 2);
+
 
 protected:
 
-    //to be used with cropped images (with track files)
-    cv::SparseMat generateSparseVolumeObject(cv::Mat image, int downsamplingRate = 2);
+
 
     cv::SparseMat subtractSparseMat(const cv::SparseMat& operand1, const cv::SparseMat& operand2);
 
