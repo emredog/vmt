@@ -21,7 +21,7 @@ SOURCES += main.cpp \
     VmtFunctions.cpp \
     ../AnalyzeAnnotations/boundingbox.cpp \
     depthtotolerance.cpp \
-    intensitygradientcomputation.cpp
+    ../3D_Gradient_Calculation/intensitygradientcomputation.cpp
 
 HEADERS += \
     HelperFunctions.h \
@@ -29,11 +29,12 @@ HEADERS += \
     VmtFunctions.h \
     ../AnalyzeAnnotations/boundingbox.h \
     depthtotolerance.h \
-    intensitygradientcomputation.h
+    ../3D_Gradient_Calculation/intensitygradientcomputation.h
 
 INCLUDEPATH += /usr/include/pcl-1.7
 INCLUDEPATH += /usr/include/eigen3
 INCLUDEPATH += ../AnalyzeAnnotations/
+INCLUDEPATH += ../3D_Gradient_Calculation/
 
 LIBS += -lpcl_common -lpcl_visualization -lpcl_filters -lpcl_io \
 -lboost_system \

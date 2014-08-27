@@ -156,6 +156,9 @@ int main(int argc, char *argv[])
     cv::SparseMat filteredVmt = PointCloudFunctions::statisticalOutlierRemoval(vmt);
     mSecs = myTimer.elapsed();
     std::cout << "Filtered with Statistical Outlier Removal in " << (double)mSecs / 1000.0 << "\n";
+    std::cout <<"\tPoints before filtering: " << vmt.nzcount() << std::endl;
+    std::cout <<"\tPoints after  filtering: " << filteredVmt.nzcount() << std::endl;
+
 
     //normalize the depth dimension and scale it between [0, NORMALIZATION_INTERVAL]
     cv::SparseMat normalized = vmtCore->spatiallyNormalizeSparseMat(filteredVmt);

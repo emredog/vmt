@@ -147,7 +147,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
         //do the subtraction
         if (prevSparseVolumeObj.nzcount() > 0) //there are at least 2 volume objects
         {
-            cv::SparseMat delta = this->subtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);
+            cv::SparseMat delta = this->subtractSparseMat(currentSparseVolumeObj, prevSparseVolumeObj);            
             //... and cleanup
             cv::SparseMat cleanedUpDelta = this->cleanUpVolumeObjectDifference(delta);
             delta.release();

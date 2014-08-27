@@ -19,7 +19,8 @@ SOURCES += main.cpp \
     ../VMT_Calculate/PointCloudFunctions.cpp \
     ../VMT_Calculate/VmtFunctions.cpp \
     ../AnalyzeAnnotations/boundingbox.cpp \
-    ../VMT_Calculate/depthtotolerance.cpp
+    ../VMT_Calculate/depthtotolerance.cpp \
+    LK_Demo.cpp
 
 
 INCLUDEPATH += /usr/include/pcl-1.7
@@ -32,6 +33,7 @@ LIBS += -lpcl_common -lpcl_visualization -lpcl_filters -lpcl_io -lpcl_sample_con
 -lopencv_core \
 -lopencv_imgproc \
 -lopencv_highgui \
+-lopencv_video
 
 INCLUDEPATH += /usr/include/vtk
 

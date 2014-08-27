@@ -43,7 +43,7 @@ int main()
 {
     help();
 
-    QString videoFolderPath = "/home/emredog/LIRIS-data/training-validation/vid0007";
+    QString videoFolderPath = "/home/emredog/LIRIS-data/training-validation/vid0004";
     //get GRAYSCALE image paths in the folder
     QStringList filters;
     filters << "*.jpg";
@@ -129,7 +129,7 @@ int main()
         needToInit = false;
         imshow("LK Demo", image);
 
-        char c = (char)waitKey(10);
+        char c = (char)waitKey(2000);
         if( c == 27 )
             break;
         switch( c )
@@ -144,6 +144,13 @@ int main()
         case 'n':
             nightMode = !nightMode;
             break;
+        }
+
+        //delete me later:
+        for (int i=0; i<points[0].size() && i<points[1].size(); i++)
+        {
+            std::cout << "OLD\t" << points[0].at(i).x << "\t" << points[0].at(i).y << std::endl;
+            std::cout << "NEW\t" << points[1].at(i).x << "\t" << points[1].at(i).y << std::endl << std::endl;
         }
 
         std::swap(points[1], points[0]);
