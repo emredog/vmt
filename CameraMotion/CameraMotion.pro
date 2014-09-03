@@ -20,20 +20,29 @@ SOURCES += main.cpp \
     ../VMT_Calculate/VmtFunctions.cpp \
     ../AnalyzeAnnotations/boundingbox.cpp \
     ../VMT_Calculate/depthtotolerance.cpp \
-    LK_Demo.cpp
+    LK_Demo.cpp \
+    sift_main.cpp
 
 
 INCLUDEPATH += /usr/include/pcl-1.7
 INCLUDEPATH += /usr/include/eigen3
 INCLUDEPATH += ../VMT_Calculate
 INCLUDEPATH += ../AnalyzeAnnotations
+#for OpenCV 2.4.9
+INCLUDEPATH += /usr/local/opencv-2.4.9/include
+LIBS += -L/usr/local/opencv-2.4.9/lib
 
 LIBS += -lpcl_common -lpcl_visualization -lpcl_filters -lpcl_io -lpcl_sample_consensus -lpcl_segmentation\
 -lboost_system \
 -lopencv_core \
 -lopencv_imgproc \
 -lopencv_highgui \
--lopencv_video
+-lopencv_video \
+-lopencv_nonfree \
+-lopencv_features2d \
+-lopencv_ocl
+
+
 
 INCLUDEPATH += /usr/include/vtk
 
