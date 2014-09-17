@@ -229,17 +229,22 @@ int main(int argc, char *argv[])
         }
 
         // check whether video file has been given
-        if (!vm.count("video-file")) {
-            cout << endl << "You need to specify a video file!" << endl << endl; //FIXME
+        if (!vm.count("vmt-file") && !vm.count("video-file")) {
+            cout << endl << "You need to specify a video file or a VMT file!" << endl << endl; //FIXME
             return EXIT_FAILURE;
         }
 
-        std::string videoFileName = vm["video-file"].as<string>();
+        std::string videoFileName = "";
+        if (vm.count("video-file"))
+            vm["video-file"].as<string>();
 
-        // check whether all necessary
-        if (!(vm.count("position-file") || vm.count("position-file2")) && !((vm.count("xy-nstride") && vm.count("t-nstride")) || (vm.count("xy-stride") || vm.count("t-stride")))) {
-            cerr << endl << "Please enter either a position-file or parameters for dense samplng (either --xy-nstride and --t-nstride or --xy-stride and --t-stride)!" << endl << endl;
-            return EXIT_FAILURE;
+        //if vmt-only is not set:
+        if (!vm.count("vmt-only"))
+        {   // check whether all necessary
+            if (!(vm.count("position-file") || vm.count("position-file2")) && !((vm.count("xy-nstride") && vm.count("t-nstride")) || (vm.count("xy-stride") || vm.count("t-stride")))) {
+                cerr << endl << "Please enter either a position-file or parameters for dense samplng (either --xy-nstride and --t-nstride or --xy-stride and --t-stride)!" << endl << endl;
+                return EXIT_FAILURE;
+            }
         }
 
         // check whether KTH options have been requested
@@ -308,7 +313,7 @@ int main(int argc, char *argv[])
         }
 
         //----------------------------------------------------------------------------------------
-        //  TODO: CALCULATE VMT HERE
+        //  CALCULATE VMT HERE
         //----------------------------------------------------------------------------------------
         Vmt resultingVmt;
 
@@ -361,9 +366,9 @@ int main(int argc, char *argv[])
 
             //filename contains W-H-D values, so that it can be read back from PCD files
             fileName = QString("VMT_%1_%2-%3-%4.pcd").arg(trackFileName)
-                                                     .arg(resultingVmt.getWidth())
-                                                     .arg(resultingVmt.getHeight())
-                                                     .arg(resultingVmt.getDepth()).toStdString();
+                    .arg(resultingVmt.getWidth())
+                    .arg(resultingVmt.getHeight())
+                    .arg(resultingVmt.getDepth()).toStdString();
 
             if (PointCloudFunctions::saveCloud(resultingVmt.getPointCloud(), fileName))
             {
@@ -378,7 +383,7 @@ int main(int argc, char *argv[])
         }
 
         //----------------------------------------------------------------------------------------
-        //  TODO: CALCULATE GRADIENT VECTOR HERE
+        //  CALCULATE GRADIENT VECTOR HERE
         //----------------------------------------------------------------------------------------
         //        boost::scoped_ptr<PclGradientComputer> gradComputer(new PclGradientComputer(&resultingVmt));
         boost::scoped_ptr<OcvGradientComputer> gradComputer(new OcvGradientComputer(&resultingVmt));

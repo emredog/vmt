@@ -16,7 +16,9 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    klaserschmidthread.cpp
+    klaserschmidthread.cpp \
+    klaserschmidthreadvmtonly.cpp
 
 HEADERS += \
-    klaserschmidthread.h
+    klaserschmidthread.h \
+    klaserschmidthreadvmtonly.h
