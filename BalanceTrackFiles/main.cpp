@@ -8,10 +8,11 @@ using namespace std;
 
 
 #define TARGET_COUNT 100
+#define BALANCE_VMTs
 
 
 QMap<int, QString> g_ClassNames;
-QMultiMap<int, QString> actionToTrack; //<actionNr, trackFileName>
+QMultiMap<int, QString> actionToFile; //<actionNr, trackFileName>
 
 int main()
 {
@@ -29,75 +30,67 @@ int main()
 
     int counters[] = {0,0,0,0,0,0,0,0,0,0,0};
 
-    QDir trackFolder("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/balanced_2");
+    QDir fileFolder("/home/emredog/LIRIS-data/training-validation_features/20140917_args32x32x32-2x2x2_icosa/balanced_20140918");
+
 
     QStringList filters;
-    filters << "*.track";
+    filters << "*.out";
 
     //get track files
-    QStringList trackFiles = trackFolder.entryList(filters, QDir::Files | QDir::NoDotAndDotDot);
+    QStringList targetFiles = fileFolder.entryList(filters, QDir::Files | QDir::NoDotAndDotDot);
 
-    //count track files
-    QStringList nameParts;
-    foreach (QString trackName, trackFiles)
+    foreach (QString fileName, targetFiles)
     {
-        nameParts = trackName.split("_");
-        counters[g_ClassNames.key(nameParts[2])]++;
-        actionToTrack.insert(g_ClassNames.key(nameParts[2]), trackName);
+        QString actionName;
+        int i = 0;
+        while (i <= 10 && actionName.isEmpty())
+        {
+            if (fileName.contains(g_ClassNames[i]))
+                actionName = g_ClassNames[i];
+            i++;
+        }
+
+        counters[g_ClassNames.key(actionName)]++;
+        actionToFile.insert(g_ClassNames.key(actionName), fileName);
     }
 
+
     //print counts before balancing
-    cout << endl << endl << "Track counts before balancing:" << endl;
+    cout << endl << endl << "Counts before balancing:" << endl;
     for (int i=0; i<11; i++)
         cout << "\t" << g_ClassNames[i].toStdString() << ": " << counters[i] << endl;
 
     //balance the data
-    QList<int> keys = actionToTrack.uniqueKeys();
+    QList<int> keys = actionToFile.uniqueKeys();
     foreach (int actionNr, keys)
     {
-        if ((counters[actionNr] < TARGET_COUNT && actionNr != 4) || //FIXME: special treatment for ENTER/LEAVE action
-                (actionNr == 4 && counters[4] < TARGET_COUNT/2)
+        if ((counters[actionNr] <= TARGET_COUNT /*&& actionNr != 4) || //FIXME: special treatment for ENTER/LEAVE action
+                (actionNr == 4 && counters[4] < TARGET_COUNT/2*/)
                 ) //track count is less than the target count
             continue; //dont balance for this action type
 
-        QStringList tracksForThisAction = actionToTrack.values(actionNr);
-        tracksForThisAction.sort();
+        QStringList filesForThisAction = actionToFile.values(actionNr);
+        filesForThisAction.sort();
 
         int index = 0;
-        int aimedCount = actionNr == 4 ? TARGET_COUNT/2 : TARGET_COUNT; //FIXME: special treatment for ENTER/LEAVE action
-        while (tracksForThisAction.length() > aimedCount)
+        int aimedCount = /*actionNr == 4 ? TARGET_COUNT/2 :*/ TARGET_COUNT;
+        while (filesForThisAction.length() > aimedCount)
         {
-            cout << "+";
-            QString videoActionPrefix = tracksForThisAction[index];
-            videoActionPrefix.chop(videoActionPrefix.length() - 10);
+            index = qrand();
 
-            int plusRange = 0;
-            while (index+plusRange < tracksForThisAction.length() &&
-                   tracksForThisAction[index+plusRange].startsWith(videoActionPrefix))
-                plusRange++;
+            index = index % filesForThisAction.length();
 
-            for (int range=0; range<plusRange && index+range<tracksForThisAction.length(); range++) //for components of this action
-            {
-                if (range%2 == 1 && range != plusRange-1) //delete the first and last one, skip every other
-                    continue;
+            QFile file(fileFolder.absoluteFilePath(filesForThisAction[index]));
 
-                QFile file(trackFolder.absoluteFilePath(tracksForThisAction[index+range]));
-                if (file.exists())
-                    file.remove();
+            if (file.exists())
+                file.remove();
 
-                tracksForThisAction.removeAt(index+range);
-                cout << "-";
-            }
-
-
-
-
-            index += plusRange;
-            if (index >= tracksForThisAction.length()) index = 0;
+            filesForThisAction.removeAt(index);
+            cout << "-";
         }
 
         //update counters
-        counters[actionNr] = tracksForThisAction.length();
+        counters[actionNr] = filesForThisAction.length();
 
         cout << endl;
     }
