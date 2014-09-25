@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 
         std::string videoFileName = "";
         if (vm.count("video-file"))
-            vm["video-file"].as<string>();
+            videoFileName = vm["video-file"].as<string>();
 
         //if vmt-only is not set:
         if (!vm.count("vmt-only"))

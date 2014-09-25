@@ -7,9 +7,9 @@ OcvGradientComputer::OcvGradientComputer(Vmt *vmt)
     : _vmt(vmt)
 {
 
-    cv::SparseMat spMat = this->_vmt->getSparseMat().clone();
+    cv::SparseMat spMat = this->_vmt->getSparseMat(); //.clone();
+
     spMat.convertTo(_vmtMat, CV_8UC1);
-    spMat.release();
 }
 
 OcvGradientComputer::~OcvGradientComputer()
@@ -75,15 +75,15 @@ cv::Mat OcvGradientComputer::cropVmt(const Box3D &box) const
 {
     //check if we reached the end of the vmt (in any direction)
     if (box.x + box.width  > _vmtMat.size[0] ||
-        box.y + box.height > _vmtMat.size[1] ||
-        box.z + box.depth  > _vmtMat.size[2])
+            box.y + box.height > _vmtMat.size[1] ||
+            box.z + box.depth  > _vmtMat.size[2])
     {
         int sizes[] = {(int)box.width, (int)box.height, (int)box.depth};
         cv::Mat mat(3, sizes, CV_8UC1);
         mat = cv::Scalar(0);
         return mat;
     }
-    cv::Range ranges[3];        
+    cv::Range ranges[3];
 
     ranges[0] = cv::Range(box.x, box.x + box.width);
     ranges[1] = cv::Range(box.y, box.y + box.height);
