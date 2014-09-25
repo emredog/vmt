@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    const QString tracksFolder = "/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/";
+    const QString tracksFolder = "/home/emredog/LIRIS-data/test_tracklets_20140424/track";
 
     QStringList filters;
     filters << "*.track";
@@ -51,8 +51,10 @@ void unionBoundingBoxes(QString trackFilePath)
                                                 .arg(maxX-minX)     //width
                                                 .arg(maxY-minY);    //heigt
 
+    trackFilePath = trackFilePath.replace('(', '_');
+    trackFilePath = trackFilePath.replace(')', '_');
     trackFilePath.chop(6); //remove extension
-    trackFilePath.append("Union.track");
+    trackFilePath.append("_Union.track");
 
     QFile outFile(trackFilePath);
     if (!outFile.open(QFile::WriteOnly))

@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     g_ClassNames[9] = "typing";
     g_ClassNames[10] = "telephone";
 
-    QDir annotationRoot("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION");
+    QDir annotationRoot("/home/emredog/LIRIS-data/test_annotations_groundTruth");
     QStringList filters;
     filters << "*.xml";
 
@@ -40,19 +40,20 @@ int main(int argc, char *argv[])
             continue;
 
         QString name = vid.name;
-        name.chop(4);
+        //name.chop(4);
+        name = name.remove(0, 3);
         foreach(Action action, vid.actions)
         {
 
-            QFile trackfile(annotationRoot.absoluteFilePath(QString("%1_%2_%3.track")
+            QFile trackfile(annotationRoot.absoluteFilePath(QString("%1_%2.track") //was QString("%1_%2_%3.track")
                                                             .arg(name)
                                                             .arg(QString::number(action.number))
-                                                            .arg(g_ClassNames.value(action.activityClass))));
+                                                            /*.arg(g_ClassNames.value(action.activityClass))*/));
 
 
             if (!trackfile.open(QFile::WriteOnly))
             {
-                cout << "CAN'T OPEN FILE FOR WRITING: " << trackfile.fileName().toStdString();
+                cout << "CAN'T OPEN FILE FOR WRITING: " << trackfile.fileName().toStdString() << endl;
             }
 
             QTextStream txtStream(&trackfile);

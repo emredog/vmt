@@ -1,15 +1,15 @@
-#ifndef KLASERSCHMIDTHREADVMTONLY_H
-#define KLASERSCHMIDTHREADVMTONLY_H
+#ifndef KLASERSCHMIDTHREADFROMVMT_H
+#define KLASERSCHMIDTHREADFROMVMT_H
 
 #include <QThread>
 #include <QDir>
 
 
-class KlaserSchmidThreadVmtOnly : public QThread
+class KlaserSchmidThreadFromVMT : public QThread
 {
     Q_OBJECT
 public:
-    explicit KlaserSchmidThreadVmtOnly(QStringList vmtFiles, QDir vmtDir, QStringList algoArgs, QDir targetDir, int threadId, QObject *parent = 0);
+    explicit KlaserSchmidThreadFromVMT(QStringList vmtFiles, QDir vmtDir, QStringList algoArgs, QDir targetDir, int threadId, QObject *parent = 0);
 
 signals:
 
@@ -29,4 +29,4 @@ protected:
 
 };
 
-#endif // KLASERSCHMIDTHREADVMTONLY_H
+#endif // KLASERSCHMIDTHREADFROMVMT_H

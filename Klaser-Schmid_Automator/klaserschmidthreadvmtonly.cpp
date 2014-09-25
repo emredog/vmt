@@ -5,7 +5,7 @@
 #include <iostream>
 using namespace std;
 
-KlaserSchmidThreadVmtOnly::KlaserSchmidThreadVmtOnly(QStringList vmtFiles, QDir vmtDir, QStringList algoArgs, QDir targetDir, int threadId, QObject *parent) :
+KlaserSchmidThreadFromVMT::KlaserSchmidThreadFromVMT(QStringList vmtFiles, QDir vmtDir, QStringList algoArgs, QDir targetDir, int threadId, QObject *parent) :
     QThread(parent)
 {
     this->program = "./Klaser-Schmid_Hog3D_VMT";
@@ -17,7 +17,7 @@ KlaserSchmidThreadVmtOnly::KlaserSchmidThreadVmtOnly(QStringList vmtFiles, QDir 
     this->threadId = threadId;
 }
 
-void KlaserSchmidThreadVmtOnly::run()
+void KlaserSchmidThreadFromVMT::run()
 {
     QStringList inputArgs;
     QFileInfo* trackFileInfo;

@@ -10,13 +10,13 @@ using namespace std;
 
 int main(/*int argc, char *argv[]*/)
 {
-    QString prefix = "featSet09";
-    QFile file("/home/emredog/LIRIS-data/training-validation_features/3rdRun_wNoAction_SlidingWindows_features_params01_non-biased/AllFeaturesInSingleFile.features");
+    QString prefix = "args16";
+    QFile file("/home/emredog/LIRIS-data/training-validation_features/20140917_args16x16x16-2x2x2_icosa/balanced_20140918/AllFeaturesInSingleFile.features");
 
-    const int totNumberOfFeats = 7253191; //
+    const int totNumberOfFeats = 861417; //199199; //861417; //
     const int dimOfFeats = 88; // Icosa:88    //Dodeca: 56;
-    const int randomFeatSize = 500000; //100000 500000
-    const int k = 4000;
+    const int randomFeatSize = 100000; //100000 500000
+    const int k = 4000; //1000;  4000;
     const int nrOfUnwantedFeats = 8;
 
     const int termCrit_Count = 100; //100 //50;

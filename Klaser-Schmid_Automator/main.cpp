@@ -22,10 +22,10 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     // SET MAJOR VARIABLES HERE
     //-----------------------------------------------------------------------------------------------------------------
-    QDir dataDir("/home/emredog/LIRIS-data/training-validation/");
-    QDir trackFileDir("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/union_of_bbox-stationary_cam/");
-    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/20140917_args32x32x32-2x2x2_icosa");
-    QDir vmtDir("/home/emredog/LIRIS-data/training-validation_VMTs_20140916/");
+    QDir dataDir("/home/emredog/LIRIS-data/test/");
+    QDir trackFileDir("/home/emredog/LIRIS-data/test_annotations_groundTruth");
+    QDir targetDir("/home/emredog/LIRIS-data/sanity_check_20140924/test_features_args16");
+    QDir vmtDir("/home/emredog/LIRIS-data/sanity_check_20140924/test_vmts/");
 
     bool fromVMT = true;
     //------------------------------------------------------------------------------------------------------------------
@@ -34,23 +34,28 @@ int main(int argc, char *argv[])
         QDir().mkdir(targetDir.absolutePath());
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop-Release");
 
-    const int threadCount = 3;
+    const int threadCount = 4;
 
 
     //-----------------------------------------------------------------------------------------------------------------
     // SET KLASER&SCHMID VARIABLES HERE
     //-----------------------------------------------------------------------------------------------------------------
     QStringList algoArgs;
-    algoArgs << "-P" << "icosahedron" //"dodecahedron" icosahedron
-                //<< "--loose-track"
-             << "--xy-stride" <<  "32"  //"16" "32"
-             << "--t-stride" << "32"    //"16" "32"
-             << "--xy-ncells" << "2"
-             << "--t-ncells" << "2"
-             << "--npix" << "2";
-
-    // SET IF VMT ONLY
-//    algoArgs << "--vmt-only";
+    if (fromVMT)
+    {
+        algoArgs << "-P" << "icosahedron" //"dodecahedron" icosahedron
+                    //<< "--loose-track"
+                 << "--xy-stride" <<  "16"  //"16" "32"
+                 << "--t-stride" << "16"    //"16" "32"
+                 << "--xy-ncells" << "2"
+                 << "--t-ncells" << "2"
+                 << "--npix" << "2";
+    }
+    else
+    {
+        // SET IF VMT ONLY
+        algoArgs << "--vmt-only";
+    }
 
     //-----------------------------------------------------------------------------------------------------------------
 
@@ -136,7 +141,7 @@ int main(int argc, char *argv[])
             if (i == threadCount - 1) //if it's the last thread
                 length = -1; //just take all of the remaining files
 
-            KlaserSchmidThreadVmtOnly* proc = new KlaserSchmidThreadVmtOnly(vmtFiles.mid(startPos, length), vmtDir, algoArgs, targetDir, i+1);
+            KlaserSchmidThreadFromVMT* proc = new KlaserSchmidThreadFromVMT(vmtFiles.mid(startPos, length), vmtDir, algoArgs, targetDir, i+1);
             proc->start();
         }
     }

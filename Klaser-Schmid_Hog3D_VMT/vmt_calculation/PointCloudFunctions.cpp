@@ -113,10 +113,15 @@ PointCloud<PointXYZI>::Ptr PointCloudFunctions::convertToPointCloud(const cv::Sp
 cv::SparseMat PointCloudFunctions::convertToSparseMat(PointCloud<PointXYZI>::Ptr ptCloud, int dim, const int sizes[])
 {
     PointCloud<PointXYZI>::const_iterator it;
-    cv::SparseMat sparseMat(dim, sizes, CV_16UC1);
 
-    int rows = sizes[1];
-    int maxZ = sizes[2];
+    int* newSizes = new int[dim];
+    for (int i=0; i<dim; i++)
+        newSizes[i] = sizes[i] + 1;
+
+    cv::SparseMat sparseMat(dim, newSizes, CV_8UC1); //was CV_16UC1
+
+    int rows = newSizes[1];
+    int maxZ = newSizes[2];
 
     for (it = ptCloud->begin(); it < ptCloud->end(); it++)
     {
@@ -125,6 +130,8 @@ cv::SparseMat PointCloudFunctions::convertToSparseMat(PointCloud<PointXYZI>::Ptr
             sparseMat.ref<uchar>(it->x, rows - it->y, maxZ - it->z) = val;
     }
 
+
+    delete newSizes;
     return sparseMat;
 }
 

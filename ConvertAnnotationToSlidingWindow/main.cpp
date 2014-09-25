@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
     int counters[] = {0,0,0,0,0,0,0,0,0,0,0};
 
-    QDir annotationRoot("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS");
+    QDir annotationRoot("/home/emredog/LIRIS-data/test_annotations_groundTruth");
     QStringList filters;
     filters << "*.xml";
 
@@ -75,13 +75,13 @@ int main(int argc, char *argv[])
                     balancedFolder = "balanced/";
 
 
-                QFile trackfile(annotationRoot.absoluteFilePath(QString("%5%1_%2_%6_(%3-%4).track")
+                QFile trackfile(annotationRoot.absoluteFilePath(QString("%5%1_%2_%3-%4.track") //was QString("%5%1_%2_%6_%3-%4.track")
                                                                 .arg(name)
                                                                 .arg(QString::number(action.number))
                                                                 .arg(beginSW)
                                                                 .arg(endSW)
                                                                 .arg(balancedFolder)
-                                                                .arg(g_ClassNames[action.activityClass])));
+                                                                /*.arg(g_ClassNames[action.activityClass])*/));
 
                 if (!trackfile.open(QFile::WriteOnly))
                 {

@@ -9,7 +9,7 @@ using namespace std;
 
 //#define TRAINING
 //#define ACT_NAME_MISSING
-#define BOW_PATH_withNOACTION_CLASS "/home/emredog/LIRIS-data/training-validation_BagOfWords/3rdRun_BoW_01/with_K-Means_s500K_k4000_C100_e0.1/"
+//#define BOW_PATH_withNOACTION_CLASS "/home/emredog/LIRIS-data/training-validation_BagOfWords/3rdRun_BoW_01/with_K-Means_s500K_k4000_C100_e0.1/"
 
 void formatTrainingData(QString pathToBows, QString outFile);
 void formatTrainingDataActNameMissing(QString pathToBoWs, QString bowPathWithNoActionClass, QString outFile);
@@ -20,10 +20,10 @@ int main(/*int argc, char *argv[]*/)
 
     //parameters
 #ifdef TRAINING
-    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BagOfWords/3rdRun_BoW_03/with_K-Means_s500K_k4000_C100_e0.1/";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BagOfWords/balanced_20140918/args32_S199k_K4000";
     QString dataFileForLibSVM = "training-validation_data.dat";
 #else
-    QString pathToBoWs = "/home/emredog/LIRIS-data/test_BagOfWords/3rdRun_params03/with_K-Means_s500K_k4000_C100_e0.1";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/test_BagOfWords/args32_S199k_K4000";
     QString dataFileForLibSVM = "test_data.dat";
 #endif
 
@@ -227,7 +227,7 @@ void formatTrainingData(QString pathToBoWs, QString outFile)
         QString curClassName;
         {
             QStringList parts = bowName.split("_");
-            curClassName = parts[2];
+            curClassName = parts[3];
         }
 
 

@@ -12,9 +12,10 @@ void paintTrackFile(Mat& img, QString trackFile, int frameIndex);
 int main(int argc, char *argv[])
 {
 
-    const QDir imgFolder("/home/emredog/LIRIS-data/test/vid0003/");
-    const QString trackFile("/home/emredog/LIRIS-data/test/vid0003_b3_d10.track");
+    const QDir imgFolder("/home/emredog/LIRIS-data/training-validation/vid0152/");
+    const QString trackFile("/home/emredog/LIRIS-data/training-validation_annotations-with-NO-ACTION-SLIDING_WINDOWS/union_of_bbox-stationary_cam/vid0152_9_no-action_1853-1893Union.track");
 
+    const int startFrom = 1853;
 
     QCoreApplication a(argc, argv);
 
@@ -26,7 +27,8 @@ int main(int argc, char *argv[])
 
     namedWindow("Display Track Rectangle", WINDOW_AUTOSIZE);
 
-    for (int i=0; i<imgFiles.count(); i++)
+
+    for (int i=startFrom; i<imgFiles.count(); i++)
     {
         img = imread(imgFolder.absoluteFilePath(imgFiles[i]).toStdString(), CV_LOAD_IMAGE_GRAYSCALE);
         paintTrackFile(img, trackFile, i);
