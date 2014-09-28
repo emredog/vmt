@@ -10,7 +10,7 @@ using namespace std;
 
 
 
-#define INSTANCE_COUNT 694
+#define INSTANCE_COUNT 381
 
 QList<int> resultFileToClassList(QString file);
 Video mergeSuccessiveActions(Video vid);
@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 
     QCoreApplication a(argc, argv);
 
-    QDir trackDir("/home/emredog/LIRIS-data/test_tracklets_20140424/track_stationary_cam_subset_for_20140922/");
-    QString resultFile = "/home/emredog/LIRIS-data/20140922_TestResults-SVM/args16_S500k_K4000_result_n0.14_g0.01.prediction";
+    QDir trackDir("/home/emredog/LIRIS-data/20140926_test_with_20/TRACKS-test-selected");
+    QString resultFile = "/home/emredog/LIRIS-data/20140926_test_with_20/KS/prediction.result";
     QDir targetDir(QString("%1-Annotations").arg(resultFile));
     if (!targetDir.exists())
         targetDir.mkdir(targetDir.absolutePath());
@@ -130,6 +130,9 @@ int main(int argc, char *argv[])
 
         cout << ".";
     }
+
+    //write last annotation file to disk
+    currentVideo.writeWithAnnotationFormat(targetDir.absoluteFilePath(QString("%1.xml").arg(currentVideo.name)));
 
     cout << "Completed." << endl;
     //return a.exec();
