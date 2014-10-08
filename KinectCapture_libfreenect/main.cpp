@@ -10,6 +10,7 @@
 #include <QString>
 #include <QTime>
 #include <QDir>
+#include <QProcess>
 
 
 #define OUTPUT_ROOT "/home/emredog/gsu-data"
@@ -150,8 +151,6 @@ int main(int argc, char **argv) {
         outputDir.mkpath(outputDirStr);
     }
 
-
-
     int stopMilisec = stopSec * 1000;
 
     //string filename("snapshot");
@@ -188,10 +187,14 @@ int main(int argc, char **argv) {
         namedWindow("dummywin");
         cout << "Recording is not startet yet. Awaiting any key press, or timeout (" << delaySec << "seconds)\n";
         waitKey(delaySec * 1000);
-        cout << "Starting recording...\n";
         destroyWindow("dummywin");
     }
 
+
+
+
+    cout << '\a';
+    cout << "Starting recording...\n";
     QTime myTimer;
     myTimer.start();
     device.startDepth();
@@ -226,6 +229,7 @@ int main(int argc, char **argv) {
     }
     int milliseconds = myTimer.elapsed();
     std::cout << i_snap << " frames are captured in " << (double)milliseconds / 1000.0 << " seconds\n";
+    cout << '\a';
 
     //device.stopVideo();
     device.stopDepth();
