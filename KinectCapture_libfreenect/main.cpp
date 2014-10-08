@@ -64,7 +64,7 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 
         // Do not call directly even in child
         void DepthCallback(void* _depth, uint32_t timestamp) {
-            std::cout << "." << std::endl;
+            std::cout << ".";
             m_depth_mutex.lock();
             uint16_t* depth = static_cast<uint16_t*>(_depth);
             depthMat.data = (uchar*) depth;
@@ -114,10 +114,11 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 int main(int argc, char **argv) {
     bool die(false);
     bool write = true;
+    int delaySec = 0;
 
-    if (argc != 2)
+    if (argc != 2 && argc != 3)
     {
-        cout << "Usage: ./KinectCapture_libfreenect [seconds_to_record]\n\n";
+        cout << "Usage: ./KinectCapture_libfreenect <seconds_to_record> [delay_before_recording]\n\n";
         return -1;
     }
 
@@ -127,8 +128,19 @@ int main(int argc, char **argv) {
 
     if (!ok || stopSec < 0)
     {
-        cout << "Usage: ./KinectCapture_libfreenect [seconds_to_record]\n\n[seconds_to_record] must be a positive integer.\n\n";
+        cout << "Usage: ./KinectCapture_libfreenect <seconds_to_record> [delay_before_recording]\n\nseconds_to_record must be a positive integer.\n\n";
         return -1;
+    }
+
+    if (argc == 3)
+    {
+        secStr = QString::fromAscii(argv[2]);
+        delaySec = secStr.toInt(&ok);
+        if (!ok || delaySec < 0)
+        {
+            cout << "Usage: ./KinectCapture_libfreenect <seconds_to_record> [delay_before_recording]\n\ndelay_before_recording must be a positive integer.\n\n";
+            return -1;
+        }
     }
 
     QDir outputDir;
@@ -169,6 +181,17 @@ int main(int argc, char **argv) {
     params.push_back(CV_IMWRITE_PNG_COMPRESSION);
     params.push_back(2);
 
+
+
+    if (delaySec > 0)
+    {
+        namedWindow("dummywin");
+        cout << "Recording is not startet yet. Awaiting any key press, or timeout (" << delaySec << "seconds)\n";
+        waitKey(delaySec * 1000);
+        cout << "Starting recording...\n";
+        destroyWindow("dummywin");
+    }
+
     QTime myTimer;
     myTimer.start();
     device.startDepth();
@@ -182,7 +205,7 @@ int main(int argc, char **argv) {
 
 
         //cv::imshow("depth",depthf);
-        char k = cvWaitKey(1);
+        char k = cvWaitKey(5);
 //        if( k == 27 ){
 //            //cvDestroyWindow("rgb");
 //            cvDestroyWindow("depth");
