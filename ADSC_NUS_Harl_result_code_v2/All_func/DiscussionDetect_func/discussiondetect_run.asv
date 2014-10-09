@@ -1,0 +1,10 @@
+function [ output_args ] = discussiondetect_run( data_path )
+%UNTITLED3 Summary of this function goes here
+%   Detailed explanation goes here
+filter_length = 100;
+
+[ targets ] = volume2targets( imagepath, filter_length );
+[ discusstions ] = Targets2discussions( targets ,foldername(fi).name,  filter_length );
+
+end
+

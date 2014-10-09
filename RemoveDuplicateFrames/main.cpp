@@ -12,15 +12,13 @@ int main(int argc, char *argv[])
 
     if (argc != 2)
     {
-        cout << "Usage: ./RemoveDuplicateFiles <dir>\n";
+        cout << "Usage: ./RemoveDuplicateFrames <dir>\n";
         return -1;
     }
 
     QString argument =  QString::fromAscii(argv[1]);
 
     QDir dirToClean(argument);
-
-    QString uff = dirToClean.absolutePath();
 
     QStringList filters;
     filters << "*.png";

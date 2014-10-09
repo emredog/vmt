@@ -10,7 +10,7 @@ using namespace std;
 
 
 
-#define INSTANCE_COUNT 381
+#define INSTANCE_COUNT 375
 
 QList<int> resultFileToClassList(QString file);
 Video mergeSuccessiveActions(Video vid);
@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 
     QCoreApplication a(argc, argv);
 
-    QDir trackDir("/home/emredog/LIRIS-data/20140926_test_with_20/TRACKS-test-selected");
-    QString resultFile = "/home/emredog/LIRIS-data/20140926_test_with_20/KS/prediction.result";
+    QDir trackDir("/home/emredog/LIRIS-data/20140926_test_with_20/VMT-KS/TRACKS-test-selected");
+    QString resultFile = "/home/emredog/LIRIS-data/20140926_test_with_20/VMT-KS/prediction.result";
     QDir targetDir(QString("%1-Annotations").arg(resultFile));
     if (!targetDir.exists())
         targetDir.mkdir(targetDir.absolutePath());

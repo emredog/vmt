@@ -13,7 +13,7 @@ int main(/*int argc, char *argv[]*/)
     QString prefix = "args16";
     QFile file("/home/emredog/LIRIS-data/training-validation_features/20140917_args16x16x16-2x2x2_icosa/balanced_20140918/AllFeaturesInSingleFile.features");
 
-    const int totNumberOfFeats = 861417; //199199; //861417; //
+    const int totNumberOfFeats = 5761079; //199199; //861417; //5761079
     const int dimOfFeats = 88; // Icosa:88    //Dodeca: 56;
     const int randomFeatSize = 100000; //100000 500000
     const int k = 4000; //1000;  4000;

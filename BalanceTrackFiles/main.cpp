@@ -30,7 +30,7 @@ int main()
 
     int counters[] = {0,0,0,0,0,0,0,0,0,0,0};
 
-    QDir fileFolder("/home/emredog/LIRIS-data/training-validation_features/20140917_args32x32x32-2x2x2_icosa/balanced_20140918");
+    QDir fileFolder("/home/emredog/LIRIS-data/20140926_test_with_20/3rdRun_wNoAction_SlidingWindows_features_params01--OLD");
 
 
     QStringList filters;

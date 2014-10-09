@@ -1,0 +1,23 @@
+function [  ] = depthmapping_run( data_path )
+%UNTITLED2 Summary of this function goes here
+%   Detailed explanation goes here
+resdir='NormMapResults\'; 
+
+if ~exist(resdir,'dir')
+    mkdir(resdir);
+end
+
+s = regexp(data_path,'\\','split');
+
+depthlist    = dir([data_path,'\depth-*','jp2']);
+nimages = length(depthlist);
+for i = 1:nimages
+    depthname = [data_path,'\',depthlist(i).name];
+    outputname = [resdir s{end} '_' depthlist(i).name(7:12) '.jpg'];
+    commandline = ['NormMap_func\ComputeNormMap.exe ' depthname ' ' outputname];
+%     disp(commandline);
+    system(commandline);
+end
+    
+end
+

@@ -20,10 +20,10 @@ int main(/*int argc, char *argv[]*/)
 
     //parameters
 #ifdef TRAINING
-    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BagOfWords/balanced_20140918/args32_S199k_K4000";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/20140926_test_with_20/KS/train-val_BoW";
     QString dataFileForLibSVM = "training-validation_data.dat";
 #else
-    QString pathToBoWs = "/home/emredog/LIRIS-data/test_BagOfWords/args32_S199k_K4000";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/20140926_test_with_20/VMT-KS/test_BoW";
     QString dataFileForLibSVM = "test_data.dat";
 #endif
 
@@ -227,7 +227,7 @@ void formatTrainingData(QString pathToBoWs, QString outFile)
         QString curClassName;
         {
             QStringList parts = bowName.split("_");
-            curClassName = parts[3];
+            curClassName = parts[2];
         }
 
 

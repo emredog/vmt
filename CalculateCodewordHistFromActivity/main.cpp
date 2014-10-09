@@ -16,10 +16,10 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
-    const QString codebookStr = "args32_K-Means_s199K_k4000_C100_e0.1.out";
-    const QDir activityFeaturesDir("/home/emredog/LIRIS-data/test_features/20140921_args32x32x32-2x2x2_icosa");
+    const QString codebookStr = "args16_K-Means_s100K_k1000_C100_e0.1.out";
+    const QDir activityFeaturesDir("/home/emredog/only_here");
     const QString codeBookFilePath = QString("/home/emredog/LIRIS-data/Codebooks/%1").arg(codebookStr);
-    const QString targetDir = QString("/home/emredog/LIRIS-data/test_BagOfWords/args32_S199k_K4000/");
+    const QString targetDir = QString("/home/emredog/LIRIS-data/only_here");
 
     //create missing target directory
     {
@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
     }
 
     const int ignoreFeatsOnActs = 8; //number of ignored features in the beginning of each line
-    const int vocabularySize = 4000; //K of K-means    4000 or 1000
+    const int vocabularySize = 1000; //K of K-means    4000 or 1000
     const int featureDim = 80;// 48<--- dodecahedron //80 <--- icosahedron
-    const int threadCount = 4;
+    const int threadCount = 1;
 
     //read Code book:
     FeatureSet codeBook(codeBookFilePath, featureDim);

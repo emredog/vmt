@@ -1,0 +1,214 @@
+function [ dooractions, dooractionclasses ] = newdooractiondetection_func( targets,keyposes,ifscene35, foldername )
+%UNTITLED2 Summary of this function goes here
+%   Detailed explanation goes here
+if nargin < 4
+    ifscene35 = 0;
+end
+
+dooractions = [];
+dooractionclasses = [];
+dai = 0;
+originalkeyposes = keyposes; 
+if ~isempty(targets) && ~isempty(keyposes)  
+    %compute the intersect
+    for i = 1:length(targets)
+        keyposes = originalkeyposes; 
+        if (targets{i}.data(end,5) > keyposes(end,5))
+            starti = find(targets{i}.data(:,5) == keyposes(end,5));
+            startframe = targets{i}.data(starti + 1,5);
+            overpart = targets{i}.data(starti+1:end,:);
+            [ Ool, kol ] = ComputeOverlap( overpart, keyposes(end,:) );
+            oindis = (Ool>0.6)|(kol>0.6);
+            endi = find(~oindis,1);
+            if isempty(endi)
+                endi = size(targets{i}.data,1);
+            else
+                endi = starti + endi - 2;
+            end
+            endframe = targets{i}.data(endi,5);
+            if endframe>startframe
+                temptarget{1}.data(1,1:4) = keyposes(end,1:4);
+                temptarget{1}.data(2,1:4) = keyposes(end,1:4);
+                temptarget{1}.data(1,5) = startframe;
+                temptarget{1}.data(2,5) = endframe;
+                [ temptarget ] = targetsinterp( temptarget );
+                keyposes = [keyposes; temptarget{1}.data];
+            end
+        end
+        
+        
+        [inters IA IB] = intersect(targets{i}.data(:,5), keyposes(:,5));
+        tx1 = targets{i}.data(IA,1);
+        ty1 = targets{i}.data(IA,2);
+        tx2 = targets{i}.data(IA,3);
+        ty2 = targets{i}.data(IA,4);
+        
+        kx1 = keyposes(IB,1);
+        ky1 = keyposes(IB,2);
+        kx2 = keyposes(IB,3);
+        ky2 = keyposes(IB,4);
+        
+        tarea = (tx2-tx1+1) .* (ty2-ty1+1);
+        karea = (kx2-kx1+1) .* (ky2-ky1+1);
+        
+        xx1 = max(tx1, kx1);
+        yy1 = max(ty1, ky1);
+        xx2 = min(tx2, kx2);
+        yy2 = min(ty2, ky2);
+        w = xx2-xx1+1;
+        h = yy2-yy1+1;
+        w = w.*(w>0);
+        h = h.*(h>0);
+        
+        %o:overlap
+        tol = w .* h ./ tarea;
+        kol = w .* h ./ karea;
+        
+        oindis = (tol>0.6)|(kol>0.6);%(tol>0.5)&(kol>0.5);
+%         IA(oindis)
+        overlapframes = targets{i}.data(IA(oindis),5);
+%         if ~isempty(dbfragments{i}) && ~isempty(overlapframes)
+%             dbf = dbfragments{i};
+%             for j=1:size(dbf,1)
+%                 if sum( (overlapframes>dbf(j,1)) & (overlapframes<dbf(j,2))) >0
+%                     dropbags{dbsi} = Targetdata2sub( targets{i}.data, dbf(j,1), dbf(j,2))
+%                     dbsi = dbsi+1;
+%                 end
+%             end
+%         end
+        
+        if ~isempty(overlapframes)
+            %process the frames into fragments of targets
+            outputframes = [];
+            outputclasses = [];
+            outputi = 0;
+
+            diffs = overlapframes(2:end) - overlapframes(1:end-1);
+            indis = find(diffs>10);
+
+            if(~isempty(indis))
+                sequences = zeros(length(indis)+1,2);
+                sequences(1,1)=1;
+                sequences(1,2)=indis(1);
+
+                sequences(end,1)=indis(end)+1;
+                sequences(end,2)=length(overlapframes)-indis(end);
+            else
+                sequences = [1 length(overlapframes)];
+            end
+
+            if(length(indis)>1)
+                for k = 2:length(indis)
+                    sequences(k,1) = indis(k-1)+1;
+                    sequences(k,2) = indis(k)-indis(k-1);
+                end
+            end
+            
+            sequences((sequences(:,2)<2),:) = [];
+            
+            for j=1:size(sequences,1)
+                outputi = outputi +1;
+                starti = overlapframes(sequences(j,1));
+                endi = overlapframes(sequences(j,1)+sequences(j,2)-1);
+%                 talksphones{tpi} = Targetdata2sub( targets{i}.data, starti, endi);
+                if starti - targets{i}.data(1,5)<3  & ((endi - starti)<30)%%abs(starti - targets{i}.data(1,5) ) <10
+%                     if (endi - starti)>30
+%                         outputframes(outputi,1) = min(starti, targets{i}.data(1,5));
+%                         outputframes(outputi,2) = outputframes(outputi,1) + 30;
+%                     else
+                        outputframes(outputi,1) = min(starti, targets{i}.data(1,5));
+                        outputframes(outputi,2) = endi;
+%                     end
+                    outputclasses(outputi,1) = 4;
+%                     outputi = outputi + 1;
+                else
+                    if endi - targets{i}.data(end,5)>-3%%abs(endi - targets{i}.data(end,5) ) <10
+                        if (endi - starti)>60
+                            outputframes(outputi,1) = starti;
+                            outputframes(outputi,2) = max(endi,targets{i}.data(end,5));
+                            outputclasses(outputi,1) = 6;
+%                             outputi = outputi + 1;
+                        else
+                            outputframes(outputi,1) = starti;
+                            outputframes(outputi,2) = max(endi,targets{i}.data(end,5));
+                            outputclasses(outputi,1) = 4;
+%                             outputi = outputi + 1;
+                        end
+                    else
+                        outputframes(outputi,1) = starti;
+                        outputframes(outputi,2) = endi;%max(endi,targets{i}.data(end,5));
+                        outputclasses(outputi,1) = 5;
+%                         outputi = outputi + 1;
+                    end
+                end
+%                 outputi = outputi + 1;
+            end
+            if ~isempty(outputclasses)
+                if ifscene35 == 1
+                    if targets{i}.data(1,5) - keyposes(1,5) < -2
+                        for k = 1:length(outputclasses)
+                            if outputclasses(k) == 4 || outputclasses(k) == 6
+                                %targets{i} load depth value
+                                for j = 1:size(targets{i}.data,1)
+                                    frameid = targets{i}.data(j,5);
+                                    depthfilename = sprintf('DepthMappingResults\\%s\\%s_%06d.png', foldername,foldername,frameid);
+                                    depthimage = imread(depthfilename);
+                                    subdp = depthimage(2*targets{i}.data(j,2):2*targets{i}.data(j,4), 2*targets{i}.data(j,1):2*targets{i}.data(j,3));
+                                    %figure(1);imshow(subdp);
+                                    if ~isempty(subdp(subdp~=0))
+                                        targets{i}.data(j,6) = median(subdp(subdp~=0));
+                                    else
+                                        targets{i}.data(j,6) = 0;
+                                    end
+                                    %targets{i}.data(j,6) = depthimage()
+                                end
+                                indis = (targets{i}.data(:,5)>=outputframes(k,1)) & (targets{i}.data(:,5)<=outputframes(k,2));
+                                depfragment = targets{i}.data(indis,6);
+                                lastdep = depfragment(end);
+                                depfragment = medfilt1(depfragment,3);
+                                if mean(depfragment) - lastdep > 1000
+                                    outputclasses(k) = 5;
+                                end
+%                                 dooraction_temp = Targetdata2sub( targets{i}.data, outputframes(k,1), outputframes(k,2));
+                            end
+                        end
+                    end
+                end
+                deli = [];
+                for k = 1:length(outputclasses)
+                    if outputclasses(k) == 5 && ( outputframes(k,2) - outputframes(k,1) )<20
+                        deli = [deli k];
+                    end
+                end
+                outputclasses(deli) = [];
+                outputframes(deli,:) = [];
+                outputi = outputi - length(deli);
+            end
+            if ~isempty(outputclasses)
+                if outputclasses(end) == 6 && outputi>1
+                    dai = dai+1;
+                    dooractions{dai} = Targetdata2sub( targets{i}.data, outputframes(1,1), outputframes(outputi,2));
+                    dooractionclasses(dai) = 6;
+                else
+                    if outputclasses(end) == 4 && outputi>1
+                        if outputclasses(end-1) == 5
+                            outputclasses(end-1) = 6;
+                            outputclasses(end) = [];
+                            
+                        end
+                    end
+                    for k = 1:length(outputclasses)
+                        dai = dai +1;
+                        dooractions{dai} = Targetdata2sub( targets{i}.data, outputframes(k,1), outputframes(k,2));
+                        dooractionclasses(dai) = outputclasses(k);
+                    end
+                end
+            end
+        end
+
+    end
+end
+    
+
+end
+
