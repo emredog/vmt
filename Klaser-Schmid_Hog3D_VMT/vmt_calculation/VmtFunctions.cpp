@@ -83,7 +83,8 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
 
     //get Depth image paths in the folder
     QStringList filters;
-    filters << "*.jp2";
+    //filters << "*.jp2"; //--> for LIRIS-data
+    filters << "*.png"; //--> for gsu-data
     QDir videoDir(videoFolderPath);
     QStringList depthImgFileNames = videoDir.entryList(filters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
 
@@ -224,8 +225,12 @@ cv::SparseMat VmtFunctions::generateSparseVolumeObject(cv::Mat image, int downsa
                 continue;
 
 
-            mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
-            depth = mostSig13Digits >> 5;
+            //for LIRIS-data
+            //mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
+            //depth = mostSig13Digits >> 5;
+
+            //for gsu-data
+            depth = pixelValue;
 
             depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
 
