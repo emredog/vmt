@@ -22,18 +22,17 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     // SET MAJOR VARIABLES HERE
     //-----------------------------------------------------------------------------------------------------------------
-    QDir dataDir("/home/emredog/LIRIS-data/test/");
-    QDir trackFileDir("/home/emredog/LIRIS-data/test_annotations_groundTruth");
-    QDir targetDir("/home/emredog/LIRIS-data/sanity_check_20140924/test_features_args16");
-    QDir vmtDir("/home/emredog/LIRIS-data/sanity_check_20140924/test_vmts/");
+    QDir dataDir("/home/emredog/gsu-data/test/camera2");
+    QDir trackFileDir("/home/emredog/gsu-data/test_tracks/camera2");
+    QDir targetDir("/home/emredog/gsu-data/test_features_args16");
+    QDir vmtDir("/home/emredog/gsu-data/test_vmts/");
 
-    bool fromVMT = true;
+    bool fromVMT = false;
     //------------------------------------------------------------------------------------------------------------------
 
     if (!targetDir.exists())
         QDir().mkdir(targetDir.absolutePath());
-    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop-Release");
-
+    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop_Qt_5_2_1_GCC_64bit-Release");
     const int threadCount = 4;
 
 
