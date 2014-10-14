@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    namedWindow("Depth", CV_WINDOW_AUTOSIZE);
+    namedWindow(argument.toStdString(), CV_WINDOW_AUTOSIZE);
 
     double scaleFactor = 255.0/2048.0;
 
@@ -39,11 +39,11 @@ int main(int argc, char *argv[])
         Mat depthMat = imread(dirContainingFiles.absoluteFilePath(fileName).toStdString(), CV_LOAD_IMAGE_UNCHANGED);
         Mat depthf (Size(640,480), CV_8UC1);
         depthMat.convertTo(depthf, CV_8UC1, scaleFactor);
-        imshow("Depth", depthf);
+        imshow(argument.toStdString(), depthf);
         waitKey(20);
     }
 
-    destroyWindow("Depth");
+    destroyWindow(argument.toStdString());
 
     return 0;
 }
