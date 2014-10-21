@@ -17,9 +17,9 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
 
     const QString codebookStr = "args16_K-Means_s100K_k1000_C100_e0.1.out";
-    const QDir activityFeaturesDir("/home/emredog/only_here");
-    const QString codeBookFilePath = QString("/home/emredog/LIRIS-data/Codebooks/%1").arg(codebookStr);
-    const QString targetDir = QString("/home/emredog/LIRIS-data/only_here");
+    const QDir activityFeaturesDir("/home/emredog/gsu-data/test_features_args16/camera2");
+    const QString codeBookFilePath = QString("/home/emredog/gsu-data/Codebook/%1").arg(codebookStr);
+    const QString targetDir = QString("/home/emredog/gsu-data/test_BagOfWords/camera2");
 
     //create missing target directory
     {
@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
 
     //read Code book:
     FeatureSet codeBook(codeBookFilePath, featureDim);
+
 
     QStringList filters;
     filters << "*.out";

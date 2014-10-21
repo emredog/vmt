@@ -45,7 +45,11 @@ void CalculateProcess::run()
 float CalculateProcess::calculateSquaredEuclidDistance(const QList<float> &featVect1, const QList<float> &featVect2)
 {
     if (featVect1.length() != featVect2.length())
+    {
+        std::cerr << "CalculateProcess::calculateSquaredEuclidDistance - Feature vectors have different sizes!!\n"
+                  << "featVect1.length: " << featVect1.length() << ", featVect2.length: " << featVect2.length() << std::endl;
         return -1.0;
+    }
 
     float sum = 0.0;
 
@@ -66,6 +70,7 @@ int CalculateProcess::findNearestCodeword(const FeatureSet &codebook, const QLis
     {
         const QList<float> codeWord = vocabulary[i];
         curDistance = calculateSquaredEuclidDistance(codeWord, featVect);
+       // std::cout << "curDistance: " << curDistance << "\tminDistance: " << minDistance << std::endl;
         if (curDistance < minDistance) //found a more near word
         {
             minDistance = curDistance;

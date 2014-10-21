@@ -15,6 +15,8 @@
 #include <opencv2/opencv.hpp> //FIXME: is this necessary? we already have the includes on header file...
 #include <opencv2/highgui/highgui.hpp>
 
+const bool isGsuData = true;
+
 
 VmtFunctions::VmtFunctions(int xSize, int ySize)
 //    : toleranceX(tolX), toleranceY(tolY), toleranceZ(tolZ)
@@ -77,14 +79,16 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     }
 
     cerr << "\n\t# First bounding box (x, y, w, h) = (" << bboxSequence.first().x << ", "
-                                                    << bboxSequence.first().y << ", "
-                                                    << bboxSequence.first().width << ", "
-                                                    << bboxSequence.first().height << ")\n";
+         << bboxSequence.first().y << ", "
+         << bboxSequence.first().width << ", "
+         << bboxSequence.first().height << ")\n";
 
     //get Depth image paths in the folder
     QStringList filters;
-    //filters << "*.jp2"; //--> for LIRIS-data
-    filters << "*.png"; //--> for gsu-data
+    if (!isGsuData)
+        filters << "*.jp2"; //--> for LIRIS-data
+    else
+        filters << "*.png"; //--> for gsu-data
     QDir videoDir(videoFolderPath);
     QStringList depthImgFileNames = videoDir.entryList(filters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
 
@@ -225,12 +229,17 @@ cv::SparseMat VmtFunctions::generateSparseVolumeObject(cv::Mat image, int downsa
                 continue;
 
 
-            //for LIRIS-data
-            //mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
-            //depth = mostSig13Digits >> 5;
-
-            //for gsu-data
-            depth = pixelValue;
+            if (!isGsuData)
+            {
+                //for LIRIS-data
+                mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
+                depth = mostSig13Digits >> 5;
+            }
+            else
+            {
+                //for gsu-data
+                depth = pixelValue;
+            }
 
             depthInMillimeters = (unsigned int)(raw_depth_to_meters((int)depth)*1000);
 
@@ -269,16 +278,19 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
     cv::SparseMat difference = cv::SparseMat(this->dims, this->matrixSize, operand2.type());
 
     //go through nonzero values of operand2, and set diff to 1 if operand1(x,y,z)==0
+    bool isWarned = false;
     for (cv::SparseMatConstIterator op2It=operand2.begin(); op2It != operand2.end(); ++op2It)
     {
         const cv::SparseMat::Node* n = op2It.node();
         //        uchar val2 = op2It.value<uchar>();
         uchar val1 = operand1.value<uchar>(n->idx);
 
+        //UNCOMMENT HERE --- ED 21.10.2014
         if (val1 <= 0) //if no value was found on that location:
         {
             int depthCorrectionCoef = this->depthCorrectionCoefficient(n->idx[Z]);
             int indexOfDepth = this->dynamicTolerance.allDepthValues.indexOf(n->idx[Z]);
+            if (indexOfDepth == -1) cerr << "Depth value not found in this->dynamicTolerance.allDepthValues\n";
             for (int i = indexOfDepth-depthCorrectionCoef; i<= indexOfDepth+depthCorrectionCoef; i++)
             {
                 int potentialZ = this->dynamicTolerance.allDepthValues[i];
@@ -296,34 +308,50 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
                 }
             }
         }
+        //UNCOMMENT HERE --- ED 21.10.2014
 
-        //        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
+        //COMMENT HERE --- ED 21.10.2014
 
-        //        if (val1 <= 0) //if no value was found on that location:
-        //        {
-        //            //search for the neighborhood of z (to handle noise from kinect)
-        //            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++) //FIXME: instead of searching, we can just pinpoint the next-previous values for performance
-        //            {
-        //                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
-        //                {
-        //                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
-        //                    {
-        //                        uchar temp = operand1.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
-        //                        if (temp > 0)
-        //                        {
-        //                            val1 = temp;
-        //                            break;
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
+//                int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
+//                if (dynamicTolerance <= 0)
+//                {
+//                    dynamicTolerance = 1;
+//                    if (!isWarned)
+//                    {
+//                        cerr << "Dynamic tolerance not found. Setting to 1...\n";
+//                        isWarned = true;
+//                    }
+//                }
+
+//                if (val1 <= 0) //if no value was found on that location:
+//                {
+//                    //search for the neighborhood of z (to handle noise from kinect)
+//                    for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++) //FIXME: instead of searching, we can just pinpoint the next-previous values for performance
+//                    {
+//                        for (int offsetX = -(dynamicTolerance); offsetX <= (int)dynamicTolerance; offsetX++) //search for the neighborhood of x
+//                        {
+//                            for (int offsetY = -(dynamicTolerance); offsetY <= (int)dynamicTolerance; offsetY++) //search for the neighborhood of y
+//                            {
+//                                uchar temp = operand1.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+//                                if (temp > 0)
+//                                {
+//                                    val1 = temp;
+//                                    break;
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+        //COMMENT HERE --- ED 21.10.2014
 
         if (val1 <= 0) //if still no value (after the neighborhood search)
         {
             difference.ref<uchar>(n->idx) = I_MAX;
         }
     }
+
+    isWarned = false;
+
     //go through nonzero values of operand1, and set diff to 1 if operand2(x,y,z)==0
     for (cv::SparseMatConstIterator op1It=operand1.begin(); op1It != operand1.end(); ++op1It)
     {
@@ -331,6 +359,7 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
         //        uchar val1 = op1It.value<uchar>();
         uchar val2 = operand2.value<uchar>(n->idx);
 
+        //UNCOMMENT HERE --- ED 21.10.2014
         if (val2 <= 0) //if no value was found on that location:
         {
             int depthCorrectionCoef = this->depthCorrectionCoefficient(n->idx[Z]);
@@ -352,28 +381,41 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
                 }
             }
         }
+        //UNCOMMENT HERE --- ED 21.10.2014
 
-        //        int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
 
-        //        if (val2 <= 0) //if no value was found on that location:
-        //        {
-        //            //search for the neighborhood of z (to handle noise from kinect)
-        //            for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
-        //            {
-        //                for (int offsetX = -(this->toleranceX); offsetX <= (int)this->toleranceX; offsetX++) //search for the neighborhood of x
-        //                {
-        //                    for (int offsetY = -(this->toleranceY); offsetY <= (int)this->toleranceY; offsetY++) //search for the neighborhood of y
-        //                    {
-        //                        uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
-        //                        if (temp > 0)
-        //                        {
-        //                            val2 = temp;
-        //                            break;
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
+//COMMENT HERE --- ED 21.10.2014
+//                int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
+//                if (dynamicTolerance <= 0)
+//                {
+//                    dynamicTolerance = 1;
+//                    if (!isWarned)
+//                    {
+//                        cerr << "Dynamic tolerance not found. Setting to 1...\n";
+//                        isWarned = true;
+//                    }
+//                }
+
+//                if (val2 <= 0) //if no value was found on that location:
+//                {
+//                    //search for the neighborhood of z (to handle noise from kinect)
+//                    for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
+//                    {
+//                        for (int offsetX = -(dynamicTolerance); offsetX <= (int)dynamicTolerance; offsetX++) //search for the neighborhood of x
+//                        {
+//                            for (int offsetY = -(dynamicTolerance); offsetY <= (int)dynamicTolerance; offsetY++) //search for the neighborhood of y
+//                            {
+//                                uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+//                                if (temp > 0)
+//                                {
+//                                    val2 = temp;
+//                                    break;
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//COMMENT HERE --- ED 21.10.2014
 
         if (val2 <= 0) //if still no value (after the neighborhood search)
         {
@@ -472,8 +514,8 @@ double VmtFunctions::magnitudeOfMotion(const cv::SparseMat& sparseMat)
 
     double normalizedMagnitudeOfMotion = (double)sparseMat.nzcount() / (double)(sizes[X]*sizes[Y]*sizes[Z]);
 
-//    qDebug() << "Number of nz elements: " << (int)sparseMat.nzcount();
-//    qDebug() << "Normalized Magnitude of Motion: " << normalizedMagnitudeOfMotion;
+    //    qDebug() << "Number of nz elements: " << (int)sparseMat.nzcount();
+    //    qDebug() << "Normalized Magnitude of Motion: " << normalizedMagnitudeOfMotion;
 
 
     return normalizedMagnitudeOfMotion;
@@ -490,7 +532,7 @@ double VmtFunctions::attenuationConstantForAnAction(const QList<cv::SparseMat>& 
     double sumOfMagnitutedOfMotion = 0;
 
     foreach(cv::SparseMat sigma, volumeObjectsDifferences)
-    {        
+    {
         sumOfMagnitutedOfMotion += magnitudeOfMotion((sigma));
     }
 
@@ -576,7 +618,7 @@ cv::SparseMat VmtFunctions::calculateVMT(const QList<cv::SparseMat> &volumeObjec
         if (i > 0)
         {
             double disappearRate = attConst*curMagnituteOfMotion;
-                        cerr << "# Disappearing rate at t= " << i << ": " << disappearRate << endl;
+            cerr << "# Disappearing rate at t= " << i << ": " << disappearRate << endl;
             //for all nonzero values of previous VMT
             for(cv::SparseMatConstIterator pit = prevVmt.begin(); pit != prevVmt.end(); ++pit)
             {

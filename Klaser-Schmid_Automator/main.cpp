@@ -24,16 +24,16 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     QDir dataDir("/home/emredog/gsu-data/test/camera2");
     QDir trackFileDir("/home/emredog/gsu-data/test_tracks/camera2");
-    QDir targetDir("/home/emredog/gsu-data/test_features_args16");
-    QDir vmtDir("/home/emredog/gsu-data/test_vmts/");
+    QDir targetDir("/home/emredog/gsu-data/test_features_args16/camera2");
+    QDir vmtDir("/home/emredog/gsu-data/test_vmts/camera2");
 
-    bool fromVMT = false;
+    bool fromVMT = true;
     //------------------------------------------------------------------------------------------------------------------
 
     if (!targetDir.exists())
         QDir().mkdir(targetDir.absolutePath());
-    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop_Qt_5_2_1_GCC_64bit-Release");
-    const int threadCount = 4;
+    QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop-Release");
+    const int threadCount = 2;
 
 
     //-----------------------------------------------------------------------------------------------------------------

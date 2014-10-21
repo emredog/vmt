@@ -50,6 +50,7 @@ namespace fs = boost::filesystem;
 
 const string VERSION = "1.3.0";
 
+
 // declerations
 struct Position3D {
     double x;

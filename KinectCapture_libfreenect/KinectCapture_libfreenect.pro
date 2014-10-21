@@ -16,7 +16,7 @@ TEMPLATE = app
 
 INCLUDEPATH += /usr/include/libusb-1.0
 
-LIBS += -lopencv_core -lopencv_highgui -lfreenect
+LIBS += -lopencv_core -lopencv_highgui -lfreenect -lopencv_imgproc
 
 
 SOURCES += main.cpp

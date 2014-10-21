@@ -23,7 +23,7 @@ int main(/*int argc, char *argv[]*/)
     QString pathToBoWs = "/home/emredog/LIRIS-data/20140926_test_with_20/KS/train-val_BoW";
     QString dataFileForLibSVM = "training-validation_data.dat";
 #else
-    QString pathToBoWs = "/home/emredog/LIRIS-data/20140926_test_with_20/VMT-KS/test_BoW";
+    QString pathToBoWs = "/home/emredog/gsu-data/test_BagOfWords/camera2";
     QString dataFileForLibSVM = "test_data.dat";
 #endif
 

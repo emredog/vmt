@@ -107,7 +107,7 @@ end
 dooractionclasses = [];
 dooractions = [];
 
-d = dir([data_path '/' '*.jp2']);
+d = dir([data_path '/' '*.png']);
 frames = 1:int16(length(d)/10):length(d);
 
 %normmap_run( data_path,foldername, frames ); % already done it
@@ -202,29 +202,31 @@ end
 % [ talksphones ] = TalksphoneDetection_run(  ['HumanDetectionResults\' foldername '_result'] );
 
 %8. pick up item: Action 3
-pickupitems = [];
-pui = 1;
-len = length(dir([data_path '/gray*.jpg']));
-cutlen = 15;
-if ~isempty(talksphones)
-    for i = 1:length(talksphones)
-        if talksphones{i}(1,5) >cutlen
-            pickupitems{pui} = repmat(talksphones{i}(1,:),cutlen,1);
-            for j = 1:cutlen
-                pickupitems{pui}(j,5) = pickupitems{pui}(j,5) - cutlen -1 + j;
-            end
-            pui = pui + 1;
-        end
-        
-        if talksphones{i}(end,5) < len - cutlen
-            pickupitems{pui} = repmat(talksphones{i}(end,:),cutlen,1);
-            for j = 1:cutlen
-                pickupitems{pui}(j,5) = pickupitems{pui}(j,5) + j;
-            end
-            pui = pui + 1;
-        end
-    end
-end
+% COMMENTED FOR gsu-data ON 09.10.2014 FROM HERE
+% pickupitems = [];
+% pui = 1;
+% len = length(dir([data_path '/gray*.jpg']));
+% cutlen = 15;
+% if ~isempty(talksphones)
+%     for i = 1:length(talksphones)
+%         if talksphones{i}(1,5) >cutlen
+%             pickupitems{pui} = repmat(talksphones{i}(1,:),cutlen,1);
+%             for j = 1:cutlen
+%                 pickupitems{pui}(j,5) = pickupitems{pui}(j,5) - cutlen -1 + j;
+%             end
+%             pui = pui + 1;
+%         end
+%         
+%         if talksphones{i}(end,5) < len - cutlen
+%             pickupitems{pui} = repmat(talksphones{i}(end,:),cutlen,1);
+%             for j = 1:cutlen
+%                 pickupitems{pui}(j,5) = pickupitems{pui}(j,5) + j;
+%             end
+%             pui = pui + 1;
+%         end
+%     end
+% end
+% COMMENTED FOR gsu-data ON 09.10.2014 TO HERE
 
 % % % % SAVE TRACKLETS HERE % % % %
 for i=1:length(pickupitems)
@@ -374,11 +376,11 @@ if(~isempty(actions))
 end
 
 if(~isempty(actions))
-    videoname_str = ['d1/' foldername];
+    videoname_str = [foldername];
     xmlFileName = [foldername,'.xml'];
     action2xml_func( videoname_str, xmlFileName,actions, actionclasses);
 else
-    videoname_str = ['d1/' foldername];
+    videoname_str = [foldername];
     xmlFileName = [foldername,'.xml'];
     action2xml_func( videoname_str, xmlFileName,[], []);
 end

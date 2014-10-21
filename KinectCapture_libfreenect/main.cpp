@@ -55,7 +55,7 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 
         // Do not call directly even in child
         void VideoCallback(void* _rgb, uint32_t timestamp) {
-            std::cout << "RGB callback" << std::endl;
+            std::cout << "";
             m_rgb_mutex.lock();
             uint8_t* rgb = static_cast<uint8_t*>(_rgb);
             rgbMat.data = rgb;
@@ -115,11 +115,12 @@ class MyFreenectDevice : public Freenect::FreenectDevice {
 int main(int argc, char **argv) {
     bool die(false);
     bool write = true;
+    bool recordBoth = true;
     int delaySec = 0;
 
-    if (argc != 2 && argc != 3)
+    if (argc != 2 && argc != 3 && argc != 4)
     {
-        cout << "Usage: ./KinectCapture_libfreenect <seconds_to_record> [delay_before_recording]\n\n";
+        cout << "Usage: ./KinectCapture_libfreenect <seconds_to_record> [delay_before_recording] [-d or --depthonly]\n\n";
         return -1;
     }
 
@@ -133,7 +134,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    if (argc == 3)
+    if (argc >= 3)
     {
         secStr = QString::fromAscii(argv[2]);
         delaySec = secStr.toInt(&ok);
@@ -142,6 +143,17 @@ int main(int argc, char **argv) {
             cout << "Usage: ./KinectCapture_libfreenect <seconds_to_record> [delay_before_recording]\n\ndelay_before_recording must be a positive integer.\n\n";
             return -1;
         }
+    }
+
+    if (argc == 4)
+    {
+        secStr = QString::fromAscii(argv[3]);
+        if (secStr.compare("-d") != 0 || secStr.compare("--depthonly") != 0)
+        {
+            cout << "Usage: ./KinectCapture_libfreenect <seconds_to_record> [delay_before_recording] [-d or --depthonly]\n\n";
+            return -1;
+        }
+        recordBoth = false;
     }
 
     QDir outputDir;
@@ -158,9 +170,9 @@ int main(int argc, char **argv) {
     int i_snap(0);
 
     Mat depthMat(Size(640,480),CV_16UC1);
-    Mat depthf (Size(640,480),CV_8UC1);
-    //Mat rgbMat(Size(640,480),CV_8UC3,Scalar(0));
-    Mat ownMat(Size(640,480),CV_8UC3,Scalar(0));
+    //Mat depthf (Size(640,480),CV_8UC1);
+    Mat rgbMat(Size(640,480),CV_8UC3,Scalar(0));
+    Mat grayMat(Size(640,480),CV_8UC1,Scalar(0));
 
     // The next two lines must be changed as Freenect::Freenect
     // isn't a template but the method createDevice:
@@ -172,8 +184,7 @@ int main(int argc, char **argv) {
     MyFreenectDevice& device = freenect.createDevice<MyFreenectDevice>(0);
 
     //namedWindow("rgb",CV_WINDOW_AUTOSIZE);
-    //namedWindow("depth",CV_WINDOW_AUTOSIZE);
-    //device.startVideo();
+    //namedWindow("depth",CV_WINDOW_AUTOSIZE);    
 
 
     vector<int> params;
@@ -198,9 +209,13 @@ int main(int argc, char **argv) {
     QTime myTimer;
     myTimer.start();
     device.startDepth();
+    if (recordBoth)
+    {
+        device.startVideo();
+    }
 
     while (!die) {
-        //device.getVideo(rgbMat);
+        if (recordBoth) device.getVideo(rgbMat);
         device.getDepth(depthMat);
         //cv::imshow("rgb", rgbMat);
 
@@ -219,6 +234,12 @@ int main(int argc, char **argv) {
             QString index = QTime::currentTime().toString("HH-mm-ss-zzz");
             QString fileName = QString("depth_%1.png").arg(index);
             cv::imwrite(outputDir.absoluteFilePath(fileName).toStdString(), depthMat, params);
+            if (recordBoth)
+            {
+                cvtColor(rgbMat, grayMat, CV_BGR2GRAY);
+                fileName = QString("gray_%1.jpg").arg(index);
+                cv::imwrite(outputDir.absoluteFilePath(fileName).toStdString(), grayMat);
+            }
             i_snap++;
         }
 
@@ -231,7 +252,7 @@ int main(int argc, char **argv) {
     std::cout << i_snap << " frames are captured in " << (double)milliseconds / 1000.0 << " seconds\n";
     cout << '\a';
 
-    //device.stopVideo();
+    if (recordBoth) device.stopVideo();
     device.stopDepth();
     return 0;
 }
