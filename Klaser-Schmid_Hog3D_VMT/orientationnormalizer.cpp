@@ -55,5 +55,5 @@ Vmt OrientationNormalizer::translateVmt(QList<float> offsets, const Vmt &initial
 //    source_cloud.reset();
 
 
-    return Vmt();
+    return transformedVmt;
 }
