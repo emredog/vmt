@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
                     .arg(resultingVmt.getHeight())
                     .arg(resultingVmt.getDepth()).toStdString();
 
-            if (PointCloudFunctions::saveCloud(resultingVmt.getPointCloud(), fileName))
+            if (PointCloudFunctions::saveCloud(resultingVmt.getPointCloud_Const(), fileName))
             {
                 cerr << "#\n#\n# VMT saved as " << fileName << endl;
                 return EXIT_SUCCESS;

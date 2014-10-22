@@ -75,7 +75,12 @@ Vmt &Vmt::operator=(const Vmt &other)
     _pointCloud = other._pointCloud->makeShared();
 }
 
-pcl::PointCloud<pcl::PointXYZI>::ConstPtr Vmt::getPointCloud() const
+pcl::PointCloud<pcl::PointXYZI>::ConstPtr Vmt::getPointCloud_Const() const
+{
+    return _pointCloud;
+}
+
+PointCloud<pcl::PointXYZI>::Ptr Vmt::getPointCloud() const
 {
     return _pointCloud;
 }

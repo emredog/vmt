@@ -30,7 +30,7 @@ PclGradientComputer::VectorType PclGradientComputer::getGradientVector(const Box
         pcl::PointXYZ maxPt(box.x + box.width, box.y + box.height, box.z + box.depth);
 
         pcl::CropBox<pcl::PointXYZI> cropBoxFilter;
-        cropBoxFilter.setInputCloud(_vmt->getPointCloud());
+        cropBoxFilter.setInputCloud(_vmt->getPointCloud_Const());
         cropBoxFilter.setMin(minPt.getArray4fMap());
         cropBoxFilter.setMax(maxPt.getArray4fMap());
 

@@ -46,7 +46,8 @@ SOURCES += main.cpp \
     vmt_calculation/VmtFunctions.cpp \
     ../AnalyzeAnnotations/boundingbox.cpp \    
     ../3D_Gradient_Calculation/intensitygradientcomputation.cpp \
-    ocvgradientcomputer.cpp
+    ocvgradientcomputer.cpp \
+    orientationnormalizer.cpp
 
 HEADERS += \
     geometry/Box.h \
@@ -71,4 +72,5 @@ HEADERS += \
     vmt_calculation/VmtFunctions.h \
     ../AnalyzeAnnotations/boundingbox.h \    
     ../3D_Gradient_Calculation/intensitygradientcomputation.h \
-    ocvgradientcomputer.h
+    ocvgradientcomputer.h \
+    orientationnormalizer.h

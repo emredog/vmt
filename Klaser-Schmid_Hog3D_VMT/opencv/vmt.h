@@ -38,7 +38,9 @@ public:
     int getHeight() const { return this->_height; }
     int getDepth() const { return this->_depth; }
 
-    pcl::PointCloud<pcl::PointXYZI>::ConstPtr getPointCloud() const;
+    pcl::PointCloud<pcl::PointXYZI>::ConstPtr getPointCloud_Const() const;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr getPointCloud() const;
+
     cv::SparseMat getSparseMat() const {return _sparseMat;}
 };
 
