@@ -26,13 +26,11 @@ int main(int argc, char *argv[])
 
     Vmt myVmt(cloud, widthOfVmt, heightOfVmt, depthOfVmt);
 
-    OrientationNormalizer orNor;
-
     QList<float> angles;
     angles << 0.0; //around X
     angles << 2.0; //around Y
     angles << 0.0; //around Z
-    Vmt rotatedVmt = orNor.rotateVmt(angles, myVmt);
+    Vmt rotatedVmt = OrientationNormalizer::rotateVmt(angles, myVmt);
 
     pcl::io::savePCDFile("/home/emredog/VMT_vid0179_1_enter-leave_78-87Union_181-464-548-ROTATED-Y.pcd",
                          *(rotatedVmt.getPointCloud_Const()));
