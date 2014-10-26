@@ -80,15 +80,15 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
         }
 
     cout << counter << " points added for interpolation in X direction.\n";
-    matVmt.release();
+    //matVmt.release();
 
     //PART II: Interpolate in Y direction
-    Mat inpolatedInXY(inpolatedInX.dims, inpolatedInX.size, inpolatedInX.type());
-    inpolatedInXY = inpolatedInX;
+    //Mat inpolatedInXY(inpolatedInX.dims, inpolatedInX.size, inpolatedInX.type());
+    //inpolatedInXY = inpolatedInX;
 
-    width = inpolatedInX.size[0];
-    heigth = inpolatedInX.size[1];
-    depth = inpolatedInX.size[2];
+   // width = inpolatedInX.size[0];
+   // heigth = inpolatedInX.size[1];
+   // depth = inpolatedInX.size[2];
 
     counter = 0;
     ranges[1] = Range::all(); //take all on Y
@@ -99,7 +99,8 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
             ranges[2] = Range(z, z+1);
 
             Mat currentSegment; //(width, 1, CV_8UC1);
-            currentSegment = inpolatedInX(ranges);
+            //currentSegment = inpolatedInX(ranges);
+            currentSegment = matVmt(ranges);
 
             SparseMat sparse_mat(currentSegment);
             if (sparse_mat.nzcount() >= 2)
@@ -124,7 +125,8 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
                     while(mapIt.hasNext())
                     {
                         mapIt.next();
-                        inpolatedInXY.at<uchar>(x, mapIt.key(), z) = mapIt.value();
+                        //inpolatedInXY.at<uchar>(x, mapIt.key(), z) = mapIt.value();
+                        inpolatedInX.at<uchar>(x, mapIt.key(), z) = mapIt.value();
                         counter++;
                     }
                 }
@@ -132,15 +134,15 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
         }
 
     cout << counter << " points added for interpolation in Y direction.\n";
-    inpolatedInX.release();
+    //inpolatedInX.release();
 
     //PART III: Interpolate in Z direction
-    Mat inpolatedInXYZ(matVmt.dims, matVmt.size, matVmt.type());
-    inpolatedInXYZ = inpolatedInXY;
+    //Mat inpolatedInXYZ(matVmt.dims, matVmt.size, matVmt.type());
+    //inpolatedInXYZ = inpolatedInXY;
 
-    width = inpolatedInXY.size[0];
-    heigth = inpolatedInXY.size[1];
-    depth = inpolatedInXY.size[2];
+    //width = inpolatedInXY.size[0];
+    //heigth = inpolatedInXY.size[1];
+    //depth = inpolatedInXY.size[2];
 
     counter = 0;
     ranges[2] = Range::all(); //take all on Z
@@ -151,7 +153,8 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
             ranges[1] = Range(y, y+1);
 
             Mat currentSegment; //(width, 1, CV_8UC1);
-            currentSegment = inpolatedInXY(ranges);
+//            currentSegment = inpolatedInXY(ranges);,
+            currentSegment = matVmt(ranges);
 
             SparseMat sparse_mat(currentSegment);
             if (sparse_mat.nzcount() >= 2)
@@ -176,7 +179,8 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
                     while(mapIt.hasNext())
                     {
                         mapIt.next();
-                        inpolatedInXY.at<uchar>(x, y, mapIt.key()) = mapIt.value();
+                        //inpolatedInXYZ.at<uchar>(x, y, mapIt.key()) = mapIt.value();
+                        inpolatedInX.at<uchar>(x, y, mapIt.key()) = mapIt.value();
                         counter++;
                     }
                 }
@@ -184,11 +188,11 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
         }
 
     cout << counter << " points added for interpolation in Z direction.\n";
-    inpolatedInXY.release();
+    //inpolatedInXY.release();
 
 
-    SparseMat spaaa(inpolatedInXYZ);
-    inpolatedInXYZ.release();
+    SparseMat spaaa(inpolatedInX);
+//    inpolatedInXYZ.release();
 
     return Vmt(spaaa);
 }
