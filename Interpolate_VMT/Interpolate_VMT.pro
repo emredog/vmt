@@ -19,7 +19,7 @@ INCLUDEPATH += /usr/include/pcl-1.7
 INCLUDEPATH += /usr/include/eigen3
 
 #Libs for PCL
-LIBS += -lpcl_common -lpcl_filters -lpcl_io -lpcl_search -lpcl_features
+LIBS += -lpcl_common -lpcl_filters -lpcl_io -lpcl_search -lpcl_features -lpcl_kdtree -lpcl_surface
 
 #libs for boost
 LIBS += -lboost_regex -lboost_system -lboost_filesystem -lboost_program_options

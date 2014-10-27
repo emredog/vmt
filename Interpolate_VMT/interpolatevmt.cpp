@@ -31,8 +31,8 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
 
     CV_Assert(matVmt.type() == CV_8UC1); //chech if type is well CV_8UC1
 
-    Mat inpolatedInX(matVmt.dims, matVmt.size, matVmt.type());
-    inpolatedInX = matVmt;    
+    Mat interpolatedMat(matVmt.dims, matVmt.size, matVmt.type());
+    interpolatedMat = matVmt;
 
     //some common variables:
     Range ranges[3];
@@ -72,23 +72,16 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
                     while(mapIt.hasNext())
                     {
                         mapIt.next();
-                        inpolatedInX.at<uchar>(mapIt.key(), y, z) = mapIt.value();
+                        interpolatedMat.at<uchar>(mapIt.key(), y, z) = mapIt.value();
                         counter++;
                     }
                 }
             }
         }
 
-    cout << counter << " points added for interpolation in X direction.\n";
-    //matVmt.release();
+    cerr << "# " << counter << " points added for interpolation in X direction.\n";
 
     //PART II: Interpolate in Y direction
-    //Mat inpolatedInXY(inpolatedInX.dims, inpolatedInX.size, inpolatedInX.type());
-    //inpolatedInXY = inpolatedInX;
-
-   // width = inpolatedInX.size[0];
-   // heigth = inpolatedInX.size[1];
-   // depth = inpolatedInX.size[2];
 
     counter = 0;
     ranges[1] = Range::all(); //take all on Y
@@ -98,8 +91,7 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
             ranges[0] = Range(x, x+1);
             ranges[2] = Range(z, z+1);
 
-            Mat currentSegment; //(width, 1, CV_8UC1);
-            //currentSegment = inpolatedInX(ranges);
+            Mat currentSegment; //(width, 1, CV_8UC1);            
             currentSegment = matVmt(ranges);
 
             SparseMat sparse_mat(currentSegment);
@@ -124,25 +116,17 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
                     //insert points:
                     while(mapIt.hasNext())
                     {
-                        mapIt.next();
-                        //inpolatedInXY.at<uchar>(x, mapIt.key(), z) = mapIt.value();
-                        inpolatedInX.at<uchar>(x, mapIt.key(), z) = mapIt.value();
+                        mapIt.next();                        
+                        interpolatedMat.at<uchar>(x, mapIt.key(), z) = mapIt.value();
                         counter++;
                     }
                 }
             }
         }
 
-    cout << counter << " points added for interpolation in Y direction.\n";
-    //inpolatedInX.release();
+    cerr << "# " << counter << " points added for interpolation in Y direction.\n";
 
     //PART III: Interpolate in Z direction
-    //Mat inpolatedInXYZ(matVmt.dims, matVmt.size, matVmt.type());
-    //inpolatedInXYZ = inpolatedInXY;
-
-    //width = inpolatedInXY.size[0];
-    //heigth = inpolatedInXY.size[1];
-    //depth = inpolatedInXY.size[2];
 
     counter = 0;
     ranges[2] = Range::all(); //take all on Z
@@ -180,19 +164,17 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
                     {
                         mapIt.next();
                         //inpolatedInXYZ.at<uchar>(x, y, mapIt.key()) = mapIt.value();
-                        inpolatedInX.at<uchar>(x, y, mapIt.key()) = mapIt.value();
+                        interpolatedMat.at<uchar>(x, y, mapIt.key()) = mapIt.value();
                         counter++;
                     }
                 }
             }
         }
 
-    cout << counter << " points added for interpolation in Z direction.\n";
-    //inpolatedInXY.release();
+    cerr << "# " << counter << " points added for interpolation in Z direction.\n";
 
-
-    SparseMat spaaa(inpolatedInX);
-//    inpolatedInXYZ.release();
+    SparseMat spaaa(interpolatedMat);
+    interpolatedMat.release();
 
     return Vmt(spaaa);
 }

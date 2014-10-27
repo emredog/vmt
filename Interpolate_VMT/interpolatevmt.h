@@ -17,9 +17,14 @@ protected:
     Vmt Interpolate_Trilinear(const Vmt& vmt);
 
     QMap<int, uchar> InterpolateArray(const QPair<int, uchar>& prevPt, const QPair<int, uchar>& nextPt);
+
+
 public:
     InterpolateVmt();
     Vmt Interpolate(const Vmt& vmt);
+    //smoothing with moving least squares
+    pcl::PointCloud<pcl::PointXYZI> smootingMLS(pcl::PointCloud<pcl::PointXYZI>::ConstPtr cloud);
+
 
 };
 
