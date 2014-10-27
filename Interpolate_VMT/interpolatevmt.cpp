@@ -19,7 +19,7 @@ InterpolateVmt::InterpolateVmt()
 {
 }
 
-Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
+Vmt InterpolateVmt::Interpolate(const Vmt &vmt, int maxSegmentLength)
 {
     Mat matVmt;
     vmt.getSparseMat().copyTo(matVmt);
@@ -66,6 +66,12 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
                 qSort(ptsInSegment);
                 for (int i=0; i<ptsInSegment.length()-1; i++)
                 {
+                    if (ptsInSegment[i+1].first - ptsInSegment[i].first > maxSegmentLength)
+                    {
+                        //if points are TOO far away, don't interpolate between them
+                        continue;
+                    }
+
                     QMap<int, uchar> interPolatedPoints = InterpolateArray(ptsInSegment[i], ptsInSegment[i+1]);
                     QMapIterator<int, uchar> mapIt(interPolatedPoints);
                     //insert points:
@@ -111,6 +117,12 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
                 qSort(ptsInSegment);
                 for (int i=0; i<ptsInSegment.length()-1; i++)
                 {
+                    if (ptsInSegment[i+1].first - ptsInSegment[i].first > maxSegmentLength)
+                    {
+                        //if points are TOO far away, don't interpolate between them
+                        continue;
+                    }
+
                     QMap<int, uchar> interPolatedPoints = InterpolateArray(ptsInSegment[i], ptsInSegment[i+1]);
                     QMapIterator<int, uchar> mapIt(interPolatedPoints);
                     //insert points:
@@ -157,6 +169,12 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt)
                 qSort(ptsInSegment);
                 for (int i=0; i<ptsInSegment.length()-1; i++)
                 {
+                    if (ptsInSegment[i+1].first - ptsInSegment[i].first > maxSegmentLength)
+                    {
+                        //if points are TOO far away, don't interpolate between them
+                        continue;
+                    }
+
                     QMap<int, uchar> interPolatedPoints = InterpolateArray(ptsInSegment[i], ptsInSegment[i+1]);
                     QMapIterator<int, uchar> mapIt(interPolatedPoints);
                     //insert points:

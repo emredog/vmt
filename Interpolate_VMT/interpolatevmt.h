@@ -21,7 +21,7 @@ protected:
 
 public:
     InterpolateVmt();
-    Vmt Interpolate(const Vmt& vmt);
+    Vmt Interpolate(const Vmt& vmt, int maxSegmentLength);
     //smoothing with moving least squares
     pcl::PointCloud<pcl::PointXYZI> smootingMLS(pcl::PointCloud<pcl::PointXYZI>::ConstPtr cloud);
 

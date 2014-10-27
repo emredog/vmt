@@ -10,9 +10,9 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
+    if (argc != 2 && argc != 3)
     {
-        std::cerr << "Usage: ./Interpolate_VMT <PATH/TO/PCD_FILE_TO_INTERPOLATE.pcd>\n\n";
+        std::cerr << "Usage: ./Interpolate_VMT <PATH/TO/PCD_FILE_TO_INTERPOLATE.pcd> [maxSegmentLength]\n\n";
         return -1;
     }
 
@@ -28,7 +28,17 @@ int main(int argc, char *argv[])
 
     bool ok = false;
 
-
+    int maxSegmentLength = 20; //pixels
+    if (argc == 3)
+    {
+        maxSegmentLength = QString(argv[2]).toInt(&ok);
+        if (!ok || maxSegmentLength <= 0)
+        {
+           std::cerr << "maxSegmentLength should be a positive integer.\n\n";
+           return -1;
+        }
+        ok = false;
+    }
 
     int widthOfVmt  = dims[0].toInt(&ok);
     if (!ok){std::cerr << dims[0].toStdString() << " is not a valid number!\n\n"; return -1;}
@@ -49,9 +59,11 @@ int main(int argc, char *argv[])
 
     InterpolateVmt vmtInterpolation;
 
-    Vmt newVmt = vmtInterpolation.Interpolate(myVmt);
+    Vmt newVmt = vmtInterpolation.Interpolate(myVmt, maxSegmentLength);
 
-    pcl::io::savePCDFile(QString("%1/%2-Intpolated.pcd").arg(vmtInfo.absolutePath()).arg(vmtInfo.baseName()).toStdString() ,
+    pcl::io::savePCDFile(QString("%1/%2-Intpolated-MaxL%3.pcd").arg(vmtInfo.absolutePath())
+                                                               .arg(vmtInfo.baseName())
+                                                               .arg(maxSegmentLength).toStdString() ,
                              *(newVmt.getPointCloud_Const()));
 
 }
