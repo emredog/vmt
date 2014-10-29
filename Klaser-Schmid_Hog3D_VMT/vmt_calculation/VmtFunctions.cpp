@@ -136,6 +136,12 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
 
         //generate volume object
         cv::SparseMat currentSparseVolumeObj = this->generateSparseVolumeObject(maskedDepthImg, this->downsampleRate);
+        if (counter == 0 || counter == bboxSequence.length())
+        {
+            cv::Vec3i momentVector = this->calculateMomentVector(currentSparseVolumeObj);
+            std::cerr << "# Moment vector of " << counter << ": (" << momentVector[0] << ", " << momentVector[1] << ", " << momentVector[2] << ")\n";
+
+        }
 
         maskedDepthImg.release();
 
@@ -737,7 +743,7 @@ cv::SparseMat VmtFunctions::calculateD_New(cv::SparseMat lastVolumeObject, cv::S
     //			1	 =			1				0
 }
 
-cv::Vec3i VmtFunctions::calculateMomentVector(cv::SparseMat volumeObjectSparse) //equation (9) from the paper
+cv::Vec3i VmtFunctions::calculateMomentVector(const cv::SparseMat &volumeObjectSparse) //equation (9) from the paper
 {
     int numOfAllElements = (int)volumeObjectSparse.nzcount(); //number of all elements of a volumeObject is equal to number of nonzero (=1) elements
 

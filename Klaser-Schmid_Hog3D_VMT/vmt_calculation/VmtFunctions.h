@@ -131,7 +131,7 @@ protected:
 
     cv::SparseMat calculateD_Old(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject);
     cv::SparseMat calculateD_New(cv::SparseMat lastVolumeObject, cv::SparseMat firstVolumeObject);
-    cv::Vec3i calculateMomentVector(cv::SparseMat volumeObject);
+    cv::Vec3i calculateMomentVector(const cv::SparseMat &volumeObject);
 
     double calculateAlpha(cv::Vec3i motionVector);
     double calculateBeta(cv::Vec3i motionVector);
