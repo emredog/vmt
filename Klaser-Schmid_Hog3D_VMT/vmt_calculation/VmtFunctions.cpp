@@ -189,7 +189,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     float beta  = (float)calculateBeta(motionVector);
     float theta = (float)calculateTheta(motionVector);
     std::cerr << "# Alpha:\t" << alpha << std::endl
-              << "# Beta:\t"  << beta  << std::endl
+              << "# Beta :\t" << beta  << std::endl
               << "# Theta:\t" << theta << std::endl << std::endl;
 
     return vmt;
@@ -293,6 +293,7 @@ QList<float> VmtFunctions::calculateRotationAngles(QString videoFolderPath, QStr
     angles.append((float)calculateAlpha(motionVector));
     angles.append((float)calculateBeta(motionVector));
     angles.append((float)calculateTheta(motionVector));
+
     std::cerr << "# Alpha:\t" << angles[0] << std::endl
               << "# Beta:\t"  << angles[1] << std::endl
               << "# Theta:\t" << angles[2] << std::endl << std::endl;
@@ -432,36 +433,36 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
 
         //COMMENT HERE --- ED 21.10.2014
 
-//                int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
-//                if (dynamicTolerance <= 0)
-//                {
-//                    dynamicTolerance = 1;
-//                    if (!isWarned)
-//                    {
-//                        cerr << "Dynamic tolerance not found. Setting to 1...\n";
-//                        isWarned = true;
-//                    }
-//                }
+        //                int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
+        //                if (dynamicTolerance <= 0)
+        //                {
+        //                    dynamicTolerance = 1;
+        //                    if (!isWarned)
+        //                    {
+        //                        cerr << "Dynamic tolerance not found. Setting to 1...\n";
+        //                        isWarned = true;
+        //                    }
+        //                }
 
-//                if (val1 <= 0) //if no value was found on that location:
-//                {
-//                    //search for the neighborhood of z (to handle noise from kinect)
-//                    for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++) //FIXME: instead of searching, we can just pinpoint the next-previous values for performance
-//                    {
-//                        for (int offsetX = -(dynamicTolerance); offsetX <= (int)dynamicTolerance; offsetX++) //search for the neighborhood of x
-//                        {
-//                            for (int offsetY = -(dynamicTolerance); offsetY <= (int)dynamicTolerance; offsetY++) //search for the neighborhood of y
-//                            {
-//                                uchar temp = operand1.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
-//                                if (temp > 0)
-//                                {
-//                                    val1 = temp;
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
+        //                if (val1 <= 0) //if no value was found on that location:
+        //                {
+        //                    //search for the neighborhood of z (to handle noise from kinect)
+        //                    for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++) //FIXME: instead of searching, we can just pinpoint the next-previous values for performance
+        //                    {
+        //                        for (int offsetX = -(dynamicTolerance); offsetX <= (int)dynamicTolerance; offsetX++) //search for the neighborhood of x
+        //                        {
+        //                            for (int offsetY = -(dynamicTolerance); offsetY <= (int)dynamicTolerance; offsetY++) //search for the neighborhood of y
+        //                            {
+        //                                uchar temp = operand1.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+        //                                if (temp > 0)
+        //                                {
+        //                                    val1 = temp;
+        //                                    break;
+        //                                }
+        //                            }
+        //                        }
+        //                    }
+        //                }
         //COMMENT HERE --- ED 21.10.2014
 
         if (val1 <= 0) //if still no value (after the neighborhood search)
@@ -504,38 +505,38 @@ cv::SparseMat VmtFunctions::subtractSparseMat(const cv::SparseMat& operand1, con
         //UNCOMMENT HERE --- ED 21.10.2014
 
 
-//COMMENT HERE --- ED 21.10.2014
-//                int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
-//                if (dynamicTolerance <= 0)
-//                {
-//                    dynamicTolerance = 1;
-//                    if (!isWarned)
-//                    {
-//                        cerr << "Dynamic tolerance not found. Setting to 1...\n";
-//                        isWarned = true;
-//                    }
-//                }
+        //COMMENT HERE --- ED 21.10.2014
+        //                int dynamicTolerance = this->dynamicTolerance.GetTolerance(n->idx[Z]);
+        //                if (dynamicTolerance <= 0)
+        //                {
+        //                    dynamicTolerance = 1;
+        //                    if (!isWarned)
+        //                    {
+        //                        cerr << "Dynamic tolerance not found. Setting to 1...\n";
+        //                        isWarned = true;
+        //                    }
+        //                }
 
-//                if (val2 <= 0) //if no value was found on that location:
-//                {
-//                    //search for the neighborhood of z (to handle noise from kinect)
-//                    for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
-//                    {
-//                        for (int offsetX = -(dynamicTolerance); offsetX <= (int)dynamicTolerance; offsetX++) //search for the neighborhood of x
-//                        {
-//                            for (int offsetY = -(dynamicTolerance); offsetY <= (int)dynamicTolerance; offsetY++) //search for the neighborhood of y
-//                            {
-//                                uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
-//                                if (temp > 0)
-//                                {
-//                                    val2 = temp;
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//COMMENT HERE --- ED 21.10.2014
+        //                if (val2 <= 0) //if no value was found on that location:
+        //                {
+        //                    //search for the neighborhood of z (to handle noise from kinect)
+        //                    for (int offsetZ = -(dynamicTolerance); offsetZ <= dynamicTolerance; offsetZ++)
+        //                    {
+        //                        for (int offsetX = -(dynamicTolerance); offsetX <= (int)dynamicTolerance; offsetX++) //search for the neighborhood of x
+        //                        {
+        //                            for (int offsetY = -(dynamicTolerance); offsetY <= (int)dynamicTolerance; offsetY++) //search for the neighborhood of y
+        //                            {
+        //                                uchar temp = operand2.value<uchar>(n->idx[X]+offsetX, n->idx[Y]+offsetY, n->idx[Z]+offsetZ); //if the element did not exist, the methods return 0.
+        //                                if (temp > 0)
+        //                                {
+        //                                    val2 = temp;
+        //                                    break;
+        //                                }
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //COMMENT HERE --- ED 21.10.2014
 
         if (val2 <= 0) //if still no value (after the neighborhood search)
         {
@@ -883,7 +884,11 @@ double VmtFunctions::calculateAlpha(const cv::Vec3i &motionVector) //equation (1
     //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
     int y = motionVector.val[1],
             z = motionVector.val[2];
-    return 1.0/cos(-(HelperFunctions::sgn(y))*(HelperFunctions::sgn(z))*((double)y / (double)(y - z)));
+
+    if (y-z == 0)
+        return 0.0;
+    else
+        return 1.0/cos(-(HelperFunctions::sgn(y))*(HelperFunctions::sgn(z))*((double)y / (double)(y - z)));
 }
 
 double VmtFunctions::calculateBeta(const cv::Vec3i &motionVector) //equation (15) from the paper
@@ -892,7 +897,11 @@ double VmtFunctions::calculateBeta(const cv::Vec3i &motionVector) //equation (15
     //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
     int x = motionVector.val[0],
             z = motionVector.val[2];
-    return 2.0/CV_PI - 1.0/cos(-(HelperFunctions::sgn(z))*HelperFunctions::sgn(x)*((double)z / (double)(z-x)));
+
+    if (z-x == 0)
+        return 0.0;
+    else
+        return 2.0/CV_PI - 1.0/cos(-(HelperFunctions::sgn(z))*HelperFunctions::sgn(x)*((double)z / (double)(z-x)));
 }
 
 double VmtFunctions::calculateTheta(const cv::Vec3i &motionVector) //equation (16) from the paper
@@ -902,7 +911,10 @@ double VmtFunctions::calculateTheta(const cv::Vec3i &motionVector) //equation (1
     int x = motionVector.val[0],
             y = motionVector.val[1];
 
-    return 1.0/cos(-(HelperFunctions::sgn(x))*HelperFunctions::sgn(y)*((double)x / (double)(x-y)));
+    if (x-y == 0)
+        return 0.0;
+    else
+        return 1.0/cos(-(HelperFunctions::sgn(x))*HelperFunctions::sgn(y)*((double)x / (double)(x-y)));
 }
 
 cv::Matx33d VmtFunctions::calculateRotationX_alpha(double alpha) //equation (11) from the paper
