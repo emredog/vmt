@@ -7,14 +7,6 @@ OrientationNormalizer::OrientationNormalizer()
 {
 }
 
-QList<float> OrientationNormalizer::calculateRotationAngles(Vmt vmt)
-{
-    //TODO
-    //.....
-
-    return QList<float>() << 0.0 << 0.0 << 0.0;
-}
-
 Vmt OrientationNormalizer::rotateVmt(QList<float> angles, const Vmt &initialVmt)
 {
     if (angles.length() != 3)
@@ -50,7 +42,7 @@ Vmt OrientationNormalizer::rotateVmt(QList<float> angles, const Vmt &initialVmt)
     pcl::PointCloud<pcl::PointXYZI>::Ptr transformed_cloud (new pcl::PointCloud<pcl::PointXYZI> ());
     pcl::PointCloud<pcl::PointXYZI>::Ptr source_cloud = initialVmt.getPointCloud();
 
-    //do the translation
+    //do the rotation
     pcl::transformPointCloud(*source_cloud, *transformed_cloud, transformer);
 
     Vmt transformedVmt(transformed_cloud, initialVmt.getWidth(), initialVmt.getHeight(), initialVmt.getDepth());
