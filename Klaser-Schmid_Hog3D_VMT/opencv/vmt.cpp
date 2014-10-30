@@ -53,8 +53,11 @@ Vmt::~Vmt()
     _depth = 0;
 
     _sparseMat.release();
-    _pointCloud->clear();
-    _pointCloud.reset();
+    if (_pointCloud)
+    {
+        _pointCloud->clear();
+        _pointCloud.reset();
+    }
 }
 
 Vmt::Vmt(const Vmt &other) : _width(other._width), _height(other._height), _depth(other._height)

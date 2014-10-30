@@ -32,6 +32,7 @@ LIBS += -lboost_regex -lboost_system -lboost_filesystem -lboost_program_options 
 #path for boundingbox.h
 INCLUDEPATH += ../AnalyzeAnnotations/
 INCLUDEPATH += ../3D_Gradient_Calculation/
+INCLUDEPATH += ../NormalizeOrientation_VMT
 INCLUDEPATH += vmt_calculation/
 
 SOURCES += main.cpp \
@@ -46,7 +47,9 @@ SOURCES += main.cpp \
     vmt_calculation/VmtFunctions.cpp \
     ../AnalyzeAnnotations/boundingbox.cpp \    
     ../3D_Gradient_Calculation/intensitygradientcomputation.cpp \
-    ocvgradientcomputer.cpp
+    ocvgradientcomputer.cpp \
+    vmt_calculation/HelperFunctions.cpp \
+    ../NormalizeOrientation_VMT/orientationnormalizer.cpp
 
 HEADERS += \
     geometry/Box.h \
@@ -71,4 +74,6 @@ HEADERS += \
     vmt_calculation/VmtFunctions.h \
     ../AnalyzeAnnotations/boundingbox.h \    
     ../3D_Gradient_Calculation/intensitygradientcomputation.h \
-    ocvgradientcomputer.h
+    ocvgradientcomputer.h \
+    vmt_calculation/HelperFunctions.h \
+    ../NormalizeOrientation_VMT/orientationnormalizer.h

@@ -1,6 +1,7 @@
 #include "VmtFunctions.h"
 #include "boundingbox.h"
 #include "PointCloudFunctions.h"
+#include "HelperFunctions.h"
 
 
 #include <stdio.h>
@@ -15,10 +16,7 @@
 #include <opencv2/opencv.hpp> //FIXME: is this necessary? we already have the includes on header file...
 #include <opencv2/highgui/highgui.hpp>
 
-const bool isGsuData = true;
-
-
-VmtFunctions::VmtFunctions(int xSize, int ySize)
+VmtFunctions::VmtFunctions(bool isGsuData, int xSize, int ySize)
 //    : toleranceX(tolX), toleranceY(tolY), toleranceZ(tolZ)
 {
     this->permittedMinZ = MIN_Z;
@@ -26,6 +24,7 @@ VmtFunctions::VmtFunctions(int xSize, int ySize)
 
     this->matrixSize = new int[this->dims];
 
+    this->isGsuData = isGsuData;
 
     //FIXME: is this working ok?
     this->matrixSize[Y] = ySize;
@@ -85,7 +84,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
 
     //get Depth image paths in the folder
     QStringList filters;
-    if (!isGsuData)
+    if (!this->isGsuData)
         filters << "*.jp2"; //--> for LIRIS-data
     else
         filters << "*.png"; //--> for gsu-data
@@ -100,6 +99,7 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     if (this->isTrackPoint)
         cerr << "# Tracking point: (" << this->trackX << ", " << this->trackY << ")\n";
 
+    QList<cv::Vec3i> momentVectors;
     int counter = 1; //FIXME: delete this
     //calculate volume object for each depth frame
     foreach(BoundingBox bb, bboxSequence)
@@ -136,10 +136,11 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
 
         //generate volume object
         cv::SparseMat currentSparseVolumeObj = this->generateSparseVolumeObject(maskedDepthImg, this->downsampleRate);
-        if (counter == 0 || counter == bboxSequence.length())
+        if (counter == 1 || counter == bboxSequence.length())
         {
             cv::Vec3i momentVector = this->calculateMomentVector(currentSparseVolumeObj);
             std::cerr << "# Moment vector of " << counter << ": (" << momentVector[0] << ", " << momentVector[1] << ", " << momentVector[2] << ")\n";
+            momentVectors.append(momentVector);
 
         }
 
@@ -183,7 +184,120 @@ cv::SparseMat VmtFunctions::constructSparseVMT(QString videoFolderPath, QString 
     //construct the VMT based on volume object differences over the track file
     cv::SparseMat vmt = this->calculateVMT(volumeObjectDifferences);
 
+    cv::Vec3i motionVector = momentVectors[1] - momentVectors[0];
+    float alpha = (float)calculateAlpha(motionVector);
+    float beta  = (float)calculateBeta(motionVector);
+    float theta = (float)calculateTheta(motionVector);
+    std::cerr << "# Alpha:\t" << alpha << std::endl
+              << "# Beta:\t"  << beta  << std::endl
+              << "# Theta:\t" << theta << std::endl << std::endl;
+
     return vmt;
+}
+
+QList<float> VmtFunctions::calculateRotationAngles(QString videoFolderPath, QString trackFilePath)
+{
+    //read track file
+    QFile trackFile(trackFilePath);
+    if (!trackFile.open(QFile::ReadOnly))
+        return QList<float>();
+
+    QList<BoundingBox> bboxSequence;
+
+    //Parse track file:
+    QTextStream reader(&trackFile);
+    while (!reader.atEnd())
+    {
+        QString line = reader.readLine();
+        QStringList parts = line.split(" ");
+
+        BoundingBox bbox;
+        bbox.frameNr    = parts[0].toInt();
+        bbox.x          = parts[1].toInt();
+        bbox.y          = parts[2].toInt();
+        bbox.width      = parts[3].toInt();
+        bbox.height     = parts[4].toInt();
+
+        bboxSequence.append(bbox);
+    }
+
+    std::cerr << "# Calculating rotation angles...\n";
+
+    //get Depth image paths in the folder
+    QStringList filters;
+    if (!this->isGsuData)
+        filters << "*.jp2"; //--> for LIRIS-data
+    else
+        filters << "*.png"; //--> for gsu-data
+    QDir videoDir(videoFolderPath);
+    QStringList depthImgFileNames = videoDir.entryList(filters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+
+    BoundingBox firstBoundingBox = bboxSequence.first();
+    BoundingBox lastBoundingBox  = bboxSequence.last();
+    QString firstImageName = depthImgFileNames[firstBoundingBox.frameNr-1];
+    QString lastImageName  = depthImgFileNames[lastBoundingBox.frameNr-1];
+
+    //Read the file
+    cv::Mat firstDepthImg = cv::imread(videoDir.absoluteFilePath(firstImageName).toStdString(), CV_LOAD_IMAGE_UNCHANGED);
+    cv::Mat lastDepthImg  = cv::imread(videoDir.absoluteFilePath(lastImageName).toStdString(), CV_LOAD_IMAGE_UNCHANGED);
+
+    //Check for invalid input
+    if(!firstDepthImg.data || !lastDepthImg.data)
+    {
+        cerr <<  "# Could not open or find the image: " << videoDir.absoluteFilePath(firstImageName).toStdString() << endl <<
+                 "# OR this one: " << videoDir.absoluteFilePath(lastImageName).toStdString() << endl;
+        return QList<float>();
+    }
+
+    //cut the bounding box if it's outside of the frame // FIXME--> this shouldn't happen?!
+    if (firstBoundingBox.x + firstBoundingBox.width >= firstDepthImg.cols) firstBoundingBox.width = firstDepthImg.cols - firstBoundingBox.x;
+    if (firstBoundingBox.y + firstBoundingBox.height >= firstDepthImg.rows) firstBoundingBox.height = firstDepthImg.rows - firstBoundingBox.y;
+    if (lastBoundingBox.x + lastBoundingBox.width >= lastDepthImg.cols) lastBoundingBox.width = lastDepthImg.cols - lastBoundingBox.x;
+    if (lastBoundingBox.y + lastBoundingBox.height >= lastDepthImg.rows) lastBoundingBox.height = lastDepthImg.rows - lastBoundingBox.y;
+
+    //mask depth image with the bounding box
+    cv::Rect roi(firstBoundingBox.x, firstBoundingBox.y, firstBoundingBox.width, firstBoundingBox.height);
+    cv::Mat mask = cv::Mat(firstDepthImg.rows, firstDepthImg.cols, CV_8UC1, cv::Scalar(0));
+    mask(roi) = cv::Scalar(1);
+    cv::Mat maskedFirstDepthImg = cv::Mat(firstDepthImg.rows, firstDepthImg.cols, firstDepthImg.type(), cv::Scalar(0));
+    firstDepthImg.copyTo(maskedFirstDepthImg, mask);
+    //and the last image with correspoind bbox:
+    cv::Rect roiLast = cv::Rect(lastBoundingBox.x, lastBoundingBox.y, lastBoundingBox.width, lastBoundingBox.height);
+    cv::Mat maskLast = cv::Mat(lastDepthImg.rows, lastDepthImg.cols, CV_8UC1, cv::Scalar(0));
+    maskLast(roiLast) = cv::Scalar(1);
+    cv::Mat maskedLastDepthImg = cv::Mat(lastDepthImg.rows, lastDepthImg.cols, lastDepthImg.type(), cv::Scalar(0));
+    lastDepthImg.copyTo(maskedLastDepthImg, maskLast);
+
+    mask.release();
+    maskLast.release();
+    firstDepthImg.release();
+    lastDepthImg.release();
+
+    cv::SparseMat firstSparseVolumeObj = this->generateSparseVolumeObject(maskedFirstDepthImg, this->downsampleRate);
+    cv::SparseMat lastSparseVolumeObj  = this->generateSparseVolumeObject(maskedLastDepthImg, this->downsampleRate);
+
+    maskedFirstDepthImg.release();
+    maskedLastDepthImg.release();
+
+    cv::Vec3i firstMomentVector = this->calculateMomentVector(firstSparseVolumeObj);
+    std::cerr << "# First moment vector : (" << firstMomentVector[0] << ", " << firstMomentVector[1] << ", " << firstMomentVector[2] << ")\n";
+    cv::Vec3i lastMomentVector = this->calculateMomentVector(lastSparseVolumeObj);
+    std::cerr << "# Last moment vector : (" << lastMomentVector[0] << ", " << lastMomentVector[1] << ", " << lastMomentVector[2] << ")\n";
+
+    firstSparseVolumeObj.release();
+    lastSparseVolumeObj.release();
+
+    QList<float> angles;
+    cv::Vec3i motionVector = lastMomentVector - firstMomentVector;
+
+    angles.append((float)calculateAlpha(motionVector));
+    angles.append((float)calculateBeta(motionVector));
+    angles.append((float)calculateTheta(motionVector));
+    std::cerr << "# Alpha:\t" << angles[0] << std::endl
+              << "# Beta:\t"  << angles[1] << std::endl
+              << "# Theta:\t" << angles[2] << std::endl << std::endl;
+
+    return angles;
 }
 
 void VmtFunctions::setTrackPoint(int x, int y)
@@ -235,7 +349,7 @@ cv::SparseMat VmtFunctions::generateSparseVolumeObject(cv::Mat image, int downsa
                 continue;
 
 
-            if (!isGsuData)
+            if (!this->isGsuData)
             {
                 //for LIRIS-data
                 mostSig13Digits = pixelValue & 65504; // (65504 = 1111 1111 1110 0000)
@@ -747,6 +861,9 @@ cv::Vec3i VmtFunctions::calculateMomentVector(const cv::SparseMat &volumeObjectS
 {
     int numOfAllElements = (int)volumeObjectSparse.nzcount(); //number of all elements of a volumeObject is equal to number of nonzero (=1) elements
 
+    if (numOfAllElements == 0)
+        return cv::Vec3i(0,0,0);
+
     cv::Vec3i sumVector(0, 0, 0);
     for(cv::SparseMatConstIterator it = volumeObjectSparse.begin(); it != volumeObjectSparse.end(); ++it)
     {
@@ -760,33 +877,33 @@ cv::Vec3i VmtFunctions::calculateMomentVector(const cv::SparseMat &volumeObjectS
     return momentVector;
 }
 
-//double VmtFunctions::calculateAlpha(cv::Vec3i motionVector) //equation (14) from the paper
-//{
-//    //Indices: y=0, x=1, z=2
-//    //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
-//    int y = motionVector.val[0],
-//            z = motionVector.val[2];
-//    return 1.0/cos(-(HelperFunctions::sgn(y))*(HelperFunctions::sgn(z))*((double)y / (double)(y - z)));
-//}
+double VmtFunctions::calculateAlpha(const cv::Vec3i &motionVector) //equation (14) from the paper
+{
+    //Indices: y=0, x=1, z=2 ???????????
+    //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
+    int y = motionVector.val[1],
+            z = motionVector.val[2];
+    return 1.0/cos(-(HelperFunctions::sgn(y))*(HelperFunctions::sgn(z))*((double)y / (double)(y - z)));
+}
 
-//double VmtFunctions::calculateBeta(cv::Vec3i motionVector) //equation (15) from the paper
-//{
-//    //Indices: y=0, x=1, z=2
-//    //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
-//    int x = motionVector.val[1],
-//            z = motionVector.val[2];
-//    return 2.0/CV_PI - 1.0/cos(-(HelperFunctions::sgn(z))*HelperFunctions::sgn(x)*((double)z / (double)(z-x)));
-//}
+double VmtFunctions::calculateBeta(const cv::Vec3i &motionVector) //equation (15) from the paper
+{
+    //Indices: y=0, x=1, z=2 ???????????
+    //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
+    int x = motionVector.val[0],
+            z = motionVector.val[2];
+    return 2.0/CV_PI - 1.0/cos(-(HelperFunctions::sgn(z))*HelperFunctions::sgn(x)*((double)z / (double)(z-x)));
+}
 
-//double VmtFunctions::calculateTheta(cv::Vec3i motionVector) //equation (16) from the paper
-//{
-//    //Indices: y=0, x=1, z=2
-//    //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
-//    int x = motionVector.val[1],
-//            y = motionVector.val[0];
+double VmtFunctions::calculateTheta(const cv::Vec3i &motionVector) //equation (16) from the paper
+{
+    //Indices: y=0, x=1, z=2 ???????????
+    //norm of projection of vector (a, b, c) to axis y is 'a' (because index of y=0)
+    int x = motionVector.val[0],
+            y = motionVector.val[1];
 
-//    return 1.0/cos(-(HelperFunctions::sgn(x))*HelperFunctions::sgn(y)*((double)x / (double)(x-y)));
-//}
+    return 1.0/cos(-(HelperFunctions::sgn(x))*HelperFunctions::sgn(y)*((double)x / (double)(x-y)));
+}
 
 cv::Matx33d VmtFunctions::calculateRotationX_alpha(double alpha) //equation (11) from the paper
 {

@@ -105,7 +105,9 @@ int main(int argc, char *argv[])
         argOpt.add_options()
                 ("video-file", po::value<string>(), "video file to process")
                 ("vmt-only", "calculates & saves VMTs only and exits (can't be used with 'vmt-file')")
-                ("vmt-file", po::value<string>(), "vmt file to process (can't be used with 'vmt-only'"); //ED 20140820
+                ("vmt-file", po::value<string>(), "vmt file to process (can't be used with 'vmt-only'")//ED 20140820
+                ("calculate-rotation", "calculates motion vectors of first and last volume object and quits. (must be used alone)") //ED 20141030
+                ("gsu-data", "For depth data that do not require bitshifting (of 5 bits)"); //ED 20141030
 
         po::options_description generalOpt("general options");
         generalOpt.add_options()
@@ -184,9 +186,12 @@ int main(int argc, char *argv[])
             return EXIT_SUCCESS;
         }
 
-        if (vm.count("vmt-file") && vm.count("vmt-only")) //ED 20140820
+        if ((vm.count("vmt-file") && vm.count("vmt-only")) || //ED 20140820
+                (vm.count("vmt-file") && vm.count("calculate-rotation")) || //ED 20141030
+                (vm.count("vmt-only") && vm.count("calculate-rotation")) )  //ED 20141030
+
         {
-            cerr << "'vmt-file' and 'vmt-only' can't be used together!\n\n";
+            cerr << "'vmt-file', 'vmt-only', 'calculate-rotation' should be used exclusively!\n\n";
             return EXIT_FAILURE;
         }
 
@@ -230,8 +235,10 @@ int main(int argc, char *argv[])
         }
 
         // check whether video file has been given
-        if (!vm.count("vmt-file") && !vm.count("video-file")) {
-            cout << endl << "You need to specify a video file or a VMT file!" << endl << endl; //FIXME
+        if ((!vm.count("vmt-file") && !vm.count("video-file")) ||
+           (!vm.count("video-file") && !vm.count("calculate-rotation")) ) //ED 20141030
+        {
+            cout << endl << "You need to specify a video file OR a VMT file OR a video file with 'calculate-rotation' flag." << endl << endl; //FIXME
             return EXIT_FAILURE;
         }
 
@@ -242,7 +249,15 @@ int main(int argc, char *argv[])
         //if vmt-only is not set:
         if (!vm.count("vmt-only"))
         {   // check whether all necessary
-            if (!(vm.count("position-file") || vm.count("position-file2")) && !((vm.count("xy-nstride") && vm.count("t-nstride")) || (vm.count("xy-stride") || vm.count("t-stride")))) {
+            if (vm.count("calculate-rotation") && (!vm.count("video-file") || !vm.count("track-file"))) //ED 20141030
+            {
+                cerr << endl << "You should provide --video-file and --track-file while calculating rotation angles." << endl << endl;
+                return EXIT_FAILURE;
+            }
+            else if (!vm.count("calculate-rotation") && //ED 20141030
+                     !(vm.count("position-file") || vm.count("position-file2"))
+                     && !((vm.count("xy-nstride") && vm.count("t-nstride")) || (vm.count("xy-stride") || vm.count("t-stride"))))
+            {
                 cerr << endl << "Please enter either a position-file or parameters for dense samplng (either --xy-nstride and --t-nstride or --xy-stride and --t-stride)!" << endl << endl;
                 return EXIT_FAILURE;
             }
@@ -269,8 +284,8 @@ int main(int argc, char *argv[])
         else
             throw std::runtime_error("unsupported platonic solid: " + quantTypeStr);
 
-
-        boost::scoped_ptr<VmtCalculator> vmtCalculator(new VmtCalculator()); //FIXME!
+        bool isGsuData = (bool)vm.count("gsu-data");
+        boost::scoped_ptr<VmtCalculator> vmtCalculator(new VmtCalculator(isGsuData)); //FIXME!
 
         // init random seed
         srand(seed);
@@ -349,6 +364,15 @@ int main(int argc, char *argv[])
 
 
             cerr << "# VMT is read from file.\n";
+        }
+        else if (vm.count("calculate-rotation"))
+        {
+            QList<float> rotationAngles = vmtCalculator->calculateRotation(videoFileName, trackFile);
+            //produce a non-cerr output (to be recorded from another program)
+            cout << trackFile << ";" << rotationAngles[0] << ";"
+                                     << rotationAngles[1] << ";"
+                                     << rotationAngles[2] << endl;
+            return EXIT_SUCCESS;
         }
         else
         {

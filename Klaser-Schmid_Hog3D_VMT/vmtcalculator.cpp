@@ -3,11 +3,12 @@
 #include "vmt_calculation/VmtFunctions.h"
 #include "vmt_calculation/PointCloudFunctions.h"
 
-VmtCalculator::VmtCalculator()
+VmtCalculator::VmtCalculator(bool isGsuData)
 {
-    this->vmtCore = new VmtFunctions(); //default size: 640*480
+    this->vmtCore = new VmtFunctions(isGsuData); //default size: 640*480
     this->vmtCore->setSavedObjects(false, false, false);
     this->vmtCore->setDownsampleRate(1); //no downsampling
+    this->isGsuData = isGsuData;
 }
 
 VmtCalculator::~VmtCalculator()
@@ -37,3 +38,18 @@ Vmt VmtCalculator::calculateVmt(std::string imgDir, std::string trackFile)
 
     return Vmt(trimmed);
 }
+
+QList<float> VmtCalculator::calculateRotation(string imgDir, string trackFile)
+{
+    return this->vmtCore->calculateRotationAngles(QString::fromStdString(imgDir), QString::fromStdString(trackFile));
+}
+bool VmtCalculator::getIsGsuData() const
+{
+    return isGsuData;
+}
+
+void VmtCalculator::setIsGsuData(bool value)
+{
+    isGsuData = value;
+}
+
