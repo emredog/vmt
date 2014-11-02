@@ -45,7 +45,7 @@ Vmt OrientationNormalizer::rotateVmt(QList<float> angles, const Vmt &initialVmt)
     //do the rotation
     pcl::transformPointCloud(*source_cloud, *transformed_cloud, transformer);
 
-    Vmt transformedVmt(transformed_cloud, initialVmt.getWidth(), initialVmt.getHeight(), initialVmt.getDepth());
+    Vmt transformedVmt(transformed_cloud);
 
 
     transformed_cloud.reset();
@@ -73,9 +73,9 @@ Vmt OrientationNormalizer::translateVmt(QList<float> offsets, const Vmt &initial
     pcl::PointCloud<pcl::PointXYZI>::Ptr source_cloud = initialVmt.getPointCloud();
 
     //do the translation
-    pcl::transformPointCloud(*source_cloud, *transformed_cloud, transformer);
+    pcl::transformPointCloud(*source_cloud, *transformed_cloud, transformer);    
 
-    Vmt transformedVmt(transformed_cloud, initialVmt.getWidth(), initialVmt.getHeight(), initialVmt.getDepth());
+    Vmt transformedVmt(transformed_cloud);
 
 
     transformed_cloud.reset();

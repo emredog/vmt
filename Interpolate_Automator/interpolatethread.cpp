@@ -29,7 +29,7 @@ void InterpolateThread::run()
 
         QStringList arguments;
         //add file name:
-        arguments << vmtFileStr;
+        arguments << dataDir.absoluteFilePath(vmtFileStr);
         //add angles
         arguments << QString::number(maxSegmentLength); //maximum length of the segment to be interpolated
 

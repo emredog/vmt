@@ -23,7 +23,8 @@ public:
     //constructor
     Vmt(){_width = -1; _height = -1; _depth = -1;}
     Vmt(cv::SparseMat sparseMat);
-    Vmt(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int width, int height, int depth);
+//    Vmt(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, int width, int height, int depth);
+    Vmt(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud);
 
     //desctructor
     ~Vmt();

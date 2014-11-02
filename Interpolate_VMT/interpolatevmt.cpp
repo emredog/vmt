@@ -3,6 +3,8 @@
 
 #include <QtCore/qmath.h>
 
+#include <opencv2/opencv.hpp>
+
 using namespace std;
 using namespace cv;
 
@@ -20,9 +22,38 @@ InterpolateVmt::InterpolateVmt()
 }
 
 Vmt InterpolateVmt::Interpolate(const Vmt &vmt, int maxSegmentLength)
-{
-    Mat matVmt;
+{    
+//    cv::SparseMat temp = vmt.getSparseMat();
+    Mat matVmt; //(temp.dims(), temp.size(), temp.type());
     vmt.getSparseMat().copyTo(matVmt);
+
+//    CV_Assert(temp.hdr );
+//    matVmt.create( temp.dims(), temp.hdr->size, temp.type() );
+//    matVmt = Scalar(0);
+
+//    SparseMatConstIterator from = temp.begin();
+//    size_t i, N = temp.nzcount();
+
+//    int maxX = 0, maxY = 0, maxZ = 0;
+//    int minX = 10000, minY = 10000, minZ = 10000;
+
+
+//    for( i = 0; i < N; i++, ++from )
+//    {
+//        const cv::SparseMat::Node* n = from.node();
+//        //this->copyElem( from.ptr, matVmt.ptr(n->idx), esz);
+//        memcpy(matVmt.ptr(n->idx), from.ptr, sizeof(uchar));
+//    }
+
+
+
+
+
+
+
+    //    cv::SparseMat temp2;
+    //    temp.copyTo(temp2);
+    //    temp2.convertTo(matVmt, CV_8UC1);
 
     //Size of vmt
     int width = matVmt.size[0];
@@ -97,7 +128,7 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt, int maxSegmentLength)
             ranges[0] = Range(x, x+1);
             ranges[2] = Range(z, z+1);
 
-            Mat currentSegment; //(width, 1, CV_8UC1);            
+            Mat currentSegment; //(width, 1, CV_8UC1);
             currentSegment = matVmt(ranges);
 
             SparseMat sparse_mat(currentSegment);
@@ -128,7 +159,7 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt, int maxSegmentLength)
                     //insert points:
                     while(mapIt.hasNext())
                     {
-                        mapIt.next();                        
+                        mapIt.next();
                         interpolatedMat.at<uchar>(x, mapIt.key(), z) = mapIt.value();
                         counter++;
                     }
@@ -149,7 +180,7 @@ Vmt InterpolateVmt::Interpolate(const Vmt &vmt, int maxSegmentLength)
             ranges[1] = Range(y, y+1);
 
             Mat currentSegment; //(width, 1, CV_8UC1);
-//            currentSegment = inpolatedInXY(ranges);,
+            //            currentSegment = inpolatedInXY(ranges);,
             currentSegment = matVmt(ranges);
 
             SparseMat sparse_mat(currentSegment);
@@ -286,14 +317,6 @@ QMap<float, cv::Point3i> InterpolateVmt::findEnclosingPts(cv::Point3i pt, const 
 
     return distancesToPoints;
 
-}
-
-uchar InterpolateVmt::calculateInterpolationVal(QMap<float, cv::Point3i>, cv::Point3i curPoint)
-{
-    //points are in this order: ppp=0, mpp, mmp, pmp, ppm, mpm, mmm, pmm
-    uchar newVal = 0;
-
-    return newVal;
 }
 
 Vmt InterpolateVmt::Interpolate_Trilinear(const Vmt &vmt)

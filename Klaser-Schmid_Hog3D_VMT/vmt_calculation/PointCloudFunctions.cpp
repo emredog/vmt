@@ -127,7 +127,9 @@ cv::SparseMat PointCloudFunctions::convertToSparseMat(PointCloud<PointXYZI>::Ptr
     {
         uchar val = static_cast<uchar>(it->intensity);
         if (val > 0)
-            sparseMat.ref<uchar>(it->x, rows - it->y, maxZ - it->z) = val;
+        {
+            sparseMat.ref<uchar>(static_cast<int>(it->x), rows - static_cast<int>(it->y), maxZ - static_cast<int>(it->z)) = val;
+        }
     }
 
 

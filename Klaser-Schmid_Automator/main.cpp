@@ -29,20 +29,20 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     // SET MAJOR VARIABLES HERE
     //-----------------------------------------------------------------------------------------------------------------
-    KlaserFunction operation = Rotation_Angle_Only;
+    KlaserFunction operation = Feature_From_Vmt;
     bool isGsuData = false;
 
-    QDir dataDir("/home/emredog/LIRIS-data/test");
-    QDir trackFileDir("/home/emredog/LIRIS-data/test_tracklets_20140424/track/union/stationary_cam");
-    QDir targetDir("...");
-    QDir vmtDir("...");
+    QDir dataDir("...");
+    QDir trackFileDir("...");
+    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/20141102-rot-int_args16");
+    QDir vmtDir("/home/emredog/LIRIS-data/training-validation_VMTs_20140916-ROTATED-INTERPOLATED");
     //------------------------------------------------------------------------------------------------------------------
 
     if (!targetDir.exists())
         QDir().mkdir(targetDir.absolutePath());
     QDir initialDir = QDir::current();
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop-Release");
-    const int threadCount = 2;
+    const int threadCount = 4;
 
     QStringList algoArgs;
 
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
         if (isGsuData)
             algoArgs << "--gsu-data";
 
-        cout << "Data directory: " << vmtDir.absolutePath().toStdString() << endl;
+        cout << "VMT directory: " << vmtDir.absolutePath().toStdString() << endl;
         QStringList nameFilters;
         //get all VMT files
         nameFilters << "*.pcd";

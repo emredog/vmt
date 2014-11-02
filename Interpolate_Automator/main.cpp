@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     // SET MAJOR VARIABLES HERE
     //-----------------------------------------------------------------------------------------------------------------
-    QDir dataDir("/home/emredog/LIRIS-data/training-validation_VMTs_20140916");
+    QDir dataDir("/home/emredog/LIRIS-data/training-validation_VMTs_20140916-ROTATED");
     int threadCount = 4;
     int maxSegmentLength = 20;
     //-----------------------------------------------------------------------------------------------------------------
@@ -49,11 +49,6 @@ int main(int argc, char *argv[])
         InterpolateThread* proc = new InterpolateThread(dataDir, vmtList.mid(startPos, length), maxSegmentLength, i+1);
         proc->start();
     }
-
-    a.exec();
-
-
-
 
     return a.exec();
 }

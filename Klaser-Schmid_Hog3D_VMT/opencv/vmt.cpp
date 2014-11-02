@@ -30,17 +30,35 @@ Vmt::Vmt(cv::SparseMat sparseMat)
     }
 }
 
-Vmt::Vmt(PointCloud<pcl::PointXYZI>::Ptr cloud, int width, int height, int depth)
+//Vmt::Vmt(PointCloud<pcl::PointXYZI>::Ptr cloud, int width, int height, int depth)
+//{
+//    _width = width;
+//    _height = height;
+//    _depth = depth;
+
+//    _pointCloud = cloud;
+
+//    if (!cloud->empty())
+//    {
+//        int sizes[] = {width, height, depth};
+//        _sparseMat = PointCloudFunctions::convertToSparseMat(cloud, 3, sizes);
+//    }
+//}
+
+Vmt::Vmt(PointCloud<pcl::PointXYZI>::Ptr cloud)
 {
-    _width = width;
-    _height = height;
-    _depth = depth;
+    pcl::PointXYZI minPt, maxPt;
+
+    pcl::getMinMax3D(*cloud, minPt, maxPt);
+    _width = maxPt.x - minPt.x;
+    _height = maxPt.y - minPt.y;
+    _depth = maxPt.z - minPt.z;
 
     _pointCloud = cloud;
 
     if (!cloud->empty())
     {
-        int sizes[] = {width, height, depth};
+        int sizes[] = {_width, _height, _depth};
         _sparseMat = PointCloudFunctions::convertToSparseMat(cloud, 3, sizes);
     }
 }
@@ -60,7 +78,7 @@ Vmt::~Vmt()
     }
 }
 
-Vmt::Vmt(const Vmt &other) : _width(other._width), _height(other._height), _depth(other._height)
+Vmt::Vmt(const Vmt &other) : _width(other._width), _height(other._height), _depth(other._depth)
 {
     _sparseMat = other._sparseMat;
     //take a deep copy of the point cloud:

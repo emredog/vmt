@@ -234,13 +234,19 @@ int main(int argc, char *argv[])
             return EXIT_SUCCESS;
         }
 
-        // check whether video file has been given
-        if ((!vm.count("vmt-file") && !vm.count("video-file")) ||
-           (!vm.count("video-file") && !vm.count("calculate-rotation")) ) //ED 20141030
+        // check whether video or vmt file has been given
+        if (!vm.count("vmt-file") && !vm.count("video-file") ) //ED 20141102
         {
-            cout << endl << "You need to specify a video file OR a VMT file OR a video file with 'calculate-rotation' flag." << endl << endl; //FIXME
+            cerr << endl << "You need to specify a video file OR a VMT file" << endl << endl; //FIXME
             return EXIT_FAILURE;
         }
+
+        if (vm.count("video-file") && !vm.count("track-file"))
+        {
+            cerr << endl << "If you specify a video-file, you need to specify a track-file as well!!\n\n";
+            return EXIT_FAILURE;
+        }
+
 
         std::string videoFileName = "";
         if (vm.count("video-file"))
@@ -336,31 +342,34 @@ int main(int argc, char *argv[])
         if (vm.count("vmt-file"))
         {
             QString vmtFile = QString::fromStdString(vm["vmt-file"].as<string>());
+            pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>);
+            pcl::io::loadPCDFile(vmtFile.toStdString(), *cloud);
 
-            //get the part with width-height-depth info
-            QString lastPart = vmtFile.split("\\").last().split("_").last();
-            lastPart.chop(4); //remove the extension
-            QStringList valueList = lastPart.split("-");
-            bool ok;
-            int width = valueList[0].toInt(&ok);
-            if (!ok)
-            {
-                cerr << "\n#\n# Can't get width value out of filename: " << vmtFile.toStdString() << endl;
-            }
-            int height = valueList[1].toInt(&ok);
-            if (!ok)
-            {
-                cerr << "\n#\n# Can't get height value out of filename: " << vmtFile.toStdString() << endl;
-            }
-            int depth = valueList[2].toInt(&ok);
-            if (!ok)
-            {
-                cerr << "\n#\n# Can't get depth value out of filename: " << vmtFile.toStdString() << endl;
-            }
+//            //get the part with width-height-depth info
+//            QString lastPart = vmtFile.split("\\").last().split("_").last();
+//            lastPart.chop(4); //remove the extension
+//            QStringList valueList = lastPart.split("-");
+//            bool ok;
+//            int width = valueList[0].toInt(&ok);
+//            if (!ok)
+//            {
+//                cerr << "\n#\n# Can't get width value out of filename: " << vmtFile.toStdString() << endl;
+//            }
+//            int height = valueList[1].toInt(&ok);
+//            if (!ok)
+//            {
+//                cerr << "\n#\n# Can't get height value out of filename: " << vmtFile.toStdString() << endl;
+//            }
+//            int depth = valueList[2].toInt(&ok);
+//            if (!ok)
+//            {
+//                cerr << "\n#\n# Can't get depth value out of filename: " << vmtFile.toStdString() << endl;
+//            }
 
-            cv::SparseMat vmtSparseMat = PointCloudFunctions::loadVmtFromPCD(vmtFile.toStdString(), width, height, depth);
+//            cv::SparseMat vmtSparseMat = PointCloudFunctions::loadVmtFromPCD(vmtFile.toStdString(), width, height, depth);
 
-            resultingVmt = Vmt(vmtSparseMat);
+            resultingVmt = Vmt(cloud);
+            cloud.reset();
 
 
             cerr << "# VMT is read from file.\n";
@@ -390,10 +399,7 @@ int main(int argc, char *argv[])
             trackFileName.chop(6); //remove the extension
 
             //filename contains W-H-D values, so that it can be read back from PCD files
-            fileName = QString("VMT_%1_%2-%3-%4.pcd").arg(trackFileName)
-                    .arg(resultingVmt.getWidth())
-                    .arg(resultingVmt.getHeight())
-                    .arg(resultingVmt.getDepth()).toStdString();
+            fileName = QString("VMT_%1.pcd").arg(trackFileName).toStdString();
 
             if (PointCloudFunctions::saveCloud(resultingVmt.getPointCloud_Const(), fileName))
             {

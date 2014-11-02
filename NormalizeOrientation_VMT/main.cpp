@@ -18,23 +18,17 @@ int main(int argc, char *argv[])
 
     //read VMT file and dimensions
     QFileInfo vmtInfo(argv[1]);
+    QStringList nameParts = vmtInfo.baseName().split("_");
 
-    QStringList dims = vmtInfo.baseName().split("_").last().split("-");
+//    QStringList dims = nameParts.last().split("-");
 
-    if (dims.length() != 3)
-    {
-        std::cerr << "File name does not contain dimension info. Good example is: /home/emredog/VMT_vid0179_1_enter-leave_78-87Union_181-464-548.pcd\n\n";
-        return -1;
-    }
+//    if (dims.length() != 3)
+//    {
+//        std::cerr << "File name does not contain dimension info. Good example is: /home/emredog/VMT_vid0179_1_enter-leave_78-87Union_181-464-548.pcd\n\n";
+//        return -1;
+//    }
 
     bool ok = false;
-
-    int widthOfVmt  = dims[0].toInt(&ok);
-    if (!ok){std::cerr << dims[0].toStdString() << " is not a valid number!\n\n"; return -1;}
-    int heightOfVmt = dims[1].toInt(&ok);
-    if (!ok){std::cerr << dims[1].toStdString() << " is not a valid number!\n\n"; return -1;}
-    int depthOfVmt  = dims[2].toInt(&ok);
-    if (!ok){std::cerr << dims[2].toStdString() << " is not a valid number!\n\n"; return -1;}
 
     //read rotation angles:
     float alpha = 0.0, beta = 0.0, theta = 0.0;
@@ -55,7 +49,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    Vmt myVmt(cloud, widthOfVmt, heightOfVmt, depthOfVmt);
+    Vmt myVmt(cloud);
 
     QList<float> angles;
     angles << alpha; //around X
@@ -63,11 +57,23 @@ int main(int argc, char *argv[])
     angles << theta; //around Z
     Vmt rotatedVmt = OrientationNormalizer::rotateVmt(angles, myVmt);
 
-    pcl::io::savePCDFile(QString("%1/%2-Rotated-A%3B%4T%5.pcd").arg(vmtInfo.absolutePath())
-                         .arg(vmtInfo.baseName())
-                         .arg(alpha)
-                         .arg(beta)
-                         .arg(theta).toStdString(),
-                         *(rotatedVmt.getPointCloud_Const()));
+    //get min & max points
+    pcl::PointCloud<pcl::PointXYZI>::ConstPtr rotatedCloud = rotatedVmt.getPointCloud_Const();
+    pcl::PointXYZI minPt, maxPt;
+    pcl::getMinMax3D(*rotatedCloud, minPt, maxPt);
+    //set the offsets and shift the rotated cloud in the positive quadrant
+    QList<float> offsets;
+    offsets << -minPt.x;
+    offsets << -minPt.y;
+    offsets << -minPt.z;
+    Vmt translatedVmt = OrientationNormalizer::translateVmt(offsets, rotatedVmt);
+
+    nameParts.removeLast();
+
+
+    pcl::io::savePCDFile(QString("%1/%2_Rotated.pcd").arg(vmtInfo.absolutePath())
+                         .arg(nameParts.join("_"))
+                         .toStdString(),
+                         *(translatedVmt.getPointCloud_Const()));
 
 }

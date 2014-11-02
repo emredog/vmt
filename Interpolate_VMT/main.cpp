@@ -18,14 +18,6 @@ int main(int argc, char *argv[])
 
     QFileInfo vmtInfo(argv[1]);
 
-    QStringList dims = vmtInfo.baseName().split("_").last().split("-");
-
-    if (dims.length() != 3)
-    {
-        std::cerr << "File name does not contain dimension info. Good example is: /home/emredog/VMT_vid0179_1_enter-leave_78-87Union_181-464-548.pcd\n\n";
-        return -1;
-    }
-
     bool ok = false;
 
     int maxSegmentLength = 20; //pixels
@@ -40,13 +32,6 @@ int main(int argc, char *argv[])
         ok = false;
     }
 
-    int widthOfVmt  = dims[0].toInt(&ok);
-    if (!ok){std::cerr << dims[0].toStdString() << " is not a valid number!\n\n"; return -1;}
-    int heightOfVmt = dims[1].toInt(&ok);
-    if (!ok){std::cerr << dims[1].toStdString() << " is not a valid number!\n\n"; return -1;}
-    int depthOfVmt  = dims[2].toInt(&ok);
-    if (!ok){std::cerr << dims[2].toStdString() << " is not a valid number!\n\n"; return -1;}
-
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>);
 
     if (pcl::io::loadPCDFile<pcl::PointXYZI> (vmtInfo.absoluteFilePath().toStdString(), *cloud) == -1) //* load the file
@@ -55,7 +40,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    Vmt myVmt(cloud, widthOfVmt, heightOfVmt, depthOfVmt);
+    Vmt myVmt(cloud);
 
     InterpolateVmt vmtInterpolation;
 

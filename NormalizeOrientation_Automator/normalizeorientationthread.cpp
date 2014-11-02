@@ -62,7 +62,7 @@ void NormalizeOrientationThread::run()
         }
 
         cout << QString("[%1] Process %2 completed. Remaining: %3").arg(this->threadId)
-                                                                   .arg(counter)
+                                                                   .arg(counter*this->threadId)
                                                                    .arg(total-counter).toStdString() <<  endl << endl;
         counter++;
 

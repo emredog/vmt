@@ -11,12 +11,21 @@ class InterpolateVmt
 protected:
 
     QMap<float, cv::Point3i> findEnclosingPts(cv::Point3i pt, const cv::Mat& mat, int wid, int hei, int dep, int sLimit=50); //search Limit
-    uchar calculateInterpolationVal(QMap<float, cv::Point3i>, cv::Point3i curPoint);
+
     enum Octant { ppp=0, mpp, mmp, pmp, ppm, mpm, mmm, pmm};
 
     Vmt Interpolate_Trilinear(const Vmt& vmt);
 
     QMap<int, uchar> InterpolateArray(const QPair<int, uchar>& prevPt, const QPair<int, uchar>& nextPt);
+
+    static inline void copyElem(const uchar* from, uchar* to, size_t elemSize)
+    {
+        size_t i;
+        for( i = 0; i + sizeof(int) <= elemSize; i += sizeof(int) )
+            *(int*)(to + i) = *(const int*)(from + i);
+        for( ; i < elemSize; i++ )
+            to[i] = from[i];
+    }
 
 
 public:
