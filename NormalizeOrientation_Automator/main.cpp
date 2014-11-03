@@ -14,10 +14,10 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     // SET MAJOR VARIABLES HERE
     //-----------------------------------------------------------------------------------------------------------------
-    QFile rotationAnglesFile("/home/emredog/LIRIS-data/RotationAngles-training-validation_AllOfUnions.txt");
-    QDir dataDir("/home/emredog/LIRIS-data/training-validation_VMTs_20140916");
+    QFile rotationAnglesFile("/home/emredog/LIRIS-data/RotationAngles-test_StationaryUnions.txt");
+    QDir dataDir("/home/emredog/LIRIS-data/test_VMTs_20140916");
     bool rotateOnlyAroundYAxis = true;
-    int threadCount = 4;
+    int threadCount = 3;
     //-----------------------------------------------------------------------------------------------------------------
 
     QDir::setCurrent("/home/emredog/qt_builds/build-NormalizeOrientation_VMT-Desktop-Release");

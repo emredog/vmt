@@ -14,8 +14,8 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------------------------------------------------------------
     // SET MAJOR VARIABLES HERE
     //-----------------------------------------------------------------------------------------------------------------
-    QDir dataDir("/home/emredog/LIRIS-data/training-validation_VMTs_20140916-ROTATED");
-    int threadCount = 4;
+    QDir dataDir("/home/emredog/LIRIS-data/test_VMTs_20140916-ROTATED");
+    int threadCount = 3;
     int maxSegmentLength = 20;
     //-----------------------------------------------------------------------------------------------------------------
 

@@ -34,15 +34,15 @@ int main(int argc, char *argv[])
 
     QDir dataDir("...");
     QDir trackFileDir("...");
-    QDir targetDir("/home/emredog/LIRIS-data/training-validation_features/20141102-rot-int_args16");
-    QDir vmtDir("/home/emredog/LIRIS-data/training-validation_VMTs_20140916-ROTATED-INTERPOLATED");
+    QDir targetDir("/home/emredog/LIRIS-data/test_features/20141102-rot-int_args16");
+    QDir vmtDir("/home/emredog/LIRIS-data/test_VMTs_20140916-ROTATED-INTERPOLATED");
     //------------------------------------------------------------------------------------------------------------------
 
     if (!targetDir.exists())
         QDir().mkdir(targetDir.absolutePath());
     QDir initialDir = QDir::current();
     QDir::setCurrent("/home/emredog/qt_builds/build-Klaser-Schmid_Hog3D_VMT-Desktop-Release");
-    const int threadCount = 4;
+    const int threadCount = 2;
 
     QStringList algoArgs;
 
@@ -264,4 +264,6 @@ int main(int argc, char *argv[])
         break;
     }
     }
+
+    return a.exec();
 }
