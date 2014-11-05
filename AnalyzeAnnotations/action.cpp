@@ -46,6 +46,26 @@ bool Action::operator==(const Action& other) const
     return false;
 }
 
+bool Action::operator>(const Action &other) const
+{
+    return this->boundingBoxes.keys().first() > other.boundingBoxes.keys().first();
+}
+
+bool Action::operator>=(const Action &other) const
+{
+    return this->boundingBoxes.keys().first() >= other.boundingBoxes.keys().first();
+}
+
+bool Action::operator<(const Action &other) const
+{
+    return this->boundingBoxes.keys().first() < other.boundingBoxes.keys().first();
+}
+
+bool Action::operator<=(const Action &other) const
+{
+    return this->boundingBoxes.keys().first() <= other.boundingBoxes.keys().first();
+}
+
 bool Action::fillBoxesFromTrackFile(QString pathToTrack)
 {
     QFile trackFile(pathToTrack);

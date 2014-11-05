@@ -10,7 +10,7 @@ using namespace std;
 
 
 
-#define INSTANCE_COUNT 375
+#define INSTANCE_COUNT 694
 
 QList<int> resultFileToClassList(QString file);
 Video mergeSuccessiveActions(Video vid);
@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 
     QCoreApplication a(argc, argv);
 
-    QDir trackDir("/home/emredog/LIRIS-data/20140926_test_with_20/VMT-KS/TRACKS-test-selected");
-    QString resultFile = "/home/emredog/LIRIS-data/20140926_test_with_20/VMT-KS/prediction.result";
+    QDir trackDir("/home/emredog/LIRIS-data/test_tracklets_20140424/track_stationary_cam_subset_for_20140922");
+    QString resultFile = "/home/emredog/LIRIS-data/20141104-SVM/args16-K1000/RBF-CSVC.prediction";
     QDir targetDir(QString("%1-Annotations").arg(resultFile));
     if (!targetDir.exists())
         targetDir.mkdir(targetDir.absolutePath());
@@ -54,155 +54,155 @@ int main(int argc, char *argv[])
     }
     cout << "Obtained " << trackFiles.length() << " *.track files." << endl;
 
-    int lastActionIndex = 1;
-    int lastNoActionIndex = 1;
-    Video currentVideo;
-    Video noActionVideo;
-
     QRegExp rx("(\\_|\\(|\\-|\\)|\\.)");
 
-
+    QMultiMap<QString, QPair<QString, int> > videoNameToTrackNameAndClass;
     for(int i=0; i<trackFiles.length(); i++)
     {
-        QString fileName = trackFiles[i];
-        Action actionFromTrack;
-        actionFromTrack.activityClass = classIndices[i];
-
-        if (!actionFromTrack.fillBoxesFromTrackFile(trackDir.absoluteFilePath(fileName)))
-        {
-            cout << "ERROR reading Action from *.track file for " << fileName.toStdString() << endl;
-            continue;
-        }
-
-        QStringList elmnts = fileName.split(rx, QString::SkipEmptyParts);
-
+        QStringList elmnts = trackFiles[i].split(rx, QString::SkipEmptyParts);
         QString vidName = elmnts[0];
         if (vidName.endsWith(".xml"))
             vidName.chop(4);
         if (vidName.startsWith("d1"))
             vidName = vidName.remove(0, 3);
-
-        //if it's a new video (vid03 ---> vid05)
-        if (vidName.compare(currentVideo.name) != 0)
-        {
-            if (!currentVideo.actions.keys().isEmpty())
-            {
-                //check for successive actions
-                Video mergedCurrentVid = mergeSuccessiveActions(currentVideo);
-                //write video to annotation
-                mergedCurrentVid.writeWithAnnotationFormat(targetDir.absoluteFilePath(QString("%1.xml").arg(mergedCurrentVid.name)));
-            }
-            else
-            {
-                currentVideo.writeWithAnnotationFormat(targetDir.absoluteFilePath(QString("%1.xml").arg(currentVideo.name)));
-            }
-
-            if (!noActionVideo.actions.keys().isEmpty())
-            {
-                //check for successive actions
-                Video mergedNoActionVid = mergeSuccessiveActions(noActionVideo);
-                //write video to annotation
-                mergedNoActionVid.writeWithAnnotationFormat(noactionDir.absoluteFilePath(QString("%1_NoAction.xml").arg(mergedNoActionVid.name)));
-
-            }
-
-            lastActionIndex = 1;
-            lastNoActionIndex = 1;
-            currentVideo.actions.clear();
-            currentVideo.name = vidName;
-            noActionVideo.actions.clear();
-            noActionVideo.name = vidName;
-
-        }
-
-        if (actionFromTrack.activityClass == 0) //no action class
-        {
-            actionFromTrack.number = lastNoActionIndex;
-            noActionVideo.actions.insert(lastNoActionIndex, actionFromTrack);
-            lastNoActionIndex++;
-        }
-        else
-        {
-            actionFromTrack.number = lastActionIndex;
-            currentVideo.actions.insert(lastActionIndex, actionFromTrack);
-            lastActionIndex++;
-        }
-
-        cout << ".";
+        videoNameToTrackNameAndClass.insert(vidName, qMakePair(trackFiles[i], classIndices[i]));
     }
 
-    //write last annotation file to disk
-    currentVideo.writeWithAnnotationFormat(targetDir.absoluteFilePath(QString("%1.xml").arg(currentVideo.name)));
+
+    foreach(QString vidName, videoNameToTrackNameAndClass.uniqueKeys())
+    {
+        Video currentVideo; //annotation to write in targetDir
+        Video currentNoActionVideo; //annotation to write in noActionDir
+
+        currentVideo.name = vidName;
+        currentNoActionVideo.name = vidName;
+
+
+        QList<QPair<QString, int> > trackFilesToClass = videoNameToTrackNameAndClass.values(vidName);
+
+        int actionCounter = 1, noActionCounter = 1;
+        for(int i=0; i<trackFilesToClass.length(); i++)
+        {
+            Action currentAction;
+            currentAction.activityClass = trackFilesToClass[i].second; //get class
+            currentAction.fillBoxesFromTrackFile(trackDir.absoluteFilePath(trackFilesToClass[i].first)); //fetch bounding boxes
+
+            //check action class
+            if (currentAction.activityClass == 0)  //if class is "no action"
+            {
+                currentAction.number = noActionCounter;
+                currentNoActionVideo.actions.insert(noActionCounter, currentAction);
+                noActionCounter++;
+            }
+            else // if another class
+            {
+                currentAction.number = actionCounter;
+                currentVideo.actions.insert(actionCounter, currentAction);
+                actionCounter++;
+            }
+        }
+        //all track files are processed for this video
+
+        //proceed to merging successive actions in videos
+        Video mergedCurrentVid = mergeSuccessiveActions(currentVideo);
+        Video mergedCurrentNoActVid = mergeSuccessiveActions(currentNoActionVideo);
+
+        //and write them to disk
+        mergedCurrentVid.writeWithAnnotationFormat(targetDir.absoluteFilePath(QString("%1.xml").arg(mergedCurrentVid.name)));
+        mergedCurrentNoActVid.writeWithAnnotationFormat(noactionDir.absoluteFilePath(QString("%1.xml").arg(mergedCurrentNoActVid.name)));
+
+        cout << "Processed: " << vidName.toStdString() << endl;
+    }
 
     cout << "Completed." << endl;
-    //return a.exec();
+
+    return EXIT_SUCCESS;
 }
 
 
 Video mergeSuccessiveActions(Video vid)
 {
-    if (vid.actions.keys().length() == 1) //just one action, no need to check
-        return vid;
+    if (vid.actions.keys().length() <= 1) //just one action, no need to check
+        return vid;        
 
     Video mergedVideo;
     mergedVideo.name = vid.name;
+    int mergedVidActionCounter = 1;
 
-    int lastActionIndex = 1;
-
-
-    QList<int> keys = vid.actions.keys();
-
-    foreach(int keyCurrent, keys)
+    //sort actions by begining frame of bounding boxes:
+    QList<Action> actions = vid.actions.values();
+    qSort(actions);
+    //clear the actions
+    vid.actions.clear();
+    //rebuild the map
+    for (int i=0; i<actions.length(); i++)
     {
+        vid.actions.insert(i+1, actions[i]);
+    }
 
-        QList<int> restOfKeys = keys;
-        restOfKeys.removeAll(keyCurrent);
-
-        foreach(int keyOther, restOfKeys)
+    Action prevAction = vid.actions.value(1); //take first action
+    //start iterating the remaining actions
+    for (int curKey=2; curKey <= vid.actions.keys().last(); curKey++)
+    {
+        Action curAction = vid.actions.value(curKey);
+        if (curAction.activityClass != prevAction.activityClass) //different classes
         {
-            // keys are ordered but there're gaps (2,3,5,6,9,...)
-            Action currentAct = vid.actions[keyCurrent];
-            Action nextAct = vid.actions[keyOther];
-
-            //if same activity
-            if (currentAct.activityClass == nextAct.activityClass)
+            //do not merge -- dump prevAction to video
+            prevAction.number = mergedVidActionCounter;
+            mergedVideo.actions.insert(mergedVidActionCounter, prevAction);
+            mergedVidActionCounter++;
+            //set cur --> prev
+            prevAction = curAction;
+            if (curKey == vid.actions.keys().last()) //if last iteration
             {
-                QMap<int, BoundingBox>::iterator lastIt = currentAct.boundingBoxes.end();
-                lastIt--;
-                int lastFrame = lastIt.key();
-                int firstFrame = nextAct.boundingBoxes.begin().key();
-               // qDebug() << "Checking frames: " << lastFrame << " vs. " << firstFrame << "\n";
-
-                //if successive
-                if (qAbs(lastFrame-firstFrame) < 1)
-                {
-                    //qDebug() << "\tFound one to merge!" << endl;
-                    Action mergedAct;
-                    mergedAct.activityClass = currentAct.activityClass;
-                    mergedAct.number = lastActionIndex;
-                    mergedAct.boundingBoxes = currentAct.boundingBoxes; //take all from current action
-
-                    QMapIterator<int, BoundingBox> itNext(nextAct.boundingBoxes); //take one by one from next action
-                    while (itNext.hasNext())
-                    {
-                        itNext.next();
-                        mergedAct.boundingBoxes.insert(itNext.key(), itNext.value());
-                    }
-
-                    mergedVideo.actions.insert(lastActionIndex, mergedAct);
-                    lastActionIndex++;
-                }
-            }
-            else //no successive activities
-            {
-                currentAct.number = lastActionIndex;
-                mergedVideo.actions.insert(lastActionIndex, currentAct);
-                lastActionIndex++;
+                curAction.number = mergedVidActionCounter;
+                mergedVideo.actions.insert(mergedVidActionCounter, curAction);
             }
         }
+        else //same classes
+        {
+            //we need to check frames of bounding boxes
+            int curActBeginFrame = curAction.boundingBoxes.keys().first();
+            int prevActBeginFrame = prevAction.boundingBoxes.keys().first();
+            int prevActEndFrame = prevAction.boundingBoxes.keys().last();
 
+            if (curActBeginFrame >= prevActBeginFrame-1 &&
+                curActBeginFrame <= prevActEndFrame+1) //current action's frames is within or just after the previous frames
+            {
+                int curActEndFrame = curAction.boundingBoxes.keys().last();
+                //enlarge prevAction with curAction's boundingboxes
+                int beginFrom = prevActEndFrame > curActBeginFrame ? prevActEndFrame : curActBeginFrame;
+                for (int frame = beginFrom; frame <= curActEndFrame; frame++)
+                {
+                    prevAction.boundingBoxes.insert(frame, curAction.boundingBoxes.value(frame));
+                }
 
+                if (curKey == vid.actions.keys().last()) //if last iteration
+                {
+                    prevAction.number = mergedVidActionCounter;
+                    mergedVideo.actions.insert(mergedVidActionCounter, prevAction);
+                }
+
+                cout << "+";
+
+                //DO NOT SET cur --> prev ; we already processed curAct & concatenated it to the prevAct
+            }
+            else //there's temporal gap between the two
+            {
+                //do not merge -- dump prevAction to video
+                mergedVideo.actions.insert(mergedVidActionCounter, prevAction);
+                mergedVidActionCounter++;
+                //set cur --> prev
+                prevAction = curAction;
+                if (curKey == vid.actions.keys().last()) //if last iteration
+                {
+                    curAction.number = mergedVidActionCounter;
+                    mergedVideo.actions.insert(mergedVidActionCounter, curAction);
+                }
+            }
+        }
     }
+    cout << endl;
 
     return mergedVideo;
 }

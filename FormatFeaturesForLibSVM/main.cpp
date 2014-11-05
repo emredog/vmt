@@ -20,10 +20,10 @@ int main(/*int argc, char *argv[]*/)
 
     //parameters
 #ifdef TRAINING
-    QString pathToBoWs = "/home/emredog/LIRIS-data/20140926_test_with_20/KS/train-val_BoW";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/training-validation_BagOfWords/balanced_20141103-fromParallelKMeans-K1000";
     QString dataFileForLibSVM = "training-validation_data.dat";
 #else
-    QString pathToBoWs = "/home/emredog/gsu-data/test_BagOfWords/camera2";
+    QString pathToBoWs = "/home/emredog/LIRIS-data/test_BagOfWords/20141103-fromParallelKMeans-K1000";
     QString dataFileForLibSVM = "test_data.dat";
 #endif
 
@@ -208,11 +208,12 @@ void formatTrainingData(QString pathToBoWs, QString outFile)
     classNames["handshaking"] = 8;
     classNames["typing"] = 9;
     classNames["telephone"] = 10;
+    QList<QString> classNameKeys = classNames.keys();
 
     //get BoW files
     QDir dirBoWs(pathToBoWs);
     QStringList filters;  filters << "*.BoW";
-    QStringList BoWFileNames = dirBoWs.entryList(filters, QDir::Files | QDir::NoDotAndDotDot);
+    QStringList BoWFileNames = dirBoWs.entryList(filters, QDir::Files | QDir::NoDotAndDotDot);        
 
     cout << "Obtained " << BoWFileNames.count() << " BoW files."  << endl;
 
@@ -227,7 +228,13 @@ void formatTrainingData(QString pathToBoWs, QString outFile)
         QString curClassName;
         {
             QStringList parts = bowName.split("_");
-            curClassName = parts[2];
+            curClassName = parts[3];
+            if (!classNameKeys.contains(curClassName))
+            {
+                cerr << "Filename format error!\nFilename: " << bowName.toStdString()
+                     << "\nExtracted class name: " << curClassName.toStdString() << endl << endl;
+                return;
+            }
         }
 
 

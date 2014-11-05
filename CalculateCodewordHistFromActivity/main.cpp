@@ -14,12 +14,13 @@ void writeBoWtoFile(QVector<int> &codeWords, QString fileName);
 
 int main(int argc, char *argv[])
 {
+    bool isCodeBookContainsIndex = true;
     QCoreApplication app(argc, argv);
 
-    const QString codebookStr = "args16_K-Means_s100K_k1000_C100_e0.1.out";
-    const QDir activityFeaturesDir("/home/emredog/gsu-data/test_features_args16/camera2");
-    const QString codeBookFilePath = QString("/home/emredog/gsu-data/Codebook/%1").arg(codebookStr);
-    const QString targetDir = QString("/home/emredog/gsu-data/test_BagOfWords/camera2");
+    const QString codebookStr = "AllFeaturesInSingleFile-Formatted-500k.features-K1000.cluster_centres";
+    const QDir activityFeaturesDir("/home/emredog/LIRIS-data/test_features/20141102-rot-int_args16");
+    const QString codeBookFilePath = QString("/home/emredog/LIRIS-data/Codebooks/20141103/%1").arg(codebookStr);
+    const QString targetDir = QString("/home/emredog/LIRIS-data/test_BagOfWords/20141103-fromParallelKMeans-K1000");
 
     //create missing target directory
     {
@@ -32,10 +33,11 @@ int main(int argc, char *argv[])
     const int ignoreFeatsOnActs = 8; //number of ignored features in the beginning of each line
     const int vocabularySize = 1000; //K of K-means    4000 or 1000
     const int featureDim = 80;// 48<--- dodecahedron //80 <--- icosahedron
-    const int threadCount = 1;
+    const int threadCount = 4;
 
     //read Code book:
-    FeatureSet codeBook(codeBookFilePath, featureDim);
+    int ignoreFeatsOnCodebook = isCodeBookContainsIndex ? 1 : 0;
+    FeatureSet codeBook(codeBookFilePath, featureDim, ignoreFeatsOnCodebook);
 
 
     QStringList filters;

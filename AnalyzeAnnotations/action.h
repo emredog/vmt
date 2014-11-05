@@ -16,6 +16,10 @@ public:
     QMap<int, BoundingBox> boundingBoxes;
 
     bool operator==(const Action& other) const;
+    bool operator> (const Action& other) const;
+    bool operator>= (const Action& other) const;
+    bool operator< (const Action& other) const;
+    bool operator<= (const Action& other) const;
 
     bool fillBoxesFromTrackFile(QString pathToTrack);
 

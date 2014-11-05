@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     //-------------------------------------------------------------------------------
     // SET VARIABLES HERE
     const int nrOfUnwantedFeats = 8;
-    const int randomFeatSize = 500000; //100000 500000
+    const int randomFeatSize = 100000; //100000 500000
     //-------------------------------------------------------------------------------
 
     QCoreApplication a(argc, argv);
